@@ -4,7 +4,10 @@ XBee Zigbee API Test Programme
 
 Screenshots
 ------------------
+
 ![ScreenShot of Startup](https://raw.github.com/matthewzhenggong/fiwt/master/XbeeZBS2Test/screenshot_startup.png)
+
+![ScreenShot of Range Test](https://raw.github.com/matthewzhenggong/fiwt/master/XbeeZBS2Test/screenshot_range_test.png)
 
 Funtion support
 ----------------
