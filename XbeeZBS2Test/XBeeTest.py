@@ -203,8 +203,8 @@ class MyFrame(wx.Frame):
 
                 AT_CMD = ['MY','BD']
                 ADDR64_LIST = ["0000000000000000","000000000000FFFF", \
-                        "0013A200408a72f0", "0013A200408A72D2",
-                        "0013a200408a72bb"]
+                        "0013a200408A72F0", "0013a200408a72d2",
+                        "0013A200408A72BB", "0013A200408A72AA"]
                 ADDR16_LIST = ["0000","FFFE"]
 
                 box = wx.BoxSizer(wx.HORIZONTAL)
@@ -332,6 +332,12 @@ Unused bits must be set to 0.  ''')
                 box.Add(self.cbEcho, 0, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
 
+                box = wx.BoxSizer(wx.HORIZONTAL)
+                self.txtRX = wx.StaticText(panel, wx.ID_ANY, "")
+                self.txtRX.SetForegroundColour((0,0,255))
+                box.Add(self.txtRX, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 1)
+                sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
+
 
                 self.log_txt = wx.TextCtrl(panel, -1, "", size=(300,300), style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_RICH2)
                 self.log_txt.SetFont(wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
@@ -385,6 +391,7 @@ Unused bits must be set to 0.  ''')
         def OnClr(self, event):
             self.log_txt.Clear()
             self.txtRXSta.SetLabel('')
+            self.txtRX.SetLabel('')
             self.first_cnt = True
             self.last_cnt = 0
             self.arrv_cnt = 0
@@ -608,9 +615,10 @@ Unused bits must be set to 0.  ''')
                             self.arrv_bcnt += len(rf_data)
                             self.lost_cnt += pnum - 1
                             elapsed = time.clock() - self.start_cnt
-                            self.txtRXSta.SetLabel('Ping {:0>5d}/{:0>3d}/{:0>3d} C{}/T{:<.2f} {:.1f}Pps/{:.0f}bps'.format(\
-                                            self.arrv_cnt, self.lost_cnt, self.dup_cnt, \
-                                            cnt, elapsed, self.arrv_cnt/elapsed, self.arrv_bcnt*10/elapsed ))
+                            self.txtRXSta.SetLabel('Ping {:0>5d}/{:0>3d}/{:0>3d} C{}/T{:<.2f} {:.1f}Pps/{:.0f}bps'\
+					    .format(self.arrv_cnt, self.lost_cnt, self.dup_cnt, \
+                                            cnt, elapsed, self.arrv_cnt/elapsed, self.arrv_bcnt*10/elapsed))
+                            self.txtRX.SetLabel(rf_data[6:])
                       if self.cbEcho.GetValue() and options & 0x01 :
                             broadcast_radius = self.txtTXrad.GetValue().encode()[:2]\
                                     .decode('hex')

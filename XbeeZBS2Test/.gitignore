@@ -1,0 +1,12 @@
+
+#python
+*.pyc
+*.pyd
+
+#data
+rec*.dat
+
+build/
+debug/
+dist/
+
