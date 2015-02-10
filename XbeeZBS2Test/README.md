@@ -2,6 +2,10 @@
 XBee Zigbee API Test Programme
 ==============================
 
+Screenshots
+------------------
+![ScreenShot of Startup](https://raw.github.com/matthewzhenggong/fiwt/master/XbeeZBS2Test/screenshot_startup.png)
+
 Funtion support
 ----------------
 - AT command
