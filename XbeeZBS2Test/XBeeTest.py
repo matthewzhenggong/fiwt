@@ -212,8 +212,10 @@ class MyFrame(wx.Frame):
                 self.btnAT.Enable(False)
                 box.Add(self.btnAT, 0, wx.ALIGN_CENTER, 5)
                 self.txtATcmd = wx.ComboBox(panel, -1, "MY", choices=AT_CMD, size=(50,-1))
+		self.txtATcmd.SetToolTip(wx.ToolTip('AT Command in TWO characters'))
                 box.Add(self.txtATcmd, 0, wx.ALIGN_CENTER, 5)
                 self.txtATpar = wx.TextCtrl(panel, -1, "", size=(100,-1), validator = MyValidator(HEX_ONLY))
+		self.txtATpar.SetToolTip(wx.ToolTip('Hexadecimal Parameter for AT Command to set.\nIf blanked, just get the parameter.'))
                 box.Add(self.txtATpar, 0, wx.ALIGN_CENTER, 5)
                 self.cbATqu = wx.CheckBox(panel, -1, "queued")
                 box.Add(self.cbATqu, 0, wx.ALIGN_CENTER, 5)
@@ -225,7 +227,7 @@ class MyFrame(wx.Frame):
                         "0000000000000000", choices=ADDR64_LIST, \
                         validator = MyValidator(HEX_ONLY))
                 self.txtRmtATaddr64.SetToolTip( \
-                        wx.ToolTip('''Set to the 64-bit address of the destination device. The following addresses are also supported: 
+                        wx.ToolTip('''Set to the 64-bit address of the destination device in hexadecimal. The following addresses are also supported: 
 0x0000000000000000 - Reserved 64-bit address for the coordinator
 0x000000000000FFFF - Broadcast address ''')
                 )
@@ -235,7 +237,7 @@ class MyFrame(wx.Frame):
                         "FFFE", choices=ADDR16_LIST, \
                         validator = MyValidator(HEX_ONLY))
                 self.txtRmtATaddr16.SetToolTip( \
-                        wx.ToolTip('''Set to the 16-bit address of the destination device, if known. Set to 0xFFFE if the address is unknown, or if sending a broadcast.''')
+                        wx.ToolTip('''Set to the 16-bit address of the destination device in hexadecimal, if known. Set to 0xFFFE if the address is unknown, or if sending a broadcast.''')
                 )
                 box.Add(self.txtRmtATaddr16, 0, wx.ALIGN_CENTER, 5)
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
@@ -245,6 +247,7 @@ class MyFrame(wx.Frame):
                 self.btnRmtAT.Enable(False)
                 box.Add(self.btnRmtAT, 0, wx.ALIGN_CENTER, 5)
                 self.txtRmtATcmd = wx.ComboBox(panel, -1, "MY", choices=AT_CMD, size=(50,-1))
+		self.txtRmtATcmd.SetToolTip(wx.ToolTip('Hexadecimal Parameter for remote AT Command to set.\nIf blanked, just get the parameter.'))
                 box.Add(self.txtRmtATcmd, 0, wx.ALIGN_CENTER, 5)
                 self.txtRmtATpar = wx.TextCtrl(panel, -1, "", size=(100,-1), validator = MyValidator(HEX_ONLY))
                 box.Add(self.txtRmtATpar, 0, wx.ALIGN_CENTER, 5)
@@ -280,6 +283,7 @@ Unused bits must be set to 0.  ''')
                 self.btnTX.Enable(False)
                 box.Add(self.btnTX, 0, wx.ALIGN_CENTER, 5)
                 self.txtTX = wx.TextCtrl(panel, -1, "", size=(130,-1))
+		self.txtTX.SetToolTip(wx.ToolTip('Text to be sent\nIf in continoous mode, the sent text will be prefixed with "P" and 5-digital index number.'))
                 box.Add(self.txtTX, 1, wx.ALIGN_CENTER, 5)
                 self.txtTXrad = wx.TextCtrl(panel, -1, "01", size=(30,-1), validator = MyValidator(HEX_ONLY))
                 self.txtTXrad.SetToolTip( \
@@ -308,6 +312,7 @@ Unused bits must be set to 0.  ''')
                 self.btnTXc.Enable(False)
                 box.Add(self.btnTXc, 0, wx.ALIGN_CENTER, 5)
                 self.txtTXfreq = wx.TextCtrl(panel, -1, "50", size=(50,-1), validator = MyValidator(DIGIT_ONLY))
+		self.txtTXfreq.SetToolTip(wx.ToolTip('Frequency to send ping pack periodically.'))
                 box.Add(self.txtTXfreq, 0, wx.ALIGN_CENTER, 5)
                 box.Add(wx.StaticText(panel, wx.ID_ANY, "Hz"), 0,
                         wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
@@ -323,6 +328,7 @@ Unused bits must be set to 0.  ''')
                 self.txtRXSta = wx.StaticText(panel, wx.ID_ANY, "")
                 box.Add(self.txtRXSta, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 1)
                 self.cbEcho = wx.CheckBox(panel, -1, "Echo RX pack")
+		self.cbEcho.SetToolTip(wx.ToolTip('If checked, any received ping pack will be sent back.'))
                 box.Add(self.cbEcho, 0, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
 
@@ -365,7 +371,7 @@ Unused bits must be set to 0.  ''')
                     data_len=len(self.txtTX.GetValue().encode())
                     br2 = int((6+data_len)/dt+1)*10
                     br1 = int((28+6+data_len)/dt+1)*10
-                    self.txtTXBR.SetLabel('pack len={}+{}={} BR={}/{}'.format(\
+                    self.txtTXBR.SetLabel('Pack len={}+{}={} BR={}/{}'.format(\
                             28,6+data_len,28+6+data_len,br2,br1))
                     br=int(self.txtBR.GetValue().encode())
                     if br1 >= br :
