@@ -4,10 +4,11 @@ XBee Zigbee API Test Programme
 
 Screenshots
 ------------------
-
-![ScreenShot of Startup](https://raw.github.com/matthewzhenggong/fiwt/master/XbeeZBS2Test/screenshot_startup.png)
-
+* Range Test
 ![ScreenShot of Range Test](https://raw.github.com/matthewzhenggong/fiwt/master/XbeeZBS2Test/screenshot_range_test.png)
+COM6 connected to a XBee router and COM3 connected to a coordinator.
+Router is sending ping packs to Coordinator in 50Hz.
+The ping pack is in the format of 'PXXXXXyyyyyyy', in which XXXXX means 5-digital index number and yyyyyyy is the input content.
 
 Funtion support
 ----------------
@@ -23,4 +24,5 @@ Programme based on
 * [wxPython](http://www.wxpython.org)
 * [pySerial](http://pyserial.sourceforge.net)
 * [python-xbee](http://code.google.com/p/python-xbee/)
+
 
