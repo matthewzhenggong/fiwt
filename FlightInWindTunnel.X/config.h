@@ -57,12 +57,12 @@
 
 
 /** UART1 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART1BAUdRATE  (115200)
+#define UART1BAUdRATE  (0x03d090)
 #define UART1TXBUFFLEN (128)
 #define UART1RXBUFFLEN (256)
 
 /** UART2 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART2BAUdRATE  (115200)
+#define UART2BAUdRATE  (0x03d090)
 #define UART2TXBUFFLEN (128)
 #define UART2RXBUFFLEN (256)
 
