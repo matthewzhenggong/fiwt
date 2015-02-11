@@ -247,9 +247,10 @@ class MyFrame(wx.Frame):
                 self.btnRmtAT.Enable(False)
                 box.Add(self.btnRmtAT, 0, wx.ALIGN_CENTER, 5)
                 self.txtRmtATcmd = wx.ComboBox(panel, -1, "MY", choices=AT_CMD, size=(50,-1))
-		self.txtRmtATcmd.SetToolTip(wx.ToolTip('Hexadecimal Parameter for remote AT Command to set.\nIf blanked, just get the parameter.'))
+		self.txtRmtATcmd.SetToolTip(wx.ToolTip('AT Command in TWO characters'))
                 box.Add(self.txtRmtATcmd, 0, wx.ALIGN_CENTER, 5)
                 self.txtRmtATpar = wx.TextCtrl(panel, -1, "", size=(100,-1), validator = MyValidator(HEX_ONLY))
+		self.txtRmtATpar.SetToolTip(wx.ToolTip('Hexadecimal Parameter for remote AT Command to set.\nIf blanked, just get the parameter.'))
                 box.Add(self.txtRmtATpar, 0, wx.ALIGN_CENTER, 5)
                 self.txtRmtATopt = wx.TextCtrl(panel, -1, "02", size=(30,-1), validator = MyValidator(HEX_ONLY))
                 self.txtRmtATopt.SetToolTip( \
