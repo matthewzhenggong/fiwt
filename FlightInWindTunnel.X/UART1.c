@@ -41,18 +41,25 @@
 __eds__ uint8_t bufferUART1TXA[UART1TXBUFFLEN] __attribute__((eds, space(dma)));
 __eds__ uint8_t bufferUART1TXB[UART1TXBUFFLEN] __attribute__((eds, space(dma)));
 #else
-volatile uint8_t bufferUART1TXA[UART1TXBUFFLEN] __attribute__((space(xmemory)));
-volatile uint8_t bufferUART1TXB[UART1TXBUFFLEN] __attribute__((space(xmemory)));
+uint8_t bufferUART1TXA[UART1TXBUFFLEN] __attribute__((space(xmemory)));
+uint8_t bufferUART1TXB[UART1TXBUFFLEN] __attribute__((space(xmemory)));
 #endif
 
 __near volatile uint16_t DMA0Sending;
 __near volatile uint16_t DMA0Cnt;
 
-__near uint8_t UART1RXBUFF[UART1RXBUFFLEN];
-__near volatile uint16_t UART1RXBUFF_head;
-__near volatile uint16_t UART1RXBUFF_tail;
+#ifdef __HAS_DMA__
+__eds__ uint8_t UART1RXBUFF[UART1RXBUFFLEN] __attribute__((eds, space(dma)));
+#else
+uint8_t UART1RXBUFF[UART1RXBUFFLEN] __attribute__((space(xmemory)));
+uint8_t *UART1RXBUFF_tail;
+#endif
+__near volatile unsigned int UART1RXBUFF_tail;
+__near unsigned int DMA4START;
+__near unsigned int DMA4END;
 
 void UART1Init(void) {
+
     /* 1) Configure U1TX as output, and U1RX as input */
 #if GNDBOARD        /*  Only for GNDBOARD */
     _TRISG0 = 0b1;
@@ -75,7 +82,8 @@ void UART1Init(void) {
     U1BRG = BR_Value;
 
     /* 4) Configure UART1 module: Set number of data bits, number of Stop bits, and parity bits */
-    /*  U1MODE: UART1 MODE REGISTER */
+    U1MODEbits.UARTEN = 0; /*  UARTEN: UART1 Enable bit. */
+    U1STAbits.UTXEN = 0; /*  The UTXEN bit is set after the UARTEN bit has been set */
     U1MODEbits.USIDL = 0b0; /*  USIDL: Stop in Idle Mode bit.
                                 1 = Discontinue module operation when device enters Idle mode.
                                 0 = Continue module operation in Idle mode. */
@@ -172,14 +180,33 @@ void UART1Init(void) {
     /*   Register Indirect with Post-Increment */
     /*   Using single buffer */
     /*   8 transfers per buffer */
+    DMA0CONbits.CHEN = 0;
     DMA0CONbits.AMODE = 0;
     DMA0CONbits.MODE = 1;
     DMA0CONbits.DIR = 1;
     DMA0CONbits.SIZE = 1;
     DMA0CNT = 0;
 
+    /**   Associate DMA Channel 4 with UART Rx */
+    DMA4REQ = 0b00001011; /*  Select UART1 RX */
+    DMA4PAD = (volatile uint16_t) & U1RXREG;
+
+    /*   Configure DMA Channel 4 to: */
+    /*   Transfer data from RAM to UART */
+    /*   Continues mode */
+    /*   Register Indirect with Post-Increment */
+    /*   Using single buffer */
+    /*   8 transfers per buffer */
+    DMA4CONbits.CHEN = 0;
+    DMA4CONbits.AMODE = 0;
+    DMA4CONbits.MODE = 0;
+    DMA4CONbits.DIR = 0;
+    DMA4CONbits.SIZE = 1;
+    DMA4CNT = UART1RXBUFFLEN-1u;
+
     /* Priorities of DMA Interrupts */
     _DMA0IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMA0 priority out 5 of 7 */
+    _DMA4IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMA4 priority out 5 of 7 */
 }
 
 void UART1Start(void) {
@@ -200,19 +227,26 @@ void UART1Start(void) {
 
     /* Enable UART1 Interrupts */
     _U1RXIF = 0; /*  UART1 Receiver Interrupt flag cleared */
-    _U1RXIE = 1; /*  UART1 Receiver Interrupt enabled */
+    _U1RXIE = 0; /*  UART1 Receiver Interrupt enabled */
     _U1TXIF = 0; /*  UART1 Receiver Interrupt flag cleared */
     _U1TXIE = 0; /*  UART1 Receiver Interrupt disabled */
     _U1EIF = 0; /*  UART1 Receiver Interrupt flag cleared */
-    _U1EIE = 1; /*  UART1 Receiver Interrupt enabled */
+    _U1EIE = 0; /*  UART1 Receiver Interrupt enabled */
 
     /*   Enable DMA Interrupts */
     _DMA0IF = 0; /*  Clear DMA Interrupt Flag */
     _DMA0IE = 1; /*  Enable DMA interrupt */
 
+    DMA4STAL = UART1RXBUFF_tail = DMA4START =__builtin_dmaoffset(UART1RXBUFF);
+    DMA4END = DMA4START+UART1RXBUFFLEN;
+    DMA4STAH = __builtin_dmapage(UART1RXBUFF);
+
+    _DMA4IF = 0; /*  Clear DMA Interrupt Flag */
+    _DMA4IE = 0; /*  Enable DMA interrupt */
+    DMA4CONbits.CHEN = 1; /* Enable DMA channel */
+
     DMA0Sending = 0;
     DMA0Cnt = 0;
-    UART1RXBUFF_head = UART1RXBUFF_tail = 0;
 }
 
 /** Setup DMA interrupt handlers */
@@ -224,10 +258,6 @@ __interrupt(no_auto_psv) void _DMA0Interrupt(void) {
     _DMA0IF = 0; /*  Clear the DMA0 Interrupt Flag; */
 }
 
-void __attribute__((__interrupt__, no_auto_psv, shadow)) _U1ErrInterrupt(void) {
-    /*  An error has occurred on the last reception. Check the last received word. */
-    _U1EIF = 0;
-}
 
 /**
  * Send all data in output buffer
@@ -249,21 +279,18 @@ void UART1Flush(void) {
     DMA0Sending ^= 1u;
     DMA0Cnt = 0;
 
+    DMA0STAH = 0x0000u;
     if (DMA0Sending & 1u) {
 #ifdef __HAS_DMA__
         DMA0STAL = __builtin_dmaoffset(bufferUART1TXA);
-        DMA0STAH = __builtin_dmapage(bufferUART1TXA);
 #else
         DMA0STAL = (volatile uint16_t) & bufferUART1TXA;
-        DMA0STAH = (volatile uint16_t) & bufferUART1TXA;
 #endif
     } else {
 #ifdef __HAS_DMA__
         DMA0STAL = __builtin_dmaoffset(bufferUART1TXB);
-        DMA0STAH = __builtin_dmapage(bufferUART1TXB);
 #else
         DMA0STAL = (volatile uint16_t) & bufferUART1TXB;
-        DMA0STAH = (volatile uint16_t) & bufferUART1TXB;
 #endif
     }
     DMA0CONbits.CHEN = 1; /*  Re-enable DMA0 Channel */
@@ -282,39 +309,29 @@ void UART1SendByte(uint8_t inbyte) {
     }
 }
 
-__interrupt(no_auto_psv) void _U1RXInterrupt(void) {
-    if (++UART1RXBUFF_head >= UART1RXBUFFLEN)
-        UART1RXBUFF_head = 0;
-    UART1RXBUFF[UART1RXBUFF_head] = U1RXREG;
-    if (UART1RXBUFF_head == UART1RXBUFF_tail) {
-        ++UART1RXBUFF_tail;
-        if (UART1RXBUFF_tail >= UART1RXBUFFLEN)
-            UART1RXBUFF_tail = 0;
-    }
-    _U1RXIF = 0; /*  Clear the UART1RX Interrupt Flag; */
-}
 
 bool UART1GetAvailable(void) {
-    if (UART1RXBUFF_head == UART1RXBUFF_tail) {
+    if (DMA4STAL == UART1RXBUFF_tail) {
         return false;
     }
-
     return true;
 }
 
 uint8_t UART1GetByte(void) {
-    if (++UART1RXBUFF_tail >= UART1RXBUFFLEN)
-        UART1RXBUFF_tail = 0;
-    return UART1RXBUFF[UART1RXBUFF_tail];
+    uint8_t c;
+    c = UART1RXBUFF[UART1RXBUFF_tail-DMA4START];
+    if (++UART1RXBUFF_tail >= DMA4END)
+        UART1RXBUFF_tail = DMA4START;
+    return  c;
 }
 
 size_t UART1GetBytes(uint8_t *output, size_t n) {
     size_t cnt;
     cnt = 0u;
-    while (cnt < n && UART1RXBUFF_head == UART1RXBUFF_tail) {
-        if (++UART1RXBUFF_tail >= UART1RXBUFFLEN)
-            UART1RXBUFF_tail = 0;
-        output [cnt++] = UART1RXBUFF[UART1RXBUFF_tail];
+    while (cnt < n && DMA4STAL != UART1RXBUFF_tail) {
+        output [cnt++] = UART1RXBUFF[UART1RXBUFF_tail-DMA4START];
+        if (++UART1RXBUFF_tail >= DMA4END)
+            UART1RXBUFF_tail = DMA4START;
     }
     return cnt;
 }
@@ -364,3 +381,4 @@ void UART1SendString(const char input[]) {
     n = strlen(input);
     UART1SendBytes((const uint8_t *)input, n);
 }
+

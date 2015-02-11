@@ -29,8 +29,6 @@
 
 #include <string.h>
 #include <xc.h>
-#include <uart.h>
-#include <dma.h>
 #include <libpic30.h>
 
 /** Compute baudrate value and store in BR_Value */
@@ -49,35 +47,41 @@ uint8_t bufferUART2TXB[UART2TXBUFFLEN] __attribute__((space(xmemory)));
 __near volatile uint16_t DMA1Sending;
 __near volatile uint16_t DMA1Cnt;
 
-__near volatile uint8_t UART2RXBUFF[UART2RXBUFFLEN];
-__near volatile uint16_t UART2RXBUFF_head;
-__near volatile uint16_t UART2RXBUFF_tail;
+#ifdef __HAS_DMA__
+__eds__ uint8_t UART2RXBUFF[UART2RXBUFFLEN] __attribute__((eds, space(dma)));
+#else
+uint8_t UART2RXBUFF[UART2RXBUFFLEN] __attribute__((space(xmemory)));
+#endif
+__near volatile unsigned int UART2RXBUFF_tail;
+__near unsigned int DMA5START;
+__near unsigned int DMA5END;
 
 void UART2Init(void) {
 
-	/* 1) Configure U2TX as output, and U2RX as input */
-#if GNDBOARD	/* Only for GNDBOARD */
-	TRISFbits.TRISF0	= 0b0;
-	TRISFbits.TRISF1	= 0b1;
-#else			/* Only for AC_MODEL and AEROCOMP boards */
-	TRISGbits.TRISG0	= 0b1;
-	TRISGbits.TRISG1	= 0b0;
+    /* 1) Configure U2TX as output, and U2RX as input */
+#if GNDBOARD        /* Only for GNDBOARD */
+    _TRISF0 = 0b0;
+    _TRISF1 = 0b1;
+#else                        /* Only for AC_MODEL and AEROCOMP boards */
+    _TRISG0 = 0b1;
+    _TRISG1 = 0b0;
 #endif
-	
-	/* 2) Assign UART2 pins through Peripherial Pin Select */
-#if GNDBOARD /* Only for GNDBOARD */
-	RPINR19bits.U2RXR	= 0x61;	/* Input tied to RP97,		0x61 ->   97 U2RX */
-	RPOR7bits.RP96R		= 0x03;	/* U2TX is assigned to RP96,	0x03 -> U2TX      */
+
+    /* 2) Assign UART2 pins through Peripherial Pin Select */
+#if GNDBOARD        /* Only for GNDBOARD */
+    _U2RXR = 0x61;        /* Input tied to RP97,                0x61 ->   97 U2RX */
+    _RP96R = 0x03;        /* U2TX is assigned to RP96,        0x03 -> U2TX      */
 #else /* Only for AC_MODEL and AEROCOMP boards */
-	RPINR19bits.U2RXR 	= 0x70;	/* U2RX	Input tied to RP112,	0x70 ->  112 */
-	RPOR13bits.RP113R	= 0x03;	/* U2TX is assigned to RP113,	0x03 -> U2TX */
-#endif	
+    _U2RXR = 0x70;        /* U2RX        Input tied to RP112,        0x70 ->  112 */
+    _RP113R = 0x03;        /* U2TX is assigned to RP113,        0x03 -> U2TX */
+#endif
 
     /* 3) Initialize the U2BRG register for the appropiate baud rate */
     U2BRG = BR_Value;
 
     /* 4) Configure UART2 module: Set number of data bits, number of Stop bits, and parity bits */
-    /*  U2MODE: UART2 MODE REGISTER */
+    U2MODEbits.UARTEN = 0; /*  UARTEN: UART2 Enable bit. */
+    U2STAbits.UTXEN = 0; /*  The UTXEN bit is set after the UARTEN bit has been set */
     U2MODEbits.USIDL = 0b0; /*  USIDL: Stop in Idle Mode bit.
                                 1 = Discontinue module operation when device enters Idle mode.
                                 0 = Continue module operation in Idle mode. */
@@ -159,7 +163,6 @@ void UART2Init(void) {
                                does not take effect.
                                0 = Address Detect mode disabled. */
 
-
     /* Priorities of UART2 Interrupts */
     _U2RXIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_MED; /*  UART2 Receiver priority out 5 of 7 */
     _U2TXIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_MED; /*  UART2 Trans priority out 5 of 7 */
@@ -175,14 +178,33 @@ void UART2Init(void) {
     /*   Register Indirect with Post-Increment */
     /*   Using single buffer */
     /*   8 transfers per buffer */
+    DMA1CONbits.CHEN = 0;
     DMA1CONbits.AMODE = 0;
     DMA1CONbits.MODE = 1;
     DMA1CONbits.DIR = 1;
     DMA1CONbits.SIZE = 1;
     DMA1CNT = 0;
 
+    /**   Associate DMA Channel 4 with UART Rx */
+    DMA5REQ = 0b00011110; /*  Select UART2 RX */
+    DMA5PAD = (volatile uint16_t) & U2RXREG;
+
+    /*   Configure DMA Channel 4 to: */
+    /*   Transfer data from RAM to UART */
+    /*   Continues mode */
+    /*   Register Indirect with Post-Increment */
+    /*   Using single buffer */
+    /*   8 transfers per buffer */
+    DMA5CONbits.CHEN = 0;
+    DMA5CONbits.AMODE = 0;
+    DMA5CONbits.MODE = 0;
+    DMA5CONbits.DIR = 0;
+    DMA5CONbits.SIZE = 1;
+    DMA5CNT = UART2RXBUFFLEN-1u;
+
     /* Priorities of DMA Interrupts */
     _DMA1IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMA1 priority out 5 of 7 */
+    _DMA5IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMA5 priority out 5 of 7 */
 }
 
 void UART2Start(void) {
@@ -203,34 +225,37 @@ void UART2Start(void) {
 
     /* Enable UART2 Interrupts */
     _U2RXIF = 0; /*  UART2 Receiver Interrupt flag cleared */
-    _U2RXIE = 1; /*  UART2 Receiver Interrupt enabled */
+    _U2RXIE = 0; /*  UART2 Receiver Interrupt enabled */
     _U2TXIF = 0; /*  UART2 Receiver Interrupt flag cleared */
     _U2TXIE = 0; /*  UART2 Receiver Interrupt disabled */
     _U2EIF = 0; /*  UART2 Receiver Interrupt flag cleared */
-    _U2EIE = 1; /*  UART2 Receiver Interrupt enabled */
+    _U2EIE = 0; /*  UART2 Receiver Interrupt enabled */
 
     /*   Enable DMA Interrupts */
     _DMA1IF = 0; /*  Clear DMA Interrupt Flag */
     _DMA1IE = 1; /*  Enable DMA interrupt */
 
+    DMA5STAL = UART2RXBUFF_tail = DMA5START =__builtin_dmaoffset(UART2RXBUFF);
+    DMA5END = DMA5START+UART2RXBUFFLEN;
+    DMA5STAH = __builtin_dmapage(UART2RXBUFF);
+
+    _DMA5IF = 0; /*  Clear DMA Interrupt Flag */
+    _DMA5IE = 0; /*  Enable DMA interrupt */
+    DMA5CONbits.CHEN = 1; /* Enable DMA channel */
+
     DMA1Sending = 0;
     DMA1Cnt = 0;
-    UART2RXBUFF_head = UART2RXBUFF_tail = 0;
 }
 
 /** Setup DMA interrupt handlers */
 __interrupt(no_auto_psv) void _DMA1Interrupt(void) {
-    DMA1Sending &= 0xFFFDu;
 #ifdef STARTKITBOARD
     mLED_2_Toggle();
 #endif
+    DMA1Sending &= 0xFFFDu;
     _DMA1IF = 0; /*  Clear the DMA1 Interrupt Flag; */
 }
 
-void __attribute__((__interrupt__, no_auto_psv, shadow)) _U2ErrInterrupt(void) {
-    /*  An error has occurred on the last reception. Check the last received word. */
-    _U2EIF = 0;
-}
 
 /**
  * Send all data in output buffer
@@ -252,21 +277,18 @@ void UART2Flush(void) {
     DMA1Sending ^= 1u;
     DMA1Cnt = 0;
 
+    DMA1STAH = 0x0000u;
     if (DMA1Sending & 1u) {
 #ifdef __HAS_DMA__
         DMA1STAL = __builtin_dmaoffset(bufferUART2TXA);
-        DMA1STAH = __builtin_dmapage(bufferUART2TXA);
 #else
         DMA1STAL = (volatile uint16_t) & bufferUART2TXA;
-        DMA1STAH = (volatile uint16_t) & bufferUART2TXA;
 #endif
     } else {
 #ifdef __HAS_DMA__
         DMA1STAL = __builtin_dmaoffset(bufferUART2TXB);
-        DMA1STAH = __builtin_dmapage(bufferUART2TXB);
 #else
         DMA1STAL = (volatile uint16_t) & bufferUART2TXB;
-        DMA1STAH = (volatile uint16_t) & bufferUART2TXB;
 #endif
     }
     DMA1CONbits.CHEN = 1; /*  Re-enable DMA1 Channel */
@@ -285,39 +307,29 @@ void UART2SendByte(uint8_t inbyte) {
     }
 }
 
-__interrupt(no_auto_psv) void _U2RXInterrupt(void) {
-    if (++UART2RXBUFF_head >= UART2RXBUFFLEN)
-        UART2RXBUFF_head = 0;
-    UART2RXBUFF[UART2RXBUFF_head] = U2RXREG;
-    if (UART2RXBUFF_head == UART2RXBUFF_tail) {
-        ++UART2RXBUFF_tail;
-        if (UART2RXBUFF_tail >= UART2RXBUFFLEN)
-            UART2RXBUFF_tail = 0;
-    }
-    _U2RXIF = 0; /*  Clear the UART2RX Interrupt Flag; */
-}
 
 bool UART2GetAvailable(void) {
-    if (UART2RXBUFF_head == UART2RXBUFF_tail) {
+    if (DMA5STAL == UART2RXBUFF_tail) {
         return false;
     }
-
     return true;
 }
 
 uint8_t UART2GetByte(void) {
-    if (++UART2RXBUFF_tail >= UART2RXBUFFLEN)
-        UART2RXBUFF_tail = 0;
-    return UART2RXBUFF[UART2RXBUFF_tail];
+    uint8_t c;
+    c = UART2RXBUFF[UART2RXBUFF_tail-DMA5START];
+    if (++UART2RXBUFF_tail >= DMA5END)
+        UART2RXBUFF_tail = DMA5START;
+    return  c;
 }
 
 size_t UART2GetBytes(uint8_t *output, size_t n) {
     size_t cnt;
     cnt = 0u;
-    while (cnt < n && UART2RXBUFF_head == UART2RXBUFF_tail) {
-        if (++UART2RXBUFF_tail >= UART2RXBUFFLEN)
-            UART2RXBUFF_tail = 0;
-        output [cnt++] = UART2RXBUFF[UART2RXBUFF_tail];
+    while (cnt < n && DMA5STAL != UART2RXBUFF_tail) {
+        output [cnt++] = UART2RXBUFF[UART2RXBUFF_tail-DMA5START];
+        if (++UART2RXBUFF_tail >= DMA5END)
+            UART2RXBUFF_tail = DMA5START;
     }
     return cnt;
 }
@@ -367,5 +379,4 @@ void UART2SendString(const char input[]) {
     n = strlen(input);
     UART2SendBytes((const uint8_t *)input, n);
 }
-
 
