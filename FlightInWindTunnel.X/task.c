@@ -159,7 +159,7 @@ void TaskStartScheduler(void) {
                     task->delay = tasks->period;
 
                     if (task->cur_status < 2) {
-                        tick_in = getMicroSeconds();
+                        tick_in = microsec_ticks;
                         last_elapsed_ticks = elapsed_ticks;
                         /* Task is waiting. Wake it up! */
                         //EnableInterrupts();
@@ -167,10 +167,10 @@ void TaskStartScheduler(void) {
                         //DisableInterrupts();
                         ++task->runtime_cnt;
                         if (last_elapsed_ticks == elapsed_ticks) {
-                            tick_in = getMicroSeconds() - tick_in;
+                            tick_in = microsec_ticks - tick_in;
                         } else {
-                            tick_in = 1000u * (elapsed_ticks - last_elapsed_ticks)
-                                    + getMicroSeconds() - tick_in;
+                            tick_in = ((elapsed_ticks - last_elapsed_ticks) << 10)
+                                    + microsec_ticks - tick_in;
                         }
                         task->runtime_microseconds += tick_in;
                         if (tick_in > task->load_max) {

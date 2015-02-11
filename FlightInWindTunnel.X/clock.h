@@ -21,6 +21,8 @@
 #ifndef CLOCK_H
 #define	CLOCK_H
 
+#include <xc.h>
+
 /**
  * @file clock.h
  *
@@ -52,9 +54,8 @@ extern "C" {
     /**
      * Get clock in microseconds
      *
-     * @return clock in microseconds
      */
-    unsigned int getMicroSeconds(void);
+    #define microsec_ticks (TMR1)
 
     /**
      * Reset this global clock.

@@ -50,8 +50,8 @@ void ConfigureOscillator(void)
 #if STARTKITBOARD
     // Configure Oscillator to operate the device at 60Mhz
     // Fosc= Fin*M/(N1*N2), Fcy=Fosc/2
-    // Fosc= 8M*60/(2*2)=120Mhz for 8M input clock
-    PLLFBD = 58;                                // M=60
+    // Fosc= 8M*64/(2*2)=128Mhz for 8M input clock
+    PLLFBD = 62;                                // M=64
     CLKDIVbits.PLLPOST = 0;                     // N1=2
     CLKDIVbits.PLLPRE = 0;                      // N2=2
     OSCTUN = 0;                                 // Tune FRC oscillator, if FRC is used

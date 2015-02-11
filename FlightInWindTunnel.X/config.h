@@ -34,7 +34,7 @@
 
 /* Microcontroller MIPs (FCY) */
 #if STARTKITBOARD
-#define SYS_FREQ        (120000000L)
+#define SYS_FREQ        (128000000L)
 #endif
 
 #define FCY             (SYS_FREQ/2L)

@@ -55,7 +55,7 @@ extern "C" {
         unsigned priority; /**< priority in list */
         TaskHandle_p next; /**< pointer to next task */
         uint32_t runtime_microseconds;
-        uint16_t runtime_cnt;
+        uint32_t runtime_cnt;
     };
 
     /** Header pointing to task list */
