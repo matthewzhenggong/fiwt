@@ -25,6 +25,7 @@
 #include "config.h"
 #include "user.h"            /* variables/params used by user.c               */
 #include "clock.h"
+#include "ADC1.h"
 
 /* Device header file */
 #include <xc.h>
@@ -125,4 +126,8 @@ void InitApp(void) {
     Serial4.init();
     Serial4.open();
 #endif /*USE_UART4*/
+
+    ADC1Init();
+    ADC1Start();
+
 }

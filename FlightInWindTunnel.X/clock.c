@@ -33,7 +33,7 @@
  * and interrupt on period match
  */
 
-__near struct clockType volatile RTclock;
+__near clockType_t volatile RTclock;
 
 __near unsigned int volatile elapsed_ticks = 0;
 

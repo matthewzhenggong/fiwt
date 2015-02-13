@@ -43,11 +43,13 @@
 #define USE_UART2 1
 #define USE_UART3 1
 #define USE_UART4 1
+#define USE_ADC1  1
 #else
 #define USE_UART1 0
 #define USE_UART2 0
 #define USE_UART3 0
 #define USE_UART4 0
+#define USE_ADC1  0
 #endif
 
 #include <xc.h>

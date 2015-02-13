@@ -36,8 +36,8 @@ void sendingInit(sendingParam_t *parameters, XBee_p xbee1, XBee_p xbee2) {
     pt = &(parameters->PT);
     PT_INIT(pt);
     parameters->cnt = 0u;
-    parameters->_xbee[0] = xbee1;
-    parameters->_xbee[1] = xbee2;
+    parameters->_xbee[0] = xbee2;
+    parameters->_xbee[1] = xbee1;
 
     memcpy(parameters->tx_req._addr64, "\00\00\00\00\00\00\00\00", 8);
     parameters->tx_req._addr16 = 0xFFFE;
@@ -74,7 +74,10 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
         ++parameters->cnt;
         if (parameters->cnt & 1) {
             /** Test One */
-            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u S%03u C%lu T%lu I%lu", (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, task->load_max, task->runtime_cnt, task->runtime_microseconds, idle_params.call_per_second);
+            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u S%03u C%lu T%lu I%lu AD%u", \
+                    (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, \
+                    task->load_max, task->runtime_cnt, task->runtime_microseconds, idle_params.call_per_second, \
+                    ADC1BUF0);
             parameters->tx_req._payloadLength = strlen((const char *) parameters->tx_req._payloadPtr);
             XBeeZBTxRequest(parameters->_xbee[0], &parameters->tx_req, 0u);
         } else {
@@ -87,8 +90,8 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
             sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u T%03u T%03u T%03u", (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, t3, t2, t1);
             parameters->tx_req._payloadLength = strlen((const char *) parameters->tx_req._payloadPtr);
             XBeeZBTxRequest(parameters->_xbee[1], &parameters->tx_req, 0u);
+            mLED_2_Toggle();
         }
-        mLED_1_Toggle();
         PT_YIELD(pt);
     }
 

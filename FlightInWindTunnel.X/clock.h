@@ -39,9 +39,10 @@ extern "C" {
         unsigned int ticks; /**< absolute time, milliseconds */
         unsigned int seconds; /**< absolute time, seconds */
     };
+    typedef struct clockType clockType_t;
 
     /** The global clock instance */
-    extern struct clockType volatile RTclock;
+    extern clockType_t volatile RTclock;
 
     /**
      * Tick instance
