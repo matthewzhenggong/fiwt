@@ -27,7 +27,7 @@
 
 void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
     switch (UARTx) {
-#if UART1ENABLE
+#if USE_UART1
         case 1u:
             /** associate fuctions of UART1 to the serial object*/
             _serial->init = &UART1Init;
@@ -41,7 +41,7 @@ void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
             _serial->writeString = &UART1SendString;
             break;
 #endif
-#if UART2ENABLE
+#if USE_UART2
         case 2u:
             /** associate fuctions of UART1 to the serial object*/
             _serial->init = &UART2Init;
@@ -55,7 +55,7 @@ void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
             _serial->writeString = &UART2SendString;
             break;
 #endif
-#if UART3ENABLE
+#if USE_UART3
         case 3u:
             /** associate fuctions of UART1 to the serial object*/
             _serial->init = &UART3Init;
@@ -69,7 +69,7 @@ void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
             _serial->writeString = &UART3SendString;
             break;
 #endif
-#if UART4ENABLE
+#if USE_UART4
         case 4u:
             /** associate fuctions of UART1 to the serial object*/
             _serial->init = &UART4Init;

@@ -42,9 +42,12 @@ extern "C" {
     /**************************************************************************/
     extern XBee_t Xbee1;
     extern XBee_t Xbee2;
+#if USE_UART3
     extern SerialStream_t Serial3;
+#endif /*USE_UART3*/
+#if USE_UART4
     extern SerialStream_t Serial4;
-
+#endif /*USE_UART4*/
     /**************************************************************************/
     /* User Function Prototypes                                               */
     /**************************************************************************/

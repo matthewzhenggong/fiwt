@@ -39,15 +39,15 @@
 #define Fcy             (SYS_FREQ/2L)
 
 #if STARTKITBOARD
-#define UART1ENABLE 1
-#define UART2ENABLE 1
-#define UART3ENABLE 1
-#define UART4ENABLE 1
+#define USE_UART1 1
+#define USE_UART2 1
+#define USE_UART3 1
+#define USE_UART4 1
 #else
-#define UART1ENABLE 0
-#define UART2ENABLE 0
-#define UART3ENABLE 0
-#define UART4ENABLE 0
+#define USE_UART1 0
+#define USE_UART2 0
+#define USE_UART3 0
+#define USE_UART4 0
 #endif
 
 #include <xc.h>
@@ -89,6 +89,7 @@
 /*   8 transfers per buffer */
 #define UART_TO_DMA_CONFIG (0x4000)
 
+#if USE_UART1
 /** UART1 Baudrate definition (Posible values: 9600, 57600, 115200) */
 #define UART1BAUdRATE  (0x03d090)
 #define UART1TXBUFFLEN (128)
@@ -104,7 +105,9 @@
 #define UART1RXPR (97) /* U1RX Input tied to RP97 */
 #define UART1TXPR (_RP96R) /* U1TX is assigned to RP96 -> U1TX*/
 #endif
+#endif /*USE_UART1*/
 
+#if USE_UART2
 /** UART2 Baudrate definition (Posible values: 9600, 57600, 115200) */
 #define UART2BAUdRATE  (0x03d090)
 #define UART2TXBUFFLEN (128)
@@ -120,7 +123,9 @@
 #define UART2RXPR (112) /* U2RX Input tied to RP112 */
 #define UART2TXPR (_RP113R) /* U2TX is assigned to RP113 -> U2TX*/
 #endif
+#endif /*USE_UART2*/
 
+#if USE_UART3
 /** UART3 Baudrate definition (Posible values: 9600, 57600, 115200) */
 #define UART3BAUdRATE  (0x03d090)
 #define UART3TXBUFFLEN (128)
@@ -129,7 +134,9 @@
 #define UART3RXTRIS (_TRISD7)
 #define UART3RXPR (71) /* U3RX Input tied to RP71 */
 #define UART3TXPR (_RP70R) /* U3TX is assigned to RP70 -> U3TX*/
+#endif /*USE_UART3*/
 
+#if USE_UART4
 /** UART4 Baudrate definition (Posible values: 9600, 57600, 115200) */
 #define UART4BAUdRATE  (0x03d090)
 #define UART4TXBUFFLEN (128)
@@ -138,7 +145,7 @@
 #define UART4RXTRIS (_TRISD5)
 #define UART4RXPR (69) /* U3RX Input tied to RP69 */
 #define UART4TXPR (_RP68R) /* U3TX is assigned to RP68 -> U4TX*/
-
+#endif /*USE_UART4*/
 /**
  * Task related definitions
  */

@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#if UART1ENABLE
+#if USE_UART1
 
 #include "UART1.h"
 

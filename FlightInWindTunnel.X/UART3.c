@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#if UART3ENABLE
+#if USE_UART3
 
 #include "UART3.h"
 
