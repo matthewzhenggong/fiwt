@@ -17,6 +17,9 @@
       <itemPath>UART2.h</itemPath>
       <itemPath>sending.h</itemPath>
       <itemPath>getting.h</itemPath>
+      <itemPath>UART3.h</itemPath>
+      <itemPath>echoTask.h</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -39,6 +42,9 @@
       <itemPath>UART2.c</itemPath>
       <itemPath>sending.c</itemPath>
       <itemPath>getting.c</itemPath>
+      <itemPath>UART3.c</itemPath>
+      <itemPath>echoTask.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

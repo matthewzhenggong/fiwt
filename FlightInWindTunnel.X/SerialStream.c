@@ -18,12 +18,30 @@
  * License along with this library.
  */
 
+#include "config.h"
 #include "SerialStream.h"
 #include "UART1.h"
 #include "UART2.h"
+#include "UART3.h"
+#include "UART4.h"
 
 void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
     switch (UARTx) {
+#if UART1ENABLE
+        case 1u:
+            /** associate fuctions of UART1 to the serial object*/
+            _serial->init = &UART1Init;
+            _serial->open = &UART1Start;
+            _serial->available = &UART1GetAvailable;
+            _serial->read = &UART1GetByte;
+            _serial->write = &UART1SendByte;
+            _serial->flush = &UART1Flush;
+            _serial->readBytes = &UART1GetBytes;
+            _serial->writeBytes = &UART1SendBytes;
+            _serial->writeString = &UART1SendString;
+            break;
+#endif
+#if UART2ENABLE
         case 2u:
             /** associate fuctions of UART1 to the serial object*/
             _serial->init = &UART2Init;
@@ -36,18 +54,37 @@ void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
             _serial->writeBytes = &UART2SendBytes;
             _serial->writeString = &UART2SendString;
             break;
-        case 1u:
-        default:
+#endif
+#if UART3ENABLE
+        case 3u:
             /** associate fuctions of UART1 to the serial object*/
-            _serial->init = &UART1Init;
-            _serial->open = &UART1Start;
-            _serial->available = &UART1GetAvailable;
-            _serial->read = &UART1GetByte;
-            _serial->write = &UART1SendByte;
-            _serial->flush = &UART1Flush;
-            _serial->readBytes = &UART1GetBytes;
-            _serial->writeBytes = &UART1SendBytes;
-            _serial->writeString = &UART1SendString;
+            _serial->init = &UART3Init;
+            _serial->open = &UART3Start;
+            _serial->available = &UART3GetAvailable;
+            _serial->read = &UART3GetByte;
+            _serial->write = &UART3SendByte;
+            _serial->flush = &UART3Flush;
+            _serial->readBytes = &UART3GetBytes;
+            _serial->writeBytes = &UART3SendBytes;
+            _serial->writeString = &UART3SendString;
+            break;
+#endif
+#if UART4ENABLE
+        case 4u:
+            /** associate fuctions of UART1 to the serial object*/
+            _serial->init = &UART4Init;
+            _serial->open = &UART4Start;
+            _serial->available = &UART4GetAvailable;
+            _serial->read = &UART4GetByte;
+            _serial->write = &UART4SendByte;
+            _serial->flush = &UART4Flush;
+            _serial->readBytes = &UART4GetBytes;
+            _serial->writeBytes = &UART4SendBytes;
+            _serial->writeString = &UART4SendString;
+            break;
+#endif
+        default :
+            break;
     }
 
 }

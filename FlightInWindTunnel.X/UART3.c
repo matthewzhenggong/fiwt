@@ -1,5 +1,5 @@
 /*
- * File:   UART2.c
+ * File:   UART3.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  * Original author: Sergio AraujoEstrada <S.AraujoEstrada@bristol.ac.uk>
  * Some code may also be from Microchip's DataSheet Documents.
@@ -22,108 +22,108 @@
 
 #include "config.h"
 
-#if UART2ENABLE
+#if UART3ENABLE
 
-#include "UART2.h"
+#include "UART3.h"
 
 #include <string.h>
 #include <xc.h>
 #include <libpic30.h>
 
 /** Compute baudrate value and store in BR_Value */
-#define BR_Value ((Fcy/UART2BAUdRATE)/16)-1
+#define BR_Value ((Fcy/UART3BAUdRATE)/16)-1
 
 
 /** Allocate two buffers for DMA transfers */
-__eds__ static uint8_t bufferUARTTXA[UART2TXBUFFLEN] __attribute__((eds, space(dma)));
-__eds__ static uint8_t bufferUARTTXB[UART2TXBUFFLEN] __attribute__((eds, space(dma)));
+__eds__ static uint8_t bufferUARTTXA[UART3TXBUFFLEN] __attribute__((eds, space(dma)));
+__eds__ static uint8_t bufferUARTTXB[UART3TXBUFFLEN] __attribute__((eds, space(dma)));
 __near static volatile uint16_t DMASending;
 __near static volatile uint16_t DMACntTx;
 
-__eds__ static uint8_t UARTRXBUFF[UART2RXBUFFLEN] __attribute__((eds, space(dma)));
+__eds__ static uint8_t UARTRXBUFF[UART3RXBUFFLEN] __attribute__((eds, space(dma)));
 __near static volatile unsigned int UARTRXBUFF_tail;
 __near static unsigned int DMARxStart;
 __near static unsigned int DMARxEnd;
 
-void UART2Init(void) {
+void UART3Init(void) {
 
     /* Configure UxTX as output, and UxRX as input */
-    UART2TXTRIS = 0b0;
-    UART2RXTRIS = 0b1;
+    UART3TXTRIS = 0b0;
+    UART3RXTRIS = 0b1;
 
-    /* Assign UART2 pins through Peripherial Pin Select */
-    _U2RXR = UART2RXPR;
-    UART2TXPR = 0x03;
+    /* Assign UART3 pins through Peripherial Pin Select */
+    _U3RXR = UART3RXPR;
+    UART3TXPR = 0x1B;
 
     /* Initialize the appropiate baud rate */
-    U2BRG = BR_Value;
+    U3BRG = BR_Value;
     /* Configure UART module */
-    U2MODE = UxMODEvalue;
+    U3MODE = UxMODEvalue;
     /* UART STATUS AND CONTROL REGISTER */
-    U2STA = UxSTAvalue;
+    U3STA = UxSTAvalue;
 
     /* Priorities of UART Interrupts */
-    _U2RXIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_MED; /*  UART Receiver priority out 5 of 7 */
-    _U2TXIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_MED; /*  UART Trans priority out 5 of 7 */
-    _U2EIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW;
+    _U3RXIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_MED; /*  UART Receiver priority out 5 of 7 */
+    _U3TXIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_MED; /*  UART Trans priority out 5 of 7 */
+    _U3EIP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW;
 
     /* Disable UART Interrupts */
-    _U2RXIF = 0;
-    _U2RXIE = 0;
-    _U2TXIF = 0;
-    _U2TXIE = 0;
-    _U2EIF = 0;
-    _U2EIE = 0;
+    _U3RXIF = 0;
+    _U3RXIE = 0;
+    _U3TXIF = 0;
+    _U3TXIE = 0;
+    _U3EIF = 0;
+    _U3EIE = 0;
 
     /**   Associate DMA Channel with UART Tx */
-    DMA1REQ = 0b00011111; /*  Select UART Transmitter */
-    DMA1PAD = (volatile uint16_t) & U2TXREG;
+    DMA2REQ = 0b01010011; /*  Select UART Transmitter */
+    DMA2PAD = (volatile uint16_t) & U3TXREG;
     /*   Configure DMA Channel */
-    DMA1CON = DMA_TO_UART_CONFIG;
+    DMA2CON = DMA_TO_UART_CONFIG;
 
     /**   Associate DMA Channel with UART Rx */
-    DMA5REQ = 0b00011110; /*  Select UART RX */
-    DMA5PAD = (volatile uint16_t) & U2RXREG;
+    DMA6REQ = 0b01010010; /*  Select UART RX */
+    DMA6PAD = (volatile uint16_t) & U3RXREG;
 
     /*   Configure DMA Channel */
-    DMA5CON = UART_TO_DMA_CONFIG;
-    DMA5CNT = UART2RXBUFFLEN - 1u;
+    DMA6CON = UART_TO_DMA_CONFIG;
+    DMA6CNT = UART3RXBUFFLEN - 1u;
     DMARxStart = __builtin_dmaoffset(UARTRXBUFF);
-    DMARxEnd = DMARxStart + UART2RXBUFFLEN;
-    DMA5STAH = __builtin_dmapage(UARTRXBUFF);
+    DMARxEnd = DMARxStart + UART3RXBUFFLEN;
+    DMA6STAH = __builtin_dmapage(UARTRXBUFF);
 
     /* Priorities of DMA Interrupts */
-    _DMA1IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
-    _DMA1IF = 0; /*  Clear DMA Interrupt Flag */
-    _DMA1IE = 0; /*  Enable DMA interrupt */
+    _DMA2IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
+    _DMA2IF = 0; /*  Clear DMA Interrupt Flag */
+    _DMA2IE = 0; /*  Enable DMA interrupt */
 
-    _DMA5IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
-    _DMA5IF = 0; /*  Clear DMA Interrupt Flag */
-    _DMA5IE = 0; /*  Enable DMA interrupt */
+    _DMA6IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
+    _DMA6IF = 0; /*  Clear DMA Interrupt Flag */
+    _DMA6IE = 0; /*  Enable DMA interrupt */
 }
 
-void UART2Start(void) {
+void UART3Start(void) {
 
     DMASending = 0;
     DMACntTx = 0;
     /*   Enable DMA Interrupts */
-    _DMA1IF = 0; /*  Clear DMA Interrupt Flag */
-    _DMA1IE = 1; /*  Enable DMA interrupt */
+    _DMA2IF = 0; /*  Clear DMA Interrupt Flag */
+    _DMA2IE = 1; /*  Enable DMA interrupt */
 
-    DMA5STAL = UARTRXBUFF_tail = DMARxStart;
-    DMA5CONbits.CHEN = 1; /* Enable DMA channel */
+    DMA6STAL = UARTRXBUFF_tail = DMARxStart;
+    DMA6CONbits.CHEN = 1; /* Enable DMA channel */
 
     /* Enable the UARTx module (UxMODE<15>) */
-    U2MODEbits.UARTEN = 1; /*  UARTEN: UARTx Enable bit. */
+    U3MODEbits.UARTEN = 1; /*  UARTEN: UARTx Enable bit. */
 
     /* Enable the UARTx module transmission */
-    U2STAbits.UTXEN = 1; /*  The UTXEN bit is set after the UARTEN bit has been set; otherwise, UART transmissions will not be enabled. */
+    U3STAbits.UTXEN = 1; /*  The UTXEN bit is set after the UARTEN bit has been set; otherwise, UART transmissions will not be enabled. */
 }
 
 /** Setup DMA interrupt handlers */
-__interrupt(no_auto_psv) void _DMA1Interrupt(void) {
+__interrupt(no_auto_psv) void _DMA2Interrupt(void) {
     DMASending &= 0xFFFDu;
-    _DMA1IF = 0; /*  Clear the DMAx Interrupt Flag; */
+    _DMA2IF = 0; /*  Clear the DMAx Interrupt Flag; */
 }
 
 /**
@@ -131,12 +131,12 @@ __interrupt(no_auto_psv) void _DMA1Interrupt(void) {
  *
  * @note swap double-bufferes and send with DMAx
  */
-void UART2Flush(void) {
+void UART3Flush(void) {
 
     if (DMACntTx == 0)
         return;
 
-    if (_DMA1IE == 0u) {
+    if (_DMA2IE == 0u) {
         return;
     }
     while (DMASending & 0b10) {
@@ -145,41 +145,41 @@ void UART2Flush(void) {
 
     /*  buff swap */
 
-    DMA1CNT = DMACntTx - 1u; /*  N+1 DMA requests */
+    DMA2CNT = DMACntTx - 1u; /*  N+1 DMA requests */
     DMASending ^= 1u;
     DMACntTx = 0;
 
     if (DMASending & 1u) {
-        DMA1STAH = __builtin_dmapage(bufferUARTTXA);
-        DMA1STAL = __builtin_dmaoffset(bufferUARTTXA);
+        DMA2STAH = __builtin_dmapage(bufferUARTTXA);
+        DMA2STAL = __builtin_dmaoffset(bufferUARTTXA);
     } else {
-        DMA1STAH = __builtin_dmapage(bufferUARTTXB);
-        DMA1STAL = __builtin_dmaoffset(bufferUARTTXB);
+        DMA2STAH = __builtin_dmapage(bufferUARTTXB);
+        DMA2STAL = __builtin_dmaoffset(bufferUARTTXB);
     }
-    DMA1CONbits.CHEN = 1; /*  Re-enable DMA Channel */
-    DMA1REQbits.FORCE = 1; /*  Manual mode: Kick-start the first transfer */
+    DMA2CONbits.CHEN = 1; /*  Re-enable DMA Channel */
+    DMA2REQbits.FORCE = 1; /*  Manual mode: Kick-start the first transfer */
     DMASending |= 0b10;
 }
 
-void UART2SendByte(uint8_t inbyte) {
+void UART3SendByte(uint8_t inbyte) {
     if (DMASending & 0b01) {
         bufferUARTTXB[DMACntTx++] = inbyte;
     } else {
         bufferUARTTXA[DMACntTx++] = inbyte;
     }
-    if (DMACntTx >= UART2TXBUFFLEN) {
-        UART2Flush();
+    if (DMACntTx >= UART3TXBUFFLEN) {
+        UART3Flush();
     }
 }
 
-bool UART2GetAvailable(void) {
-    if (DMA5STAL == UARTRXBUFF_tail) {
+bool UART3GetAvailable(void) {
+    if (DMA6STAL == UARTRXBUFF_tail) {
         return false;
     }
     return true;
 }
 
-uint8_t UART2GetByte(void) {
+uint8_t UART3GetByte(void) {
     uint8_t c;
     c = UARTRXBUFF[UARTRXBUFF_tail - DMARxStart];
     if (++UARTRXBUFF_tail >= DMARxEnd)
@@ -187,12 +187,12 @@ uint8_t UART2GetByte(void) {
     return c;
 }
 
-size_t UART2GetBytes(uint8_t *output, size_t n) {
+size_t UART3GetBytes(uint8_t *output, size_t n) {
     size_t cnt;
     unsigned int head;
     signed int len;
 
-    head = DMA5STAL;
+    head = DMA6STAL;
     len = head - UARTRXBUFF_tail;
     cnt = 0u;
     if (len < 0 && UARTRXBUFF_tail + n >= DMARxEnd) {
@@ -217,7 +217,7 @@ size_t UART2GetBytes(uint8_t *output, size_t n) {
     return cnt;
 }
 
-void UART2SendBytes(const uint8_t *input, size_t n) {
+void UART3SendBytes(const uint8_t *input, size_t n) {
 #ifdef __HAS_DMA__
     __eds__ uint8_t *buffer;
 #else
@@ -225,8 +225,8 @@ void UART2SendBytes(const uint8_t *input, size_t n) {
 #endif
     size_t n1;
 
-    while (n + DMACntTx >= UART2TXBUFFLEN) {
-        n1 = UART2TXBUFFLEN - DMACntTx;
+    while (n + DMACntTx >= UART3TXBUFFLEN) {
+        n1 = UART3TXBUFFLEN - DMACntTx;
         if (DMASending & 0b01) {
             buffer = bufferUARTTXB;
         } else {
@@ -234,7 +234,7 @@ void UART2SendBytes(const uint8_t *input, size_t n) {
         }
         _memcpy_eds(buffer, (__eds__ void *) input, n1);
         DMACntTx += n1;
-        UART2Flush();
+        UART3Flush();
         n -= n1;
         input += n1;
     }
@@ -249,10 +249,10 @@ void UART2SendBytes(const uint8_t *input, size_t n) {
     }
 }
 
-void UART2SendString(const char input[]) {
+void UART3SendString(const char input[]) {
     size_t n;
     n = strlen(input);
-    UART2SendBytes((const uint8_t *) input, n);
+    UART3SendBytes((const uint8_t *) input, n);
 }
 
-#endif /* UART2ENABLE */
+#endif /* UART3ENABLE */

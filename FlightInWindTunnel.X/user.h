@@ -42,6 +42,8 @@ extern "C" {
     /**************************************************************************/
     extern XBee_t Xbee1;
     extern XBee_t Xbee2;
+    extern SerialStream_t Serial3;
+    extern SerialStream_t Serial4;
 
     /**************************************************************************/
     /* User Function Prototypes                                               */

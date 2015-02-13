@@ -42,6 +42,8 @@
 
 __near SerialStream_t Xbee2Serial;
 __near SerialStream_t Xbee1Serial;
+__near SerialStream_t Serial3;
+__near SerialStream_t Serial4;
 __near XBee_t Xbee1;
 __near XBee_t Xbee2;
 
@@ -102,4 +104,11 @@ void InitApp(void) {
     Xbee2Serial.init();
     Xbee2Serial.open();
     XBeeInit(&Xbee2, &Xbee2Serial);
+
+    serial_assign(&Serial3, 3u);
+    Serial3.init();
+    Serial3.open();
+    serial_assign(&Serial4, 4u);
+    Serial4.init();
+    Serial4.open();
 }
