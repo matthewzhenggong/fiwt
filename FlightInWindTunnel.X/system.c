@@ -48,12 +48,21 @@ __builtin functions.*/
 void ConfigureOscillator(void)
 {
 #if STARTKITBOARD
-    // Configure Oscillator to operate the device at 60Mhz
+    // Configure Oscillator to operate the device at 64Mhz
     // Fosc= Fin*M/(N1*N2), Fcy=Fosc/2
     // Fosc= 8M*64/(2*2)=128Mhz for 8M input clock
     PLLFBD = 62;                                // M=64
-    CLKDIVbits.PLLPOST = 0;                     // N1=2
-    CLKDIVbits.PLLPRE = 0;                      // N2=2
+    CLKDIVbits.PLLPRE = 0;                      // N1=2
+    CLKDIVbits.PLLPOST = 0;                     // N2=2
+#else
+    // Configure Oscillator to operate the device at 64Mhz
+    // Fosc= Fin*M/(N1*N2), Fcy=Fosc/2
+    // Fosc= 10M*128/(5*2)=128Mhz for 8M input clock
+    PLLFBD = 126;                                // M=128
+    CLKDIVbits.PLLPRE = 3;                      // N1=5
+    CLKDIVbits.PLLPOST = 0;                     // N2=2
+#endif
+
     OSCTUN = 0;                                 // Tune FRC oscillator, if FRC is used
     RCONbits.SWDTEN = 0;                        /* Disable Watch Dog Timer*/
 
@@ -67,7 +76,6 @@ void ConfigureOscillator(void)
     // Wait for Clock switch to occur
     while( OSCCONbits.LOCK != 1 )
     { };
-#endif
 }
 
 void DisableInterrupts(void) {
