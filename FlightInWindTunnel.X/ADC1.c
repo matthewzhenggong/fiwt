@@ -1,6 +1,7 @@
 /*
  * File:   ADC1.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
+ * Modified code from : Sergio AraujoEstrada <S.AraujoEstrada@bristol.ac.uk>
  *
  * This file is part of FIWT.
  *
@@ -97,8 +98,10 @@ void ADC1Init(void) {
     AD1CON3bits.ADRC = 0b0; /* ADC Conversion Clock Source bit: 0 = Clock Derived from
                                System Clock. */
     /* ADC Conversion Clock Select bits. Minimum TAD = 117.6 ns. */
-    AD1CON3bits.ADCS = 0x0E; /* At 64 MIPS, TCY = 16 ns.
-                                With ADCS = 0x0E = 15*TCY = 250 ns > minimumm TAD. */
+    AD1CON3bits.ADCS = 80; /* At 64 MIPS, TCY = 15.6 ns.
+                                With ADCS = 80 = 80*TCY = 1248 ns > minimumm TAD.
+                             * T = (31+14)*CSS*ADCS*TCY= 505.44 us
+                             * Freq = 2kHz */
 
     /* 5) Determine how inputs will be allocated to S&H channels (ADxCHS0<15:0> and ADxCHS123<15:0>) */
     /* AD1CHS123bits: ADC1 Input Channel 1,2,3 Select Register.*/
@@ -131,7 +134,7 @@ void ADC1Init(void) {
     /* Analog inputs selection */
     /* AC_MODEL & AEROCOMP Common analog inputs*/
     AD1CSSH = 0x0030; /* ADC1 Input Scan Select Register High:
-                                                                    0x0030 = Scans AN20, AN21. */
+                         0x0030 = Scans AN20, AN21. */
     /* GNDBOARD, AC_MODEL & AEROCOMP Specific analog inputs*/
 #if GNDBOARD
     AD1CSSL = 0x003F; /* ADC1 Input Scan Select Register Low:
@@ -139,13 +142,6 @@ void ADC1Init(void) {
 #elif AC_MODEL
     AD1CSSL = 0x702E; /* ADC1 Input Scan Select Register Low:
                       0x702E = Scans AN1, AN2, AN3, AN5, AN12, AN13, AN14. */
-#else
-    AD1CSSL = 0x700C; /* ADC1 Input Scan Select Register Low:
-
-                       *
-                       *
-                       *
-                       * 0x700C = Scans AN2, AN3, AN12, AN13, AN14. */
 #endif
 
     /* 8) Select Manual or Auto Sampling */
@@ -158,7 +154,7 @@ void ADC1Init(void) {
     AD1CON1bits.SSRC = 0b111; /* Sample Clock Source Select bits: 111 = Internal counter ends
                                                            sampling and starts conversion (auto-convert). */
     AD1CON1bits.SSRCG = 0b00; /* Sample Clock Source Group bit: 0 = Group 2. */
-    AD1CON3bits.SAMC = 0b01111; /* Auto Sample Time bits: 0b01111 = 15 TAD. */
+    AD1CON3bits.SAMC = 31; /* Auto Sample Time bits:  max TAD. */
 
     /* 10) Select how the data format for the conversion results are stored in the buffer
      (ADxCON1<9:8>) */
@@ -171,15 +167,15 @@ void ADC1Init(void) {
 
     /* 12) Select the interrupt rate or DMA buffer pointer increment rate (ADxCON2<6:2>) */
 #if GNDBOARD
-    AD1CON2bits.SMPI = 0b01000; /* Sample and Conversion Operation bits
+    AD1CON2bits.SMPI = 8-1; /* Sample and Conversion Operation bits
                                                               0b01000 = ADC interrupt is generated at the completion of every
                                                               8th sample/conversion operation. */
 #elif AC_MODEL
-    AD1CON2bits.SMPI = 0b01001; /* Sample and Conversion Operation bits
+    AD1CON2bits.SMPI = 9-1; /* Sample and Conversion Operation bits
                                                               0b01001 = ADC interrupt is generated at the completion of every
                                                                9th sample/conversion operation. */
 #elif AEROCOMP
-    AD1CON2bits.SMPI = 0b00111; /* 0b00100 = ADC interrupt is generated at the completion of every
+    AD1CON2bits.SMPI = 7-1; /* 0b00100 = ADC interrupt is generated at the completion of every
                                                                7th sample/conversion operation. */
 #endif
 
@@ -194,6 +190,9 @@ void ADC1Init(void) {
     /* 18) Additional configuration parameters */
     AD1CON1bits.ADSIDL = 0b00; /* Stop in Idle Mode bit: 0 = Continue module operation when
                                                               device enters Idle mode. */
+
+    /* Disable Interupt*/
+    _AD1IE = 0;
 }
 
 void ADC1Start(void) {

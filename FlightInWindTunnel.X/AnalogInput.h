@@ -29,22 +29,20 @@
 extern "C" {
 #endif
 
-    /* External variables declaration */
-#if GNDBOARD
-#if DEBUG == 0
-    extern unsigned int ADC_Input[8];
-#endif
-#else
-    extern unsigned int BattCell[3];
-#if AC_MODEL
-    extern unsigned int ServoPos[6];
-#elif AEROCOMP
-    extern unsigned int ServoPos[4];
-#endif
-#endif
-    extern clockType_t AnalogInputTimeStamp;
-    extern unsigned int AnalogInputTimeMicroSecStamp;
+    /** BattCell ADC Value */
+    extern unsigned int BattCell[BATTCELLADCNUM];
 
+    /** ServoPos ADC Value */
+    extern unsigned int ServoPos[SERVOPOSADCNUM];
+
+    /** Analog Input Time Stamp
+     *  Update when call function UpdateAnalogInputs()
+     */
+    extern clockType_t AnalogInputTimeStamp;
+
+    /** Update Analog Inputs from SFRs
+     *  call it before visit ADC values
+     */
     void UpdateAnalogInputs(void);
 
 

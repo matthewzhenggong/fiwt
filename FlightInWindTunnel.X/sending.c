@@ -21,6 +21,7 @@
 #include "sending.h"
 #include "idle.h"
 #include "clock.h"
+#include "AnalogInput.h"
 
 #include <xc.h>
 #include <stddef.h>
@@ -74,10 +75,14 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
         ++parameters->cnt;
         if (parameters->cnt & 1) {
             /** Test One */
-            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u S%03u C%lu T%lu I%lu AD%u", \
-                    (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, \
-                    task->load_max, task->runtime_cnt, task->runtime_microseconds, idle_params.call_per_second, \
-                    ADC1BUF0);
+//            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u S%03u C%lu T%lu I%lu AD%u", 
+//                    (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, 
+//                    task->load_max, task->runtime_cnt, task->runtime_microseconds, idle_params.call_per_second, 
+//                    ADC1BUF0);
+            UpdateAnalogInputs();
+            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u L%03u S%04u S%04u S%04u S%04u S%04u S%04u",
+                    (parameters->cnt) >> 1u, AnalogInputTimeStamp.seconds, AnalogInputTimeStamp.ticks, \
+                    task->load_max, ServoPos[0], ServoPos[1], ServoPos[2], ServoPos[3], ServoPos[4], ServoPos[5]);
             parameters->tx_req._payloadLength = strlen((const char *) parameters->tx_req._payloadPtr);
             XBeeZBTxRequest(parameters->_xbee[0], &parameters->tx_req, 0u);
         } else {

@@ -27,8 +27,9 @@
  */
 
 #define GNDBOARD 0
-#define AC_MODEL 0
+#define AC_MODEL 1
 #define AEROCOMP 0
+
 #define STARTKITBOARD 1
 
 /* Microcontroller MIPs (FCY) */
@@ -38,11 +39,11 @@
 
 #define Fcy             (SYS_FREQ/2L)
 
-#if STARTKITBOARD
+#if AC_MODEL
 #define USE_UART1 1
 #define USE_UART2 1
-#define USE_UART3 1
-#define USE_UART4 1
+#define USE_UART3 0
+#define USE_UART4 0
 #define USE_ADC1  1
 #else
 #define USE_UART1 0
@@ -148,6 +149,19 @@
 #define UART4RXPR (69) /* U3RX Input tied to RP69 */
 #define UART4TXPR (_RP68R) /* U3TX is assigned to RP68 -> U4TX*/
 #endif /*USE_UART4*/
+
+#if GNDBOARD
+#define BATTCELLADCNUM (0)
+#define SERVOPOSADCNUM (0)
+#else
+#define BATTCELLADCNUM (3)
+#if AC_MODEL
+#define SERVOPOSADCNUM (6)
+#elif AEROCOMP
+#define SERVOPOSADCNUM (4)
+#endif
+#endif
+
 /**
  * Task related definitions
  */

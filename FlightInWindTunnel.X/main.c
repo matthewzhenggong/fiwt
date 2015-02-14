@@ -38,7 +38,7 @@ idleParam_t idle_params;
 sendingParam_t sending;
 gettingParam_t getting1;
 gettingParam_t getting2;
-echoParam_t echo;
+//echoParam_t echo;
 
 int main(void) {
 
@@ -55,8 +55,8 @@ int main(void) {
     sendingInit(&sending, &Xbee1, &Xbee2);
     TaskCreate(sendingLoop, "BISEND", (void *)&sending, sendingPERIOD, sendingDELAY, sendingPRIORITY);
 
-    echoInit(&echo, &Serial3);
-    TaskCreate(echoLoop, "ECHO", (void *)&echo, echoPERIOD, echoDELAY, echoPRIORITY);
+    //echoInit(&echo, &Serial3);
+    //TaskCreate(echoLoop, "ECHO", (void *)&echo, echoPERIOD, echoDELAY, echoPRIORITY);
 
     gettingInit(&getting1, &Xbee1);
     TaskCreate(gettingLoop, "GETMSG1", (void *)&getting1, gettingPERIOD, gettingDELAY, gettingPRIORITY);

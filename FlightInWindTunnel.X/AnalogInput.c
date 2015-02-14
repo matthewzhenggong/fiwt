@@ -1,6 +1,7 @@
 /*
- * File:   AnalogInput.h
+ * File:   AnalogInput.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
+ * Original code from : Sergio AraujoEstrada <S.AraujoEstrada@bristol.ac.uk>
  *
  * This file is part of FIWT.
  *
@@ -27,17 +28,41 @@
 extern unsigned int ADC_Input[8];
 #endif
 #else
-__near unsigned int BattCell[3];
+__near unsigned int BattCell[BATTCELLADCNUM];
 #if AC_MODEL
-__near unsigned int ServoPos[6];
+__near unsigned int ServoPos[SERVOPOSADCNUM];
 #elif AEROCOMP
-__near unsigned int ServoPos[4];
+__near unsigned int ServoPos[SERVOPOSADCNUM];
 #endif
 #endif
 
 __near clockType_t AnalogInputTimeStamp;
-__near unsigned int AnalogInputTimeMicroSecStamp;
 
 void UpdateAnalogInputs(void) {
+    AnalogInputTimeStamp = RTclock;
+    /* Read ADC conversion result */
+    #if AC_MODEL
+        // Servo's Potentiometer readings
+        ServoPos[0] = ADC1BUF7;	// Read data from AN20 input.
+        ServoPos[1] = ADC1BUF8;	// Read data from AN21 input.
+        ServoPos[2] = ADC1BUF3;	// Read data from AN5 input.
+        ServoPos[3] = ADC1BUF2;	// Read data from AN3 input.
+        ServoPos[4] = ADC1BUF1;	// Read data from AN2 input.
+        ServoPos[5] = ADC1BUF0;	// Read data from AN1 input.
+        // Battery Cells readings
+        BattCell[0] = ADC1BUF4;	// Read data from AN12 input.
+        BattCell[1] = ADC1BUF5;	// Read data from AN13 input.
+        BattCell[2] = ADC1BUF6;	// Read data from AN14 input.
+    #elif AEROCOMP
+        // Servo's Potentiometer readings
+        ServoPos[0] = ADC1BUF5;	// Read data from AN20 input.
+        ServoPos[1] = ADC1BUF6;	// Read data from AN21 input.
+        ServoPos[2] = ADC1BUF1;	// Read data from AN3 input.
+        ServoPos[3] = ADC1BUF0;	// Read data from AN2 input.
+        // Battery Cells readings
+        BattCell[0] = ADC1BUF2;	// Read data from AN12 input.
+        BattCell[1] = ADC1BUF3;	// Read data from AN13 input.
+        BattCell[2] = ADC1BUF4;	// Read data from AN14 input.
+    #endif
 
 }
