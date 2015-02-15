@@ -26,6 +26,7 @@
 #include "user.h"            /* variables/params used by user.c               */
 #include "clock.h"
 #include "ADC1.h"
+#include "PWMx.h"
 
 /* Device header file */
 #include <xc.h>
@@ -127,7 +128,14 @@ void InitApp(void) {
     Serial4.open();
 #endif /*USE_UART4*/
 
+#if USE_ADC1
     ADC1Init();
     ADC1Start();
+#endif
+
+#if USE_PWM
+    PWMxInit();
+    PWMxStart();
+#endif
 
 }

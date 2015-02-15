@@ -1,0 +1,89 @@
+/*
+ * File:   PWMx.c
+ * Author: Zheng GONG(matthewzhenggong@gmail.com)
+ *
+ * This file is part of FIWT.
+ *
+ * FIWT is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3.0 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library.
+ */
+
+#include "config.h"
+#include "PWMx.h"
+
+#if USE_PWM
+
+#include <xc.h>
+
+#define RESET_PWM(idx,phase) \
+    PWMCON##idx = PWMCONx_CFG; \
+    IOCON##idx = IOCONx_CFG; \
+    FCLCON##idx = FCLCONx_CFG; \
+    PDC##idx = 0; \
+    PHASE##idx = phase; \
+    SDC##idx = 0; \
+    SPHASE##idx = phase; \
+    ALTDTR##idx = 0u; \
+    TRIG##idx = TRIGx_CFG; \
+    TRGCON##idx = 0u; \
+    LEBCON##idx = LEBCONx_CFG; \
+    LEBDLY##idx = LEBDLYx_CFG; \
+    PWMCAP##idx = 0u; \
+    AUXCON##idx = AUXCONx_CFG
+
+void PWMxInit(void) {
+    PTCON = PTCON_CFG;
+    PTCON2 = PTCON2_CFG;
+    PTPER = PTPER_CFG;
+    STCON = STCON_CFG;
+    STCON2 = STCON2_CFG;
+    STPER = STPER_CFG;
+    MDC = MDC_CFG;
+    SEVTCMP = SEVTCMP_CFG;
+    SSEVTCMP = SSEVTCMP_CFG;
+    CHOP = CHOP_CFG;
+
+#if GNDBOARD		// Only for GNDBOARD board
+#else				// Only for AC_MODEL and AEROCOMP boards
+    RESET_PWM(1, 0);
+    IOCON1bits.PENH = 1;
+    RESET_PWM(2, 171);
+    IOCON2bits.PENL = 1;
+    RESET_PWM(5, 142);
+    IOCON5bits.PENL = 1;
+#if defined(__dsPIC33EP512MU814__)
+    RESET_PWM(7, 113);
+    IOCON7bits.PENL = 1;
+#endif
+    #if AC_MODEL	// Only for AC_MODEL board
+    RESET_PWM(3, 84);
+    IOCON3bits.PENL = 1;
+    RESET_PWM(6, 55);
+    IOCON6bits.PENL = 1;
+    #endif
+#endif
+}
+
+void PWMxStart(void) {
+    /* Turn on the High-Speed PWM module (PTEN<15>). */
+    _PTEN = 0b1; // PWM Module Enable bit: 1 = PWM module is enabled.
+
+    /* test */
+    PDC1 = 20;
+    SDC2 = 21;
+    SDC3 = 22;
+    SDC5 = 23;
+    SDC6 = 24;
+}
+
+#endif /* USE_PWM*/

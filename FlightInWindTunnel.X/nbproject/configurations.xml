@@ -22,6 +22,10 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/ADC1.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.h</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/config_pwm.h</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/config_uart.h</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/config_adc.h</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/PWMx.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -49,6 +53,7 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/ADC1.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/PWMx.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -605,7 +610,6 @@
         <property key="UART 4" value="true"/>
         <property key="USB" value="true"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>
