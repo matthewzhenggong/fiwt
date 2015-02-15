@@ -22,78 +22,20 @@
 #ifndef UART2_H
 #define	UART2_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-/**
- * @file UART2.h operationes of the first UART peripheral
- */
-
-#ifdef	__cplusplus
-extern "C" {
+#ifdef UARTX_H
+#undef UARTX_H
 #endif
 
-    /**
-     *  Config and initialize peripheral UART2
-     */
-    void UART2Init(void);
-
-    /**
-     * Start peripheral UART2
-     *
-     * @note Call it before read/write operations
-     */
-    void UART2Start(void);
-
-    //void UART2Stop(void);
-
-    /**
-     * Write one byte into the output buffer of peripheral UART2
-     */
-    void UART2SendByte(uint8_t);
-
-    /**
-     * Send all data in current output buffer of peripheral UART2
-     */
-    void UART2Flush(void);
-
-    /**
-     * Test if there is any data in input buffer peripheral UART2 for read
-     *
-     * @return true if you can read.
-     * @note Call this test before any read operation on UART2
-     */
-    bool UART2GetAvailable(void);
-
-    /**
-     * Read one byte from input buffer of peripheral UART2
-     *
-     * @note Call UART2GetAvailable() test before reading
-     */
-    /* please check UART2GetAvailable before call UART2GetByte */
-    uint8_t UART2GetByte(void);
-
-    /**
-     * Read at most n bytes from input buffer of peripheral UART2
-     *
-     * @return number of read bytes
-     */
-    size_t UART2GetBytes(uint8_t *, size_t);
-
-    /**
-     * Send n bytes to output buffer of peripheral UART2
-     */
-    void UART2SendBytes(const uint8_t *, size_t);
-
-    /**
-     * Send a C-style string to output buffer of peripheral UART2
-     */
-    void UART2SendString(const char []);
-
-#ifdef	__cplusplus
-}
+#ifdef UARTxFunc
+#undef UARTxFunc
 #endif
+
+#define UARTxFunc(FUN) UART2##FUN
+
+#include "UARTx.h"
+
+#undef UARTxFunc
+#undef UARTX_H
 
 #endif	/* UART2_H */
 

@@ -22,74 +22,20 @@
 #ifndef UART4_H
 #define	UART4_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-/**
- * @file UART4.h operationes of the first UART peripheral
- */
-
-#ifdef	__cplusplus
-extern "C" {
+#ifdef UARTX_H
+#undef UARTX_H
 #endif
 
-    /**
-     *  Config and initialize peripheral UART4
-     */
-    void UART4Init(void);
+#ifdef UARTxFunc
+#undef UARTxFunc
+#endif
 
-    /**
-     * Start peripheral UART4
-     *
-     * @note Call it before read/write operations
-     */
-    void UART4Start(void);
+#define UARTxFunc(FUN) UART4##FUN
 
-    //void UART4Stop(void);
+#include "UARTx.h"
 
-    /**
-     * Write one byte into the output buffer of peripheral UART4
-     */
-    void UART4SendByte(uint8_t);
-
-    /**
-     * Send all data in current output buffer of peripheral UART4
-     */
-    void UART4Flush(void);
-
-    /**
-     * Test if there is any data in input buffer peripheral UART4 for read
-     *
-     * @return true if you can read.
-     * @note Call this test before any read operation on UART4
-     */
-    bool UART4GetAvailable(void);
-
-    /**
-     * Read one byte from input buffer of peripheral UART4
-     *
-     * @note Call UART4GetAvailable() test before reading
-     */
-    /* please check UART4GetAvailable before call UART4GetByte */
-    uint8_t UART4GetByte(void);
-
-    /**
-     * Read at most n bytes from input buffer of peripheral UART4
-     *
-     * @return number of read bytes
-     */
-    size_t UART4GetBytes(uint8_t *, size_t);
-
-    /**
-     * Send n bytes to output buffer of peripheral UART4
-     */
-    void UART4SendBytes(const uint8_t *, size_t);
-
-    /**
-     * Send a C-style string to output buffer of peripheral UART4
-     */
-    void UART4SendString(const char []);
+#undef UARTxFunc
+#undef UARTX_H
 
 #ifdef	__cplusplus
 }
