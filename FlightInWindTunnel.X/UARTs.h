@@ -1,5 +1,5 @@
 /*
- * File:   UART3.h
+ * File:   UARTs.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -19,22 +19,35 @@
  */
 
 
-#ifndef UART3_H
-#define	UART3_H
+#ifndef UARTS_H
+#define	UARTS_H
 
 #ifdef UARTX_H
 #undef UARTX_H
 #endif
-
 #ifdef UARTxFunc
 #undef UARTxFunc
 #endif
 
-#define UARTxFunc(FUN) UART3##FUN
-
+#define UARTxFunc(FUN) UART1##FUN
 #include "UARTx.h"
-
-#undef UARTxFunc
 #undef UARTX_H
+#undef UARTxFunc
 
-#endif	/* UART3_H */
+#define UARTxFunc(FUN) UART2##FUN
+#include "UARTx.h"
+#undef UARTX_H
+#undef UARTxFunc
+
+#define UARTxFunc(FUN) UART3##FUN
+#include "UARTx.h"
+#undef UARTX_H
+#undef UARTxFunc
+
+#define UARTxFunc(FUN) UART4##FUN
+#include "UARTx.h"
+#undef UARTX_H
+#undef UARTxFunc
+
+#endif	/* UARTS_H */
+

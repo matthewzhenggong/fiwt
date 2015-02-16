@@ -20,10 +20,7 @@
 
 #include "config.h"
 #include "SerialStream.h"
-#include "UART1.h"
-#include "UART2.h"
-#include "UART3.h"
-#include "UART4.h"
+#include "UARTs.h"
 
 void serial_assign(SerialStream_p _serial, unsigned int UARTx) {
     switch (UARTx) {
