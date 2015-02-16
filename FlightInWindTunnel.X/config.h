@@ -30,12 +30,10 @@
 #define AC_MODEL 1
 #define AEROCOMP 0
 
-#define STARTKITBOARD 1
+#define STARTKITBOARD 0
 
 /* Microcontroller MIPs (FCY) */
-#if STARTKITBOARD
 #define SYS_FREQ        (128000000L)
-#endif
 
 #define Fcy             (SYS_FREQ/2L)
 
@@ -82,6 +80,9 @@
 
 #include "config_uart.h"
 #include "config_adc.h"
+
+/** PWM in 10kHz */
+#define PWM_FREQ 10000u
 #include "config_pwm.h"
 
 #endif 	/* CONFIG_H */

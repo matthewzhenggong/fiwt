@@ -73,10 +73,15 @@
  *                   001 = Divide by 2
  *                   000 = Divide by 1, maximum PWM timing resolution (power-on default)
  */
-#define PTCON2_CFG 0x0006
+#define PTCON2_CFG 4
+
+/**
+ * Duty circle for each PWM generator should be less than PWM_PEROID and greater than zero.
+ */
+#define PWM_PEROID ((SYS_FREQ >> PTCON2_CFG) / PWM_FREQ)
 
 /** PRIMARY MASTER TIME BASE PERIOD REGISTER */
-#define PTPER_CFG 200u
+#define PTPER_CFG PWM_PEROID
 
 #define STCON_CFG PTCON_CFG
 #define STCON2_CFG PTCON2_CFG

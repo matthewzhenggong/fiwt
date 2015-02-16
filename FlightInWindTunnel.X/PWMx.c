@@ -57,18 +57,18 @@ void PWMxInit(void) {
 #else				// Only for AC_MODEL and AEROCOMP boards
     RESET_PWM(1, 0);
     IOCON1bits.PENH = 1;
-    RESET_PWM(2, 171);
+    RESET_PWM(2, PWM_PEROID*6u/7u);
     IOCON2bits.PENL = 1;
-    RESET_PWM(5, 142);
+    RESET_PWM(5, PWM_PEROID*3u/7u);
     IOCON5bits.PENL = 1;
 #if defined(__dsPIC33EP512MU814__)
-    RESET_PWM(7, 113);
+    RESET_PWM(7, PWM_PEROID/7u);
     IOCON7bits.PENL = 1;
 #endif
     #if AC_MODEL	// Only for AC_MODEL board
-    RESET_PWM(3, 84);
+    RESET_PWM(3, PWM_PEROID*5u/7u);
     IOCON3bits.PENL = 1;
-    RESET_PWM(6, 55);
+    RESET_PWM(6, PWM_PEROID*2u/7u);
     IOCON6bits.PENL = 1;
     #endif
 #endif
@@ -78,12 +78,12 @@ void PWMxStart(void) {
     /* Turn on the High-Speed PWM module (PTEN<15>). */
     _PTEN = 0b1; // PWM Module Enable bit: 1 = PWM module is enabled.
 
-    /* test */
-    PDC1 = 20;
-    SDC2 = 21;
-    SDC3 = 22;
-    SDC5 = 23;
-    SDC6 = 24;
+    /* reset */
+    PDC1 = 0;
+    SDC2 = 0;
+    SDC3 = 0;
+    SDC5 = 0;
+    SDC6 = 0;
 }
 
 #endif /* USE_PWM*/

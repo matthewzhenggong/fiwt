@@ -1,5 +1,5 @@
 /*
- * File:   PWMx.h
+ * File:   Servo.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,47 +18,39 @@
  * License along with this library.
  */
 
-
-#ifndef PWMX_H
-#define	PWMX_H
-
-#include "config.h"
-
-#if USE_PWM
-
-#include <xc.h>
+#ifndef SERVO_H
+#define	SERVO_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    /**
-     * PWM Duty Circle Register
-     */
-#define PWM1DC PDC1
-#define PWM2DC SDC2
-#define PWM3DC SDC3
-#define PWM5DC SDC5
-#define PWM6DC SDC6
-#if defined(__dsPIC33EP512MU814__)
-#define PWM7DC SDC7
-#endif
+    struct Servo {
+        volatile unsigned int *Position;
+        unsigned int PrevPosition;
+        unsigned int Reference;
+        signed int Ctrl;
+        volatile unsigned int *DutyCycle;
+        volatile unsigned int *lat_cw;
+        unsigned int lat_cw_pos;
+        unsigned int lat_cw_mask;
+        volatile unsigned int *lat_ccw;
+        unsigned int lat_ccw_pos;
+        unsigned int lat_ccw_mask;
+        unsigned int Enabled;
+    };
+    typedef struct Servo Servo_t;
+    typedef Servo_t *Servo_p;
 
-    /**
-     *  Config and initialize peripheral PWMx
-     */
-    void PWMxInit(void);
+    extern Servo_t Servos[];
 
-    /**
-     * Start peripheral PWMx
-     */
-    void PWMxStart(void);
+    void ServoInit(void);
+
+    void ServoStart(void);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif /* USE_PWM */
-
-#endif	/* PWMX_H */
+#endif	/* SERVO_H */
 

@@ -80,9 +80,9 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
 //                    task->load_max, task->runtime_cnt, task->runtime_microseconds, idle_params.call_per_second, 
 //                    ADC1BUF0);
             UpdateAnalogInputs();
-            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u L%03u S%04u S%04u S%04u S%04u S%04u S%04u",
+            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u L%03u S%04u S%04u B%03u B%03u B%03u",
                     (parameters->cnt) >> 1u, AnalogInputTimeStamp.seconds, AnalogInputTimeStamp.ticks, \
-                    task->load_max, ServoPos[0], ServoPos[1], ServoPos[2], ServoPos[3], ServoPos[4], ServoPos[5]);
+                    task->load_max, ServoPos[0], ServoPos[1], BattCell[0], BattCell[1], BattCell[2]);
             parameters->tx_req._payloadLength = strlen((const char *) parameters->tx_req._payloadPtr);
             XBeeZBTxRequest(parameters->_xbee[0], &parameters->tx_req, 0u);
         } else {

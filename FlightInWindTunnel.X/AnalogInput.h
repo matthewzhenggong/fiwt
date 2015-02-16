@@ -29,10 +29,14 @@
 extern "C" {
 #endif
 
-    /** BattCell ADC Value */
+    /** BattCell ADC Value
+     * Unit : 10mV
+     */
     extern unsigned int BattCell[BATTCELLADCNUM];
 
-    /** ServoPos ADC Value */
+    /** ServoPos ADC Value
+     * from 0-180deg, 0-4096 output
+     */
     extern unsigned int ServoPos[SERVOPOSADCNUM];
 
     /** Analog Input Time Stamp
