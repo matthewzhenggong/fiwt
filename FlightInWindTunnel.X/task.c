@@ -89,6 +89,7 @@ inline void insert2list(TaskHandle_p *task_list, TaskHandle_p t) {
                     t2->next = t;
                     break;
                 }
+                t2 = t2->next;
             }
             if (!t2->next) {
                 /* append in tail */
@@ -156,7 +157,7 @@ void TaskStartScheduler(void) {
             /* loop working tasks */
             for (task = TaskListHeader; task; task = task->next) {
                 if (--task->delay == 0u) {
-                    task->delay = tasks->period;
+                    task->delay = task->period;
 
                     if (task->cur_status < 2) {
                         tick_in = microsec_ticks;

@@ -22,6 +22,7 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
+#include "servoTask.h"
 #include "sending.h"
 #include "getting.h"
 #include "echoTask.h"
@@ -38,7 +39,9 @@ idleParam_t idle_params;
 sendingParam_t sending;
 gettingParam_t getting1;
 gettingParam_t getting2;
-//echoParam_t echo;
+
+TaskHandle_p servoTask;
+servoParam_t servo;
 
 int main(void) {
 
@@ -62,6 +65,9 @@ int main(void) {
     TaskCreate(gettingLoop, "GETMSG1", (void *)&getting1, gettingPERIOD, gettingDELAY, gettingPRIORITY);
     gettingInit(&getting2, &Xbee2);
     TaskCreate(gettingLoop, "GETMSG2", (void *)&getting2, gettingPERIOD, gettingDELAY+2u, gettingPRIORITY);
+
+    servoInit(&servo);
+    servoTask = TaskCreate(servoLoop, "SERVO", (void *)&servo, servoPERIOD, servoDELAY, servoPRIORITY);
 
     idleInit(&idle_params);
     TaskSetIdleHook(idleLoop, (void *)&idle_params);

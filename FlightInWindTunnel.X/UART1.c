@@ -1,6 +1,8 @@
 /*
- * File:   sending.h
+ * File:   UART1.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
+ * Original author: Sergio AraujoEstrada <S.AraujoEstrada@bristol.ac.uk>
+ * Some code may also be from Microchip's DataSheet Documents.
  *
  * This file is part of FIWT.
  *
@@ -18,35 +20,23 @@
  * License along with this library.
  */
 
-#ifndef SENDING_H
-#define	SENDING_H
+#include "config.h"
 
-#include "XBeeZBS2.h"
-#include "task.h"
-#include "pt.h"
+#if USE_UART1
 
-#define sendingPERIOD (10u)
-#define sendingDELAY (9u)
-#define sendingPRIORITY (10u)
+/** Compute baudrate value and store in BR_Value */
+#define UARTxTXPR 0x01
+#define DMAxTXREQ 0b00001100
+#define DMAxRXREQ 0b00001011
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+#define UARTx(PARAM) UART1##PARAM
+#define UxREG(REG) U1##REG
+#define _UxREG(REG) _U1##REG
+#define DMAxTX(REG) DMA0##REG
+#define DMAxRX(REG) DMA4##REG
+#define _DMAxTX(REG) _DMA0##REG
+#define _DMAxRX(REG) _DMA4##REG
 
-    typedef struct {
-        ZBTxRequest_t tx_req;
-        struct pt PT;
-        unsigned int cnt;
-        XBee_p _xbee[2];
-    } sendingParam_t;
+#include "UARTx.c"
 
-    void sendingInit(sendingParam_t *parameters, XBee_p, XBee_p);
-
-    PT_THREAD(sendingLoop)(TaskHandle_p task);
-
-#ifdef	__cplusplus
-}
-#endif
-
-#endif	/* SENDING_H */
-
+#endif /* UART1ENABLE */

@@ -1,5 +1,5 @@
 /*
- * File:   sending.h
+ * File:   servoTask.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,35 +18,36 @@
  * License along with this library.
  */
 
-#ifndef SENDING_H
-#define	SENDING_H
+#ifndef SERVOTASK_H
+#define	SERVOTASK_H
 
-#include "XBeeZBS2.h"
 #include "task.h"
 #include "pt.h"
 
-#define sendingPERIOD (10u)
-#define sendingDELAY (9u)
-#define sendingPRIORITY (10u)
+#define servoPERIOD (1u)
+#define servoDELAY (0u)
+#define servoPRIORITY (100u)
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
     typedef struct {
-        ZBTxRequest_t tx_req;
         struct pt PT;
-        unsigned int cnt;
-        XBee_p _xbee[2];
-    } sendingParam_t;
+        uint16_t _ticks;
+        uint16_t _peroid;
+        int16_t _dc;
+        uint8_t _ch;
+        uint8_t _loop;
+    } servoParam_t;
 
-    void sendingInit(sendingParam_t *parameters, XBee_p, XBee_p);
+    void servoInit(servoParam_t *parameters);
 
-    PT_THREAD(sendingLoop)(TaskHandle_p task);
+    PT_THREAD(servoLoop)(TaskHandle_p task);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* SENDING_H */
+#endif	/* SERVOTASK_H */
 

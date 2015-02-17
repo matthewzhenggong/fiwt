@@ -24,6 +24,7 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/PWMx.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/Servo.h</itemPath>
       <itemPath>UARTs.h</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/servoTask.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -49,7 +50,11 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/PWMx.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/Servo.c</itemPath>
-      <itemPath>UARTs.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/servoTask.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART1.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART2.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART3.c</itemPath>
+      <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -65,7 +70,7 @@
         <targetDevice>dsPIC33EP512MU814</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>ICD3PlatformTool</platformTool>
+        <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
         <languageToolchainVersion>1.23</languageToolchainVersion>
         <platform>3</platform>

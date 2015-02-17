@@ -18,7 +18,6 @@
  * License along with this library.
  */
 
-#include "config.h"
 #include "PWMx.h"
 
 #if USE_PWM

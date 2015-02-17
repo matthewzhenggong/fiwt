@@ -21,6 +21,10 @@
 #ifndef SERVO_H
 #define	SERVO_H
 
+#include "config.h"
+
+#if USE_PWM && USE_ADC1
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -48,9 +52,20 @@ extern "C" {
 
     void ServoStart(void);
 
+    /**
+     * Set the duty circle and direction for servo1
+     * @param duty_circle for pwm gen and sign means direction
+     */
+#define MotorSetDecl(idx) void MotorSet##idx(signed int duty_circle)
+
+    MotorSetDecl(0);
+    MotorSetDecl(1);
+
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* USE_PWM && USE_ADC1 */
 
 #endif	/* SERVO_H */
 

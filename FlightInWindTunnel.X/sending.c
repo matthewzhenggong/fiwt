@@ -22,14 +22,10 @@
 #include "idle.h"
 #include "clock.h"
 #include "AnalogInput.h"
+#include "Servo.h"
 
-#include <xc.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "StartKit.h"
 
 void sendingInit(sendingParam_t *parameters, XBee_p xbee1, XBee_p xbee2) {
     struct pt *pt;
@@ -48,21 +44,20 @@ void sendingInit(sendingParam_t *parameters, XBee_p xbee1, XBee_p xbee2) {
     parameters->tx_req._payloadPtr[0] = 'P';
 }
 
-extern idleParam_t idle_params;
+struct SensorPack {
+    clockType_t time;
+    unsigned int ServoPos[SERVOPOSADCNUM];
+    unsigned int BattCell[BATTCELLADCNUM];
+    signed int ServoCtrl[SERVOPOSADCNUM];
+    uint16_t loadmax[2];
+};
 
-static void test(void) {
-    int i;
-    float f;
-    for (i=0,f=1.0f; i<100; ++i) {
-        f = f/1.2f;
-    }
-    return;
-}
+extern TaskHandle_p servoTask;
 
 PT_THREAD(sendingLoop)(TaskHandle_p task) {
     sendingParam_t *parameters;
     struct pt *pt;
-    unsigned int t1,t2,t3,i;
+    struct SensorPack *pack;
     parameters = (sendingParam_t *) (task->parameters);
     pt = &(parameters->PT);
 
@@ -73,29 +68,22 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
     /* We loop forever here. */
     while (1) {
         ++parameters->cnt;
+        UpdateAnalogInputs();
+        parameters->tx_req._payloadPtr[0] = '\x06';
+        parameters->tx_req._payloadPtr[1] = '\x00';
+        pack = (struct SensorPack *) (parameters->tx_req._payloadPtr + 2u);
+        pack->time = AnalogInputTimeStamp;
+        memcpy(pack->ServoPos, ServoPos, sizeof(ServoPos));
+        memcpy(pack->BattCell, BattCell, sizeof(BattCell));
+        pack->ServoCtrl[0] = Servos[0].Ctrl;
+        pack->loadmax[0] = task->load_max;
+        pack->loadmax[1] = servoTask->load_max;
+        parameters->tx_req._payloadLength = sizeof(struct SensorPack)+2u;
+
         if (parameters->cnt & 1) {
-            /** Test One */
-//            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u S%03u C%lu T%lu I%lu AD%u", 
-//                    (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, 
-//                    task->load_max, task->runtime_cnt, task->runtime_microseconds, idle_params.call_per_second, 
-//                    ADC1BUF0);
-            UpdateAnalogInputs();
-            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u L%03u S%04u S%04u B%03u B%03u B%03u",
-                    (parameters->cnt) >> 1u, AnalogInputTimeStamp.seconds, AnalogInputTimeStamp.ticks, \
-                    task->load_max, ServoPos[0], ServoPos[1], BattCell[0], BattCell[1], BattCell[2]);
-            parameters->tx_req._payloadLength = strlen((const char *) parameters->tx_req._payloadPtr);
             XBeeZBTxRequest(parameters->_xbee[0], &parameters->tx_req, 0u);
         } else {
-            /** Test Two */
-            t1 = microsec_ticks;
-            test();
-            t2 = microsec_ticks;
-            asm volatile ("REPEAT, #640"); ++i;
-            t3 = microsec_ticks;
-            sprintf((char *) (parameters->tx_req._payloadPtr + 1u), "%05d %05u.%03u.%03u T%03u T%03u T%03u", (parameters->cnt) >> 1u, RTclock.seconds, RTclock.ticks, microsec_ticks, t3, t2, t1);
-            parameters->tx_req._payloadLength = strlen((const char *) parameters->tx_req._payloadPtr);
             XBeeZBTxRequest(parameters->_xbee[1], &parameters->tx_req, 0u);
-            mLED_2_Toggle();
         }
         PT_YIELD(pt);
     }

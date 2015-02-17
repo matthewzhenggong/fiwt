@@ -21,6 +21,7 @@
 
 #include "AnalogInput.h"
 
+#if USE_PWM && USE_ADC1
 
 /* External variables declaration */
 #if GNDBOARD
@@ -66,3 +67,5 @@ void UpdateAnalogInputs(void) {
     #endif
 
 }
+
+#endif /* USE_ADC1 */

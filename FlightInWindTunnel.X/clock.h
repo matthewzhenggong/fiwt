@@ -36,8 +36,8 @@ extern "C" {
 
     /** Clock providing seconds and milliseconds */
     struct clockType {
-        unsigned int ticks; /**< absolute time, milliseconds */
         unsigned int seconds; /**< absolute time, seconds */
+        unsigned int ticks; /**< absolute time, milliseconds */
     };
     typedef struct clockType clockType_t;
 

@@ -167,10 +167,10 @@
  * bit 14 PENL = 0.  PWMxL Output Pin Ownership bit
  *                   1 = PWM module controls PWMxL pin
  *                   0 = GPIO module controls PWMxL pin
- * bit 13 POLH = 0.  PWMxH Output Pin Polarity bit
+ * bit 13 POLH = 1.  PWMxH Output Pin Polarity bit
  *                   1 = PWMxH pin is active-low
  *                   0 = PWMxH pin is active-high
- * bit 12 POLL = 0.  PWMxL Output Pin Polarity bit
+ * bit 12 POLL = 1.  PWMxL Output Pin Polarity bit
  *                   1 = PWMxL pin is active-low
  *                   0 = PWMxL pin is active-high
  * bit 11-10 PMOD<1:0> = 11.  PWM # I/O Pin Mode bits
@@ -208,7 +208,7 @@ pin
  *                   1 = Output overrides via the OVRDAT<1:0> bits are synchronized to the PWM time base
  *                   0 = Output overrides via the OVRDAT<1:0> bits occur on next CPU clock boundary
  */
-#define IOCONx_CFG 0x0C00u
+#define IOCONx_CFG 0x3C00u
 
 /** FCLCONx
  * bit 15 IFLTMOD = 0.  Independent Fault Mode Enable bit(4)

@@ -27,7 +27,7 @@
 
 #define gettingPERIOD (10u)
 #define gettingDELAY (5u)
-#define gettingPRIORITY (9998u)
+#define gettingPRIORITY (9u)
 
 #ifdef	__cplusplus
 extern "C" {

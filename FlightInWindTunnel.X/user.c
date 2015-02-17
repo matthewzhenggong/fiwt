@@ -27,6 +27,7 @@
 #include "clock.h"
 #include "ADC1.h"
 #include "PWMx.h"
+#include "Servo.h"
 
 /* Device header file */
 #include <xc.h>
@@ -138,4 +139,8 @@ void InitApp(void) {
     PWMxStart();
 #endif
 
+#if USE_PWM && USE_ADC1
+    ServoInit();
+    ServoStart();
+#endif /* USE_PWM && USE_ADC1 */
 }

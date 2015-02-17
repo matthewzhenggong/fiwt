@@ -23,6 +23,9 @@
 #define	ANALOGINPUT_H
 
 #include "config.h"
+
+#if USE_PWM && USE_ADC1
+
 #include "clock.h"
 
 #ifdef	__cplusplus
@@ -53,6 +56,9 @@ extern "C" {
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* USE_ADC1 */
+
 
 #endif	/* ANALOGINPUT_H */
 

@@ -22,32 +22,52 @@
 #ifndef UARTS_H
 #define	UARTS_H
 
+#include "config.h"
+
+
+#if USE_UART1
 #ifdef UARTX_H
 #undef UARTX_H
 #endif
 #ifdef UARTxFunc
 #undef UARTxFunc
 #endif
-
 #define UARTxFunc(FUN) UART1##FUN
 #include "UARTx.h"
-#undef UARTX_H
-#undef UARTxFunc
+#endif /* USE_UART1 */
 
+#if USE_UART2
+#ifdef UARTX_H
+#undef UARTX_H
+#endif
+#ifdef UARTxFunc
+#undef UARTxFunc
+#endif
 #define UARTxFunc(FUN) UART2##FUN
 #include "UARTx.h"
-#undef UARTX_H
-#undef UARTxFunc
+#endif /* USE_UART2 */
 
+#if USE_UART3
+#ifdef UARTX_H
+#undef UARTX_H
+#endif
+#ifdef UARTxFunc
+#undef UARTxFunc
+#endif
 #define UARTxFunc(FUN) UART3##FUN
 #include "UARTx.h"
-#undef UARTX_H
-#undef UARTxFunc
+#endif /* USE_UART3 */
 
+#if USE_UART4
+#ifdef UARTX_H
+#undef UARTX_H
+#endif
+#ifdef UARTxFunc
+#undef UARTxFunc
+#endif
 #define UARTxFunc(FUN) UART4##FUN
 #include "UARTx.h"
-#undef UARTX_H
-#undef UARTxFunc
+#endif /* USE_UART4 */
 
 #endif	/* UARTS_H */
 
