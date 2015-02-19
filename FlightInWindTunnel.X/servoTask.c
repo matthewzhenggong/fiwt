@@ -20,6 +20,7 @@
 
 #include "servoTask.h"
 #include "Servo.h"
+#include "AnalogInput.h"
 
 void servoInit(servoParam_t *parameters) {
     struct pt *pt;
@@ -31,11 +32,13 @@ void servoInit(servoParam_t *parameters) {
     parameters->_dc = 0u;
     parameters->_ch = 0u;
     parameters->_loop = 0u;
+    parameters->_test_mode = 0u;
 }
 
 PT_THREAD(servoLoop)(TaskHandle_p task) {
     servoParam_t *parameters;
     struct pt *pt;
+
     parameters = (servoParam_t *) (task->parameters);
     pt = &(parameters->PT);
 
@@ -46,23 +49,40 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
     /* We loop forever here. */
     while (1) {
         if (parameters->_loop) {
-            switch (parameters->_ch) {
-                case 1:
-                    MotorSet0(0);
-                    MotorSet1(parameters->_dc);
+            switch (parameters->_test_mode) {
+                case 1u :
+                    UpdateAnalogInputs();
+                    switch (parameters->_ch) {
+                        case 1:
+                            ServoUpdate100Hz(1u, parameters->_dc);
+                            break;
+                        default:
+                            ServoUpdate100Hz(0u, parameters->_dc);
+                    }
                     break;
                 default:
-                    MotorSet0(parameters->_dc);
-                    MotorSet1(0);
+                    switch (parameters->_ch) {
+                        case 1:
+                            MotorSet(1u,parameters->_dc);
+                            break;
+                        default:
+                            MotorSet(0u,parameters->_dc);
+                    }
             }
             if (--parameters->_ticks == 0u) {
                 --parameters->_loop;
                 parameters->_ticks = parameters->_peroid;
-                parameters->_dc = -parameters->_dc;
+
+                switch (parameters->_test_mode) {
+                    case 1u :
+                        break;
+                    default :
+                    parameters->_dc = -parameters->_dc;
+                }
             }
         } else {
-            MotorSet0(0);
-            MotorSet1(0);
+            MotorSet(0u,0);
+            MotorSet(1u,0);
         }
         PT_YIELD(pt);
     }

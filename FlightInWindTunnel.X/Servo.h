@@ -25,15 +25,14 @@
 
 #if USE_PWM && USE_ADC1
 
+#define SEVERONUM 2
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
     struct Servo {
         volatile unsigned int *Position;
-        unsigned int PrevPosition;
-        unsigned int Reference;
-        signed int Ctrl;
         volatile unsigned int *DutyCycle;
         volatile unsigned int *lat_cw;
         unsigned int lat_cw_pos;
@@ -41,7 +40,11 @@ extern "C" {
         volatile unsigned int *lat_ccw;
         unsigned int lat_ccw_pos;
         unsigned int lat_ccw_mask;
-        unsigned int Enabled;
+        float  PrevPosition;
+        float  Reference;
+        float butt1;
+        float butt2;
+        signed int Ctrl;
     };
     typedef struct Servo Servo_t;
     typedef Servo_t *Servo_p;
@@ -53,13 +56,18 @@ extern "C" {
     void ServoStart(void);
 
     /**
-     * Set the duty circle and direction for servo1
+     * Set the duty circle and direction for servo
+     * @param ch Servo channel
      * @param duty_circle for pwm gen and sign means direction
      */
-#define MotorSetDecl(idx) void MotorSet##idx(signed int duty_circle)
+    void MotorSet(unsigned int ch, signed int duty_circle);
 
-    MotorSetDecl(0);
-    MotorSetDecl(1);
+    /**
+     * Set Servo reference and update the control law
+     * @param ch Servo channel
+     * @param ref
+     */
+    void ServoUpdate100Hz(unsigned int ch, unsigned int ref);
 
 #ifdef	__cplusplus
 }

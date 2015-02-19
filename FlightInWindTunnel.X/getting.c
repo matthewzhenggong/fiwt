@@ -69,6 +69,7 @@ PT_THREAD(gettingLoop)(TaskHandle_p task) {
                                 servo._dc = parameters->rx_rsp._payloadPtr[3]+((uint16_t)(parameters->rx_rsp._payloadPtr[4]) << 8);
                                 servo._peroid = parameters->rx_rsp._payloadPtr[5];
                                 servo._loop = parameters->rx_rsp._payloadPtr[6];
+                                servo._test_mode = parameters->rx_rsp._payloadPtr[7];
                                 servo._ticks = servo._peroid;
                             }
                                 break;

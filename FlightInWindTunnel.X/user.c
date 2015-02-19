@@ -141,6 +141,7 @@ void InitApp(void) {
 
 #if USE_PWM && USE_ADC1
     ServoInit();
+    asm ("repeat #640;");Nop();
     ServoStart();
 #endif /* USE_PWM && USE_ADC1 */
 }

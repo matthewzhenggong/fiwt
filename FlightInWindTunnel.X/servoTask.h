@@ -24,8 +24,8 @@
 #include "task.h"
 #include "pt.h"
 
-#define servoPERIOD (1u)
-#define servoDELAY (0u)
+#define servoPERIOD (10u)
+#define servoDELAY (3u)
 #define servoPRIORITY (100u)
 
 #ifdef	__cplusplus
@@ -39,6 +39,7 @@ extern "C" {
         int16_t _dc;
         uint8_t _ch;
         uint8_t _loop;
+        uint8_t _test_mode;
     } servoParam_t;
 
     void servoInit(servoParam_t *parameters);

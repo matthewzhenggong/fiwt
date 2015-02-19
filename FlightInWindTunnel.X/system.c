@@ -75,7 +75,7 @@ void ConfigureOscillator(void)
     PLLFBD = 126;                                // M=128
     CLKDIVbits.PLLPRE = 3;                      // N1=5
     CLKDIVbits.PLLPOST = 0;                     // N2=2
-    asm ("repeat #1024;");Nop();
+    asm ("repeat #6400;");Nop();
 #endif
 }
 

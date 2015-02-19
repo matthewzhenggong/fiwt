@@ -135,7 +135,7 @@
         <property key="scalar-model" value="default"/>
         <property key="use-cci" value="true"/>
         <property key="use-iar" value="false"/>
-        <appendMe value=" -save-temps "/>
+        <appendMe value=" -save-temps -menable-fixed "/>
       </C30>
       <C30-AR>
         <property key="additional-options-chop-files" value="false"/>
@@ -207,7 +207,7 @@
       <C30Global>
         <property key="common-include-directories" value=""/>
         <property key="dual-boot-partition" value="0"/>
-        <property key="fast-math" value="false"/>
+        <property key="fast-math" value="true"/>
         <property key="generic-16-bit" value="false"/>
         <property key="legacy-libc" value="false"/>
         <property key="oXC16glb-macros" value=""/>
@@ -215,7 +215,7 @@
         <property key="relaxed-math" value="false"/>
         <property key="save-temps" value="false"/>
       </C30Global>
-      <ICD3PlatformTool>
+      <PICkit3PlatformTool>
         <property key="ADC 1" value="true"/>
         <property key="ADC 2" value="true"/>
         <property key="AutoSelectMemRanges" value="auto"/>
@@ -282,10 +282,9 @@
         <property key="UART 3" value="true"/>
         <property key="UART 4" value="true"/>
         <property key="USB" value="true"/>
-        <property key="debugoptions.useswbreakpoints" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
-        <property key="memories.bootflash" value="false"/>
+        <property key="memories.bootflash" value="true"/>
         <property key="memories.configurationmemory" value="true"/>
         <property key="memories.configurationmemory2" value="true"/>
         <property key="memories.dataflash" value="true"/>
@@ -301,8 +300,10 @@
                   value="${memories.programmemory.partition2.start.value}"/>
         <property key="memories.programmemory.start" value="0x0"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmertogo.imagename" value=""/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.pgmspeed" value="2"/>
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preserveeeprom" value="false"/>
         <property key="programoptions.preserveprogramrange" value="false"/>
@@ -315,7 +316,7 @@
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="programoptions.uselvpprogramming" value="false"/>
         <property key="voltagevalue" value="3.25"/>
-      </ICD3PlatformTool>
+      </PICkit3PlatformTool>
     </conf>
     <conf name="XC16_dsPIC33EP512MU810" type="2">
       <toolsSet>

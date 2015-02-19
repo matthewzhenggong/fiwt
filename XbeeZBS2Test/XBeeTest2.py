@@ -289,12 +289,28 @@ Unused bits must be set to 0.  ''')
                 self.btnTM = wx.Button(panel, -1, "Test Motor", size=(100,-1))
                 self.btnTM.Enable(False)
                 box.Add(self.btnTM, 0, wx.ALIGN_CENTER, 5)
+                box.Add(wx.StaticText(panel, wx.ID_ANY, "CH"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
+		self.chcTMCH = wx.Choice(panel, -1, choices=['1','2'])
+		self.chcTMCH.SetSelection(0)
+                self.chcTMCH.SetToolTip( wx.ToolTip('Channel'))
+                box.Add(self.chcTMCH, 0, wx.ALIGN_CENTER, 5)
+                box.Add(wx.StaticText(panel, wx.ID_ANY, "DC"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
                 self.txtTMDC = wx.TextCtrl(panel, -1, "400", size=(50,-1), validator = MyValidator(DIGIT_ONLY))
+                self.txtTMDC.SetToolTip( wx.ToolTip('Duty Circle/Servo Pos'))
                 box.Add(self.txtTMDC, 0, wx.ALIGN_CENTER, 5)
-                self.txtTMPD = wx.TextCtrl(panel, -1, "100", size=(50,-1), validator = MyValidator(DIGIT_ONLY))
+                box.Add(wx.StaticText(panel, wx.ID_ANY, "PD"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
+                self.txtTMPD = wx.TextCtrl(panel, -1, "20", size=(50,-1), validator = MyValidator(DIGIT_ONLY))
+                self.txtTMPD.SetToolTip( wx.ToolTip('Peroid in 10ms'))
                 box.Add(self.txtTMPD, 0, wx.ALIGN_CENTER, 5)
+                box.Add(wx.StaticText(panel, wx.ID_ANY, "LP"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
                 self.txtTMLP = wx.TextCtrl(panel, -1, "2", size=(50,-1), validator = MyValidator(DIGIT_ONLY))
+                self.txtTMLP.SetToolTip( wx.ToolTip('Loops'))
                 box.Add(self.txtTMLP, 0, wx.ALIGN_CENTER, 5)
+                box.Add(wx.StaticText(panel, wx.ID_ANY, "MD"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
+		self.chcTMMD = wx.Choice(panel, -1, choices=['motor','servo'])
+		self.chcTMMD.SetSelection(0)
+                self.chcTMMD.SetToolTip( wx.ToolTip('Mode'))
+                box.Add(self.chcTMMD, 0, wx.ALIGN_CENTER, 5)
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
 
                 box = wx.BoxSizer(wx.HORIZONTAL)
@@ -501,11 +517,13 @@ Unused bits must be set to 0.  ''')
             traceback.print_exc()
 
         def OnTestMotor(self, event):
-            loop = int(self.txtTMLP.GetValue())
+            ch = int(self.chcTMCH.GetSelection())
+            dc = int(self.txtTMDC.GetValue())
             peroid = int(self.txtTMPD.GetValue())
-            self.test_motor_ticks = loop*peroid+300
-            data=struct.pack('<HBh2B', 2, 0, int(self.txtTMDC.GetValue()), \
-                    peroid, loop)
+            loop = int(self.txtTMLP.GetValue())
+            mode = int(self.chcTMMD.GetSelection())
+            self.test_motor_ticks = loop*peroid+30
+            data=struct.pack('<HBh3B', 2, ch, dc, peroid, loop, mode)
             self.send(data)
 
         def OnTX(self, event):
@@ -713,7 +731,7 @@ Unused bits must be set to 0.  ''')
                         self.txtRXSta.SetLabel('Sensor {1}.{2:03d} B{9} S{3:04d} L{18} L{19}'.format(*rslt))
                         if self.test_motor_ticks > 0 :
                             self.log.info('Sensor\t{1}.{2:03d}\t{3}\t{12}'.format(*rslt))
-                            self.test_motor_ticks -= 10
+                            self.test_motor_ticks -= 1
                     else :
                         self.log.info( \
                     'RX:{}. Get {} from {}({})'.format(recv_opts[options], \

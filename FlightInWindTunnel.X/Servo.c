@@ -26,6 +26,7 @@
 #include "PWMx.h"
 #include "AnalogInput.h"
 #include <xc.h>
+#include <stddef.h>
 
 /* Servos pin layout */
 /************************************************************************
@@ -46,8 +47,8 @@ AEROCOMP    Servo2		AN21        PMW2	LATJ6 	/ LATJ7
  ************************************************************************/
 
 Servo_t Servos[] = {
-    {&ServoPos[0], 2048, 2048, 2048, &PWM1DC, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, 0},
-    {&ServoPos[1], 2048, 2048, 2048, &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, 0},
+    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK},
+    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK},
 };
 
 void ServoInit(void) {
@@ -55,30 +56,81 @@ void ServoInit(void) {
 }
 
 void ServoStart(void) {
-
+    size_t i;
+    Servo_p servo;
+    UpdateAnalogInputs();
+    for (i = 0u, servo = Servos; i < SEVERONUM; ++i, ++servo) {
+        servo->PrevPosition = *(servo->Position);
+        servo->Reference = 1.57;
+        servo->butt1 = 0.0f;
+        servo->butt2 = 0.0f;
+        servo->Ctrl = 0;
+    }
 }
 
-#define MotorSetImpl(idx) \
-void MotorSet##idx(signed int duty_circle) { \
-    *(Servos[idx].lat_cw) &= Servos[idx].lat_cw_mask; \
-    *(Servos[idx].lat_ccw) &= Servos[idx].lat_ccw_mask; \
-    if (duty_circle==0) { \
-        Servos[idx].Ctrl = 0; \
-    }else if (duty_circle>0) { \
-        *(Servos[idx].lat_cw) |= Servos[idx].lat_cw_pos; \
-        if (duty_circle > PWM_PEROID) duty_circle = PWM_PEROID; \
-        Servos[idx].Ctrl = duty_circle; \
-    }else if (duty_circle<0) { \
-        *(Servos[idx].lat_ccw) |= Servos[idx].lat_ccw_pos; \
-        if (duty_circle < -PWM_PEROID) duty_circle = -PWM_PEROID; \
-        Servos[idx].Ctrl = duty_circle; \
-        duty_circle = -duty_circle; \
-    } \
-    *(Servos[idx].DutyCycle) = duty_circle; \
+void MotorSet(unsigned int ch, signed int duty_circle) {
+    Servo_p servo;
+    servo = &Servos[ch];
+    *(servo->lat_cw) &= servo->lat_cw_mask;
+    *(servo->lat_ccw) &= servo->lat_ccw_mask;
+    if (duty_circle == 0) {
+        servo->Ctrl = 0;
+    } else if (duty_circle > 0) {
+        *(servo->lat_cw) |= servo->lat_cw_pos;
+        if (duty_circle > PWM_PEROID) duty_circle = PWM_PEROID;
+        servo->Ctrl = duty_circle;
+    } else if (duty_circle < 0) {
+        *(servo->lat_ccw) |= servo->lat_ccw_pos;
+        if (duty_circle < -PWM_PEROID) duty_circle = -PWM_PEROID;
+        servo->Ctrl = duty_circle;
+        duty_circle = -duty_circle;
+    }
+    *(servo->DutyCycle) = duty_circle;
 }
 
-MotorSetImpl(0);
+void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
+    Servo_p servo;
+    signed int duty_circle;
+    float pos, rate, butt1, ctrl;
 
-MotorSetImpl(1);
+    servo = Servos + ch;
+    
+    pos = *servo->Position * 0.0007669904;
+    servo->Reference = ref * 0.0007669904;
+
+    rate = (pos - servo->PrevPosition)*100;
+    if (rate > 3.14) rate = 3.14;
+    else if (rate < -3.14) rate = -3.14;
+    /** butterwolf filter */
+    butt1 = servo->butt1;
+    servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
+    servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
+    rate = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
+
+    ctrl = 15 * ((servo->Reference - pos) + 0.04 * (-rate));
+    ctrl *= (800 / 3.8);
+    if (ctrl > 0) {
+        duty_circle = 250+ctrl;
+    } else {
+        duty_circle = -250+ctrl;
+    }
+
+    *(servo->lat_cw) &= servo->lat_cw_mask;
+    *(servo->lat_ccw) &= servo->lat_ccw_mask;
+    if (duty_circle == 0) {
+        servo->Ctrl = 0;
+    } else if (duty_circle > 0) {
+        *(servo->lat_cw) |= servo->lat_cw_pos;
+        if (duty_circle > PWM_PEROID) duty_circle = PWM_PEROID;
+        servo->Ctrl = duty_circle;
+    } else if (duty_circle < 0) {
+        *(servo->lat_ccw) |= servo->lat_ccw_pos;
+        if (duty_circle < -PWM_PEROID) duty_circle = -PWM_PEROID;
+        servo->Ctrl = duty_circle;
+        duty_circle = -duty_circle;
+    }
+    *(servo->DutyCycle) = duty_circle;
+    servo->PrevPosition = pos;
+}
 
 #endif /* USE_PWM && USE_ADC1 */
