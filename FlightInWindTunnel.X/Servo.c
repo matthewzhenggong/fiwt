@@ -61,7 +61,7 @@ void ServoStart(void) {
     UpdateAnalogInputs();
     for (i = 0u, servo = Servos; i < SEVERONUM; ++i, ++servo) {
         servo->PrevPosition = *(servo->Position);
-        servo->Reference = 1.57;
+        servo->Reference = 2096;
         servo->butt1 = 0.0f;
         servo->butt2 = 0.0f;
         servo->Ctrl = 0;
@@ -91,28 +91,32 @@ void MotorSet(unsigned int ch, signed int duty_circle) {
 void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
     Servo_p servo;
     signed int duty_circle;
-    float pos, rate, butt1, ctrl;
+    signed int pos;
+    signed int rate;
+    float butt1;
 
     servo = Servos + ch;
     
-    pos = *servo->Position * 0.0007669904;
-    servo->Reference = ref * 0.0007669904;
+    pos = *servo->Position;
+    servo->Reference = ref;
 
-    rate = (pos - servo->PrevPosition)*100;
-    if (rate > 3.14) rate = 3.14;
-    else if (rate < -3.14) rate = -3.14;
+    rate = (pos - servo->PrevPosition);
+    if (rate > 41) rate = 41;
+    else if (rate < -41) rate = -41;
     /** butterwolf filter */
     butt1 = servo->butt1;
     servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
     servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
     rate = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
 
-    ctrl = 15 * ((servo->Reference - pos) + 0.04 * (-rate));
-    ctrl *= (800 / 3.8);
-    if (ctrl > 0) {
-        duty_circle = 250+ctrl;
+//    ctrl = (15*PWM_PEROID/3.8f * 0.0007669904) * (servo->Reference - pos) /* Proportion */
+//            + (15*0.04*PWM_PEROID/3.8*pi/4096*100) * (-rate); /* Difference */
+    duty_circle = (19 * (servo->Reference - pos) >> 3) /* Proportion */
+            + (19 * (-rate) >> 1); /* Difference */
+    if (duty_circle > 0) {
+        duty_circle += 250;
     } else {
-        duty_circle = -250+ctrl;
+        duty_circle -= 250;
     }
 
     *(servo->lat_cw) &= servo->lat_cw_mask;

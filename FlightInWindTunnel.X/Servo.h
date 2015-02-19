@@ -40,8 +40,8 @@ extern "C" {
         volatile unsigned int *lat_ccw;
         unsigned int lat_ccw_pos;
         unsigned int lat_ccw_mask;
-        float  PrevPosition;
-        float  Reference;
+        signed int  PrevPosition;
+        signed int  Reference;
         float butt1;
         float butt2;
         signed int Ctrl;
