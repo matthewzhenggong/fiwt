@@ -25,6 +25,8 @@
 
 #if USE_PWM && USE_ADC1
 
+#include <dsp.h>
+
 #define SEVERONUM 2
 
 #ifdef	__cplusplus
@@ -42,8 +44,7 @@ extern "C" {
         unsigned int lat_ccw_mask;
         signed int  PrevPosition;
         signed int  Reference;
-        float butt1;
-        float butt2;
+        fractional butt[3];
         signed int Ctrl;
     };
     typedef struct Servo Servo_t;

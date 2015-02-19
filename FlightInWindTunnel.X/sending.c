@@ -76,6 +76,7 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
         memcpy(pack->ServoPos, ServoPos, sizeof(ServoPos));
         memcpy(pack->BattCell, BattCell, sizeof(BattCell));
         pack->ServoCtrl[0] = Servos[0].Ctrl;
+        pack->ServoCtrl[1] = Servos[0].butt[2];
         pack->loadmax[0] = task->load_max;
         pack->loadmax[1] = servoTask->load_max;
         parameters->tx_req._payloadLength = sizeof(struct SensorPack)+2u;

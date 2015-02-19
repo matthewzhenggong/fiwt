@@ -728,9 +728,9 @@ Unused bits must be set to 0.  ''')
                       self.last_cnt = cnt
                     elif rf_data[0] == '\x06' :
                         rslt = self.pack06.unpack(rf_data)
-                        self.txtRXSta.SetLabel('Sensor {1}.{2:03d} B{9} S{3:04d} L{18} L{19}'.format(*rslt))
+                        self.txtRXSta.SetLabel('Sensor {1}.{2:03d} B{9} S{3:04d} S{4:04d} L{18} L{19}'.format(*rslt))
                         if self.test_motor_ticks > 0 :
-                            self.log.info('Sensor\t{1}.{2:03d}\t{3}\t{12}'.format(*rslt))
+                            self.log.info('Sensor\t{1}.{2:03d}\t{3}\t{12}\t{13}'.format(*rslt))
                             self.test_motor_ticks -= 1
                     else :
                         self.log.info( \
