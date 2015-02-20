@@ -35,7 +35,7 @@
 #define SEVERONUM (0)
 #endif
 
-#define SERVO_ACCEL_LIMIT (50)
+#define SERVO_ACCEL_LIMIT (35)
 
 #ifdef	__cplusplus
 extern "C" {
@@ -55,6 +55,7 @@ extern "C" {
         signed int  Reference;
         fractional butt[3];
         signed int Ctrl;
+        unsigned int tick;
     };
     typedef struct Servo Servo_t;
     typedef Servo_t *Servo_p;

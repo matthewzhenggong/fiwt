@@ -181,12 +181,18 @@ def pval(fb_coeff, shifts) :
      max_fb_val = 2**15 / fb_coeff_i
      return (fb_coeff_i,err,max_fb_val)
          */
-        duty_circle = (19 *  diff >> 3) /* Proportion */
-                    + (19 * -rate >> 1); /* Difference */
-        if (duty_circle > 0) {
+        duty_circle = (15 *  diff >> 3) /* Proportion */
+                    + (15 * -rate >> 1); /* Difference */
+        if (duty_circle > 1) {
             duty_circle += 250;
-        } else {
+        } else if (duty_circle < -1){
             duty_circle -= 250;
+        } else {
+            if (++servo->tick & 1) {
+               duty_circle = 251;
+            } else {
+               duty_circle = -251;
+            }
         }
 
         _motor_set(servo, duty_circle);

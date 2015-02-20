@@ -64,6 +64,11 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
 
                 switch (parameters->_test_mode) {
                     case 1u :
+                        if (parameters->_loop & 1) {
+                        parameters->_dc -= 23;
+                        } else {
+                        parameters->_dc += 23;
+                        }
                         break;
                     default :
                     parameters->_dc = -parameters->_dc;
