@@ -51,6 +51,12 @@ Servo_t Servos[] = {
     {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK},
 };
 
+//    0.2779,-0.4152, 0.5872,
+//    0.4152, 0.8651, 0.1908,
+//    0.1468, 0.6594, 0.0675
+static fractional butter_mat_frac[] = {9106, -13605, 19241, 13605, 28347, 6252, 4810, 21607, 2211
+};
+
 void ServoInit(void) {
 
 }
@@ -62,8 +68,8 @@ void ServoStart(void) {
     for (i = 0u, servo = Servos; i < SEVERONUM; ++i, ++servo) {
         servo->PrevPosition = *(servo->Position);
         servo->Reference = 2096;
-        servo->butt1 = 0.0f;
-        servo->butt2 = 0.0f;
+        servo->butt[0] = 0.0r;
+        servo->butt[1] = 0.0r;
         servo->Ctrl = 0;
     }
 }
@@ -92,26 +98,39 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
     Servo_p servo;
     signed int duty_circle;
     signed int pos;
+    fractional dstM[3];
     signed int rate;
-    float butt1;
+    signed int diff;
+//    float butt1;
 
     servo = Servos + ch;
     
     pos = *servo->Position;
     servo->Reference = ref;
 
-    rate = (pos - servo->PrevPosition);
+    /** butterwolf filter */
+    rate = pos - servo->PrevPosition;
     if (rate > 41) rate = 41;
     else if (rate < -41) rate = -41;
-    /** butterwolf filter */
-    butt1 = servo->butt1;
-    servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
-    servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
-    rate = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
+//    butt1 = servo->butt1;
+//    servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
+//    servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
+//    servo->butt3 = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
+//    rate = servo->butt3;
+    servo->butt[2] = rate;
+    MatrixMultiply(2,3,1, dstM, butter_mat_frac, servo->butt);
+    servo->butt[0] = dstM[0];
+    servo->butt[1] = dstM[1];
+    MatrixMultiply(1,3,1, dstM, butter_mat_frac+6, servo->butt);
+    rate = dstM[0];
 
-//    ctrl = (15*PWM_PEROID/3.8f * 0.0007669904) * (servo->Reference - pos) /* Proportion */
+
+    diff = servo->Reference - pos;
+    if (diff > 1724) diff = 1724; /* 1724 = (2^15)/19*/
+    else if (diff < -1724) diff = -1724;
+//    ctrl = (15*PWM_PEROID/3.8f * 0.0007669904) * (diff) /* Proportion */
 //            + (15*0.04*PWM_PEROID/3.8*pi/4096*100) * (-rate); /* Difference */
-    duty_circle = (19 * (servo->Reference - pos) >> 3) /* Proportion */
+    duty_circle = (19 * diff >> 3) /* Proportion */
             + (19 * (-rate) >> 1); /* Difference */
     if (duty_circle > 0) {
         duty_circle += 250;
