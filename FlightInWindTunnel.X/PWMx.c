@@ -83,6 +83,9 @@ void PWMxStart(void) {
     SDC3 = 0;
     SDC5 = 0;
     SDC6 = 0;
+#if defined(__dsPIC33EP512MU814__)
+    SDC7 = 0;
+#endif
 }
 
 #endif /* USE_PWM*/

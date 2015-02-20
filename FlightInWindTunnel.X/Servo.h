@@ -27,7 +27,15 @@
 
 #include <dsp.h>
 
-#define SEVERONUM 2
+#if AC_MODEL
+#define SEVERONUM (6)
+#elif AEROCOMP
+#define SEVERONUM (4)
+#else
+#define SEVERONUM (0)
+#endif
+
+#define SERVO_ACCEL_LIMIT (50)
 
 #ifdef	__cplusplus
 extern "C" {
@@ -43,6 +51,7 @@ extern "C" {
         unsigned int lat_ccw_pos;
         unsigned int lat_ccw_mask;
         signed int  PrevPosition;
+        signed int  PrevRate;
         signed int  Reference;
         fractional butt[3];
         signed int Ctrl;

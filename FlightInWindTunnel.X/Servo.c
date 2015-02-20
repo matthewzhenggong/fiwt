@@ -47,15 +47,45 @@ AEROCOMP    Servo2		AN21        PMW2	LATJ6 	/ LATJ7
  ************************************************************************/
 
 Servo_t Servos[] = {
+#if AC_MODEL
     {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK},
     {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK},
+    {&ServoPos[2], &PWM3DC, &LATG, _LATG_LATG14_MASK, ~_LATG_LATG14_MASK, &LATG, _LATG_LATG12_MASK, ~_LATG_LATG12_MASK},
+    {&ServoPos[3], &PWM7DC, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK},
+    {&ServoPos[4], &PWM5DC, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK},
+    {&ServoPos[5], &PWM6DC, &LATG, _LATG_LATG6_MASK, ~_LATG_LATG6_MASK, &LATG, _LATG_LATG7_MASK, ~_LATG_LATG7_MASK},
+#elif AEROCOMP
+    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK},
+    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK},
+    {&ServoPos[2], &PWM7DC, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK},
+    {&ServoPos[3], &PWM5DC, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK},
+#endif
 };
 
+/** two-order butterwolf filter 10Hz */
+#define BUTTER_ORDER (2)
 //    0.2779,-0.4152, 0.5872,
 //    0.4152, 0.8651, 0.1908,
 //    0.1468, 0.6594, 0.0675
-static fractional butter_mat_frac[] = {9106, -13605, 19241, 13605, 28347, 6252, 4810, 21607, 2211
+// x 2^15 = 
+static fractional _butter_mat_frac[] = { \
+     9106, -13605, 19241,
+    13605, 28347, 6252,
+    4810, 21607, 2211
 };
+
+static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER+1]) {
+    fractional dstM[BUTTER_ORDER];
+    int i;
+
+    butt[BUTTER_ORDER] = input;
+    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER+1, 1, dstM, _butter_mat_frac, butt);
+    for (i=0; i<BUTTER_ORDER; ++i) {
+        butt[i] = dstM[i];
+    }
+    MatrixMultiply(1, BUTTER_ORDER+1, 1, dstM, _butter_mat_frac + BUTTER_ORDER*(BUTTER_ORDER+1), butt);
+    return dstM[0];
+}
 
 void ServoInit(void) {
 
@@ -67,16 +97,16 @@ void ServoStart(void) {
     UpdateAnalogInputs();
     for (i = 0u, servo = Servos; i < SEVERONUM; ++i, ++servo) {
         servo->PrevPosition = *(servo->Position);
+        servo->PrevRate = 0;
         servo->Reference = 2096;
-        servo->butt[0] = 0.0r;
-        servo->butt[1] = 0.0r;
+        servo->butt[0] = 0;
+        servo->butt[1] = 0;
+        servo->butt[2] = 0;
         servo->Ctrl = 0;
     }
 }
 
-void MotorSet(unsigned int ch, signed int duty_circle) {
-    Servo_p servo;
-    servo = &Servos[ch];
+static void _motor_set(Servo_p servo, signed int duty_circle) {
     *(servo->lat_cw) &= servo->lat_cw_mask;
     *(servo->lat_ccw) &= servo->lat_ccw_mask;
     if (duty_circle == 0) {
@@ -92,68 +122,67 @@ void MotorSet(unsigned int ch, signed int duty_circle) {
         duty_circle = -duty_circle;
     }
     *(servo->DutyCycle) = duty_circle;
+}
+
+void MotorSet(unsigned int ch, signed int duty_circle) {
+    Servo_p servo;
+    if (ch < SEVERONUM) {
+        servo = Servos + ch;
+        _motor_set(servo, duty_circle);
+    }
 }
 
 void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
     Servo_p servo;
     signed int duty_circle;
     signed int pos;
-    fractional dstM[3];
     signed int rate;
     signed int diff;
-//    float butt1;
+    signed int accel;
+    //    float butt1;
 
-    servo = Servos + ch;
-    
-    pos = *servo->Position;
-    servo->Reference = ref;
+    if (ch < SEVERONUM) {
+        servo = Servos + ch;
 
-    /** butterwolf filter */
-    rate = pos - servo->PrevPosition;
-    if (rate > 41) rate = 41;
-    else if (rate < -41) rate = -41;
-//    butt1 = servo->butt1;
-//    servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
-//    servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
-//    servo->butt3 = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
-//    rate = servo->butt3;
-    servo->butt[2] = rate;
-    MatrixMultiply(2,3,1, dstM, butter_mat_frac, servo->butt);
-    servo->butt[0] = dstM[0];
-    servo->butt[1] = dstM[1];
-    MatrixMultiply(1,3,1, dstM, butter_mat_frac+6, servo->butt);
-    rate = dstM[0];
+        pos = *servo->Position;
+        servo->Reference = ref;
 
+        rate = pos - servo->PrevPosition;
+        accel = rate - servo->PrevRate;
+        /* Accel limitation */
+        if (accel > SERVO_ACCEL_LIMIT || accel < -SERVO_ACCEL_LIMIT) {
+            rate = 0;
+        }
+        //else { /* rate limitation */
+        //    if (rate > 63) rate = 63;
+        //    else if (rate < -63) rate = -63;
+        // }
+        
+        //    butt1 = servo->butt1;
+        //    servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
+        //    servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
+        //    servo->butt3 = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
+        //    rate = servo->butt3;
+        rate = _butter_update(rate, servo->butt);
 
-    diff = servo->Reference - pos;
-    if (diff > 1724) diff = 1724; /* 1724 = (2^15)/19*/
-    else if (diff < -1724) diff = -1724;
-//    ctrl = (15*PWM_PEROID/3.8f * 0.0007669904) * (diff) /* Proportion */
-//            + (15*0.04*PWM_PEROID/3.8*pi/4096*100) * (-rate); /* Difference */
-    duty_circle = (19 * diff >> 3) /* Proportion */
-            + (19 * (-rate) >> 1); /* Difference */
-    if (duty_circle > 0) {
-        duty_circle += 250;
-    } else {
-        duty_circle -= 250;
+        diff = servo->Reference - pos;
+        if (diff > 1724) diff = 1724; /* 1724 = (2^15)/19*/
+        else if (diff < -1724) diff = -1724;
+        //    ctrl = (15*PWM_PEROID/3.8f * 0.0007669904) * (diff) /* Proportion */
+        //            + (15*0.04*PWM_PEROID/3.8*pi/4096*100) * (-rate); /* Difference */
+        duty_circle = (19 *  diff >> 3) /* Proportion */
+                    + (19 * -rate >> 1); /* Difference */
+        if (duty_circle > 0) {
+            duty_circle += 250;
+        } else {
+            duty_circle -= 250;
+        }
+
+        _motor_set(servo, duty_circle);
+
+        servo->PrevPosition = pos;
+        servo->PrevRate = rate;
     }
-
-    *(servo->lat_cw) &= servo->lat_cw_mask;
-    *(servo->lat_ccw) &= servo->lat_ccw_mask;
-    if (duty_circle == 0) {
-        servo->Ctrl = 0;
-    } else if (duty_circle > 0) {
-        *(servo->lat_cw) |= servo->lat_cw_pos;
-        if (duty_circle > PWM_PEROID) duty_circle = PWM_PEROID;
-        servo->Ctrl = duty_circle;
-    } else if (duty_circle < 0) {
-        *(servo->lat_ccw) |= servo->lat_ccw_pos;
-        if (duty_circle < -PWM_PEROID) duty_circle = -PWM_PEROID;
-        servo->Ctrl = duty_circle;
-        duty_circle = -duty_circle;
-    }
-    *(servo->DutyCycle) = duty_circle;
-    servo->PrevPosition = pos;
 }
 
 #endif /* USE_PWM && USE_ADC1 */
