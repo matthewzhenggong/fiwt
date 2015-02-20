@@ -56,6 +56,7 @@ extern TaskHandle_p servoTask;
 
 PT_THREAD(sendingLoop)(TaskHandle_p task) {
     sendingParam_t *parameters;
+    size_t i;
     struct pt *pt;
     struct SensorPack *pack;
     parameters = (sendingParam_t *) (task->parameters);
@@ -75,8 +76,9 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
         pack->time = AnalogInputTimeStamp;
         memcpy(pack->ServoPos, ServoPos, sizeof(ServoPos));
         memcpy(pack->BattCell, BattCell, sizeof(BattCell));
-        pack->ServoCtrl[0] = Servos[0].Ctrl;
-        pack->ServoCtrl[1] = Servos[0].butt[2];
+        for (i=0u;i<SERVOPOSADCNUM;++i) {
+            pack->ServoCtrl[i] = Servos[i].Ctrl;
+        }
         pack->loadmax[0] = task->load_max;
         pack->loadmax[1] = servoTask->load_max;
         parameters->tx_req._payloadLength = sizeof(struct SensorPack)+2u;

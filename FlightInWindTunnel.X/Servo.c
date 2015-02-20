@@ -149,6 +149,7 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
 
         rate = pos - servo->PrevPosition;
         accel = rate - servo->PrevRate;
+        servo->PrevRate = rate;
         /* Accel limitation */
         if (accel > SERVO_ACCEL_LIMIT || accel < -SERVO_ACCEL_LIMIT) {
             rate = 0;
@@ -168,8 +169,18 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
         diff = servo->Reference - pos;
         if (diff > 1724) diff = 1724; /* 1724 = (2^15)/19*/
         else if (diff < -1724) diff = -1724;
-        //    ctrl = (15*PWM_PEROID/3.8f * 0.0007669904) * (diff) /* Proportion */
-        //            + (15*0.04*PWM_PEROID/3.8*pi/4096*100) * (-rate); /* Difference */
+        /** python code to generate feedback coefficients
+def pval(fb_coeff, shifts) :
+     # unit convert
+     fb_coeff_f = fb_coeff*800/3.8*pi/4096.0 * 2**shifts
+     # round-off
+     fb_coeff_i = int(fb_coeff_f)
+     # error percentage
+     err = (fb_coeff_i-fb_coeff_f)/fb_coeff_f*100
+     # max input
+     max_fb_val = 2**15 / fb_coeff_i
+     return (fb_coeff_i,err,max_fb_val)
+         */
         duty_circle = (19 *  diff >> 3) /* Proportion */
                     + (19 * -rate >> 1); /* Difference */
         if (duty_circle > 0) {
@@ -181,7 +192,6 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
         _motor_set(servo, duty_circle);
 
         servo->PrevPosition = pos;
-        servo->PrevRate = rate;
     }
 }
 

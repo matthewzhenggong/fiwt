@@ -38,6 +38,7 @@ void servoInit(servoParam_t *parameters) {
 PT_THREAD(servoLoop)(TaskHandle_p task) {
     servoParam_t *parameters;
     struct pt *pt;
+    unsigned int i;
 
     parameters = (servoParam_t *) (task->parameters);
     pt = &(parameters->PT);
@@ -52,22 +53,10 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
             switch (parameters->_test_mode) {
                 case 1u :
                     UpdateAnalogInputs();
-                    switch (parameters->_ch) {
-                        case 1:
-                            ServoUpdate100Hz(1u, parameters->_dc);
-                            break;
-                        default:
-                            ServoUpdate100Hz(0u, parameters->_dc);
-                    }
+                    ServoUpdate100Hz(parameters->_ch, parameters->_dc);
                     break;
                 default:
-                    switch (parameters->_ch) {
-                        case 1:
-                            MotorSet(1u,parameters->_dc);
-                            break;
-                        default:
-                            MotorSet(0u,parameters->_dc);
-                    }
+                    MotorSet(parameters->_ch,parameters->_dc);
             }
             if (--parameters->_ticks == 0u) {
                 --parameters->_loop;
@@ -81,8 +70,9 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                 }
             }
         } else {
-            MotorSet(0u,0);
-            MotorSet(1u,0);
+            for (i=0u; i<SEVERONUM; ++i) {
+                MotorSet(i,0);
+            }
         }
         PT_YIELD(pt);
     }

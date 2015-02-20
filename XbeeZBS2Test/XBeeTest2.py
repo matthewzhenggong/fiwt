@@ -290,7 +290,7 @@ Unused bits must be set to 0.  ''')
                 self.btnTM.Enable(False)
                 box.Add(self.btnTM, 0, wx.ALIGN_CENTER, 5)
                 box.Add(wx.StaticText(panel, wx.ID_ANY, "CH"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
-		self.chcTMCH = wx.Choice(panel, -1, choices=['1','2'])
+		self.chcTMCH = wx.Choice(panel, -1, choices=['1','2','3','4','5','6'])
 		self.chcTMCH.SetSelection(0)
                 self.chcTMCH.SetToolTip( wx.ToolTip('Channel'))
                 box.Add(self.chcTMCH, 0, wx.ALIGN_CENTER, 5)
@@ -406,6 +406,10 @@ Unused bits must be set to 0.  ''')
                 self.Bind(wx.EVT_CLOSE, self.OnClose)
                 self.Bind(wx.EVT_RADIOBUTTON, self.OnChoosePort1, self.rb1)
                 self.Bind(wx.EVT_RADIOBUTTON, self.OnChoosePort2, self.rb2)
+                self.Bind(wx.EVT_TEXT_ENTER, self.OnTestMotor, self.txtTMDC)
+                self.Bind(wx.EVT_TEXT_ENTER, self.OnTX, self.txtTX)
+                self.Bind(wx.EVT_TEXT_ENTER, self.OnAT, self.txtATpar)
+                self.Bind(wx.EVT_TEXT_ENTER, self.OnRmtAT, self.txtRmtATpar)
 
                 self.timer = None
 
@@ -517,14 +521,14 @@ Unused bits must be set to 0.  ''')
             traceback.print_exc()
 
         def OnTestMotor(self, event):
-            ch = int(self.chcTMCH.GetSelection())
+            self.ch = int(self.chcTMCH.GetSelection())
             dc = int(self.txtTMDC.GetValue())
             peroid = int(self.txtTMPD.GetValue())
             loop = int(self.txtTMLP.GetValue())
             mode = int(self.chcTMMD.GetSelection())
             self.test_motor_ticks = loop*peroid+30
-            data=struct.pack('<HBh3B', 2, ch, dc, peroid, loop, mode)
-            self.send(data)
+            data=struct.pack('<HBh3B', 2, self.ch, dc, peroid, loop, mode)
+            self.send(data, no_response=True)
 
         def OnTX(self, event):
             data=self.txtTX.GetValue().encode()
@@ -593,7 +597,7 @@ Unused bits must be set to 0.  ''')
                 broadcast_radius = self.txtTXrad.GetValue().encode()[:2]\
                         .decode('hex')
                 options = self.txtTXopt.GetValue().encode()[:2].decode('hex')
-                if not self.periodic_sending :
+                if not self.periodic_sending and not no_response :
                     self.log.debug('send TX '+data.__repr__()+' to ' \
                             + ':'.join('{:02x}'.format(ord(c)) for c in addr16)
                             + '('+':'.join('{:02x}'.format(ord(c)) for c in addr64)
@@ -684,6 +688,7 @@ Unused bits must be set to 0.  ''')
             self.frame_id = 1
 
             self.pack06 = struct.Struct("<H2H6H3H6h2H")
+            self.ch = 0
             self.test_motor_ticks = 0
             self.starting = False
             print 'start'
@@ -728,9 +733,13 @@ Unused bits must be set to 0.  ''')
                       self.last_cnt = cnt
                     elif rf_data[0] == '\x06' :
                         rslt = self.pack06.unpack(rf_data)
-                        self.txtRXSta.SetLabel('Sensor {1}.{2:03d} B{9} S{3:04d} S{4:04d} L{18} L{19}'.format(*rslt))
+                        self.txtRXSta.SetLabel('Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d} 1L{18} 2L{19}'.format(*rslt))
                         if self.test_motor_ticks > 0 :
-                            self.log.info('Sensor\t{1}.{2:03d}\t{3}\t{12}\t{13}'.format(*rslt))
+                            sec = rslt[1]
+                            msec = rslt[2]
+                            pos = rslt[3+self.ch]
+                            ctrl = rslt[12+self.ch]
+                            self.log.info('Sensor\t{0}.{1:03d}\t{2}\t{3}'.format(sec,msec,pos,ctrl))
                             self.test_motor_ticks -= 1
                     else :
                         self.log.info( \
