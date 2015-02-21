@@ -25,6 +25,7 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/Servo.h</itemPath>
       <itemPath>UARTs.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/servoTask.h</itemPath>
+      <itemPath>Enc.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -55,6 +56,7 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART2.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART3.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.c</itemPath>
+      <itemPath>Enc.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

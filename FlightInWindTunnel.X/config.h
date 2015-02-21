@@ -85,4 +85,12 @@
 #define PWM_FREQ 10000u
 #include "config_pwm.h"
 
+#if AC_MODEL
+#define ENCNUM (3)
+#elif AEROCOMP
+#define ENCNUM (4)
+#elif GNDBOARD
+#define ENCNUM (3)
+#endif
+
 #endif 	/* CONFIG_H */

@@ -182,7 +182,7 @@ void TaskStartScheduler(void) {
                             TaskFlags |= 1;
                         }
                     } else {
-                        /* TODO free the task */
+                        // TODO free the task
                     }
                 }
             }
