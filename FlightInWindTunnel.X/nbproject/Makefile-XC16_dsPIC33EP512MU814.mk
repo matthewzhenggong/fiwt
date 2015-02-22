@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=configuration_bits.c main.c system.c traps.c user.c XBeeZBS2.c SerialStream.c task.c clock.c idle.c sending.c getting.c echoTask.c D:/source/fiwt/FlightInWindTunnel.X/ADC1.c D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c D:/source/fiwt/FlightInWindTunnel.X/PWMx.c D:/source/fiwt/FlightInWindTunnel.X/Servo.c D:/source/fiwt/FlightInWindTunnel.X/servoTask.c D:/source/fiwt/FlightInWindTunnel.X/UART1.c D:/source/fiwt/FlightInWindTunnel.X/UART2.c D:/source/fiwt/FlightInWindTunnel.X/UART3.c D:/source/fiwt/FlightInWindTunnel.X/UART4.c Enc.c
+SOURCEFILES_QUOTED_IF_SPACED=configuration_bits.c main.c system.c traps.c user.c XBeeZBS2.c SerialStream.c task.c clock.c idle.c sending.c getting.c echoTask.c D:/source/fiwt/FlightInWindTunnel.X/ADC1.c D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c D:/source/fiwt/FlightInWindTunnel.X/PWMx.c D:/source/fiwt/FlightInWindTunnel.X/Servo.c D:/source/fiwt/FlightInWindTunnel.X/servoTask.c D:/source/fiwt/FlightInWindTunnel.X/UART1.c D:/source/fiwt/FlightInWindTunnel.X/UART2.c D:/source/fiwt/FlightInWindTunnel.X/UART3.c D:/source/fiwt/FlightInWindTunnel.X/UART4.c Enc.c IMU.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/configuration_bits.o ${OBJECTDIR}/main.o ${OBJECTDIR}/system.o ${OBJECTDIR}/traps.o ${OBJECTDIR}/user.o ${OBJECTDIR}/XBeeZBS2.o ${OBJECTDIR}/SerialStream.o ${OBJECTDIR}/task.o ${OBJECTDIR}/clock.o ${OBJECTDIR}/idle.o ${OBJECTDIR}/sending.o ${OBJECTDIR}/getting.o ${OBJECTDIR}/echoTask.o ${OBJECTDIR}/_ext/747220533/ADC1.o ${OBJECTDIR}/_ext/747220533/AnalogInput.o ${OBJECTDIR}/_ext/747220533/PWMx.o ${OBJECTDIR}/_ext/747220533/Servo.o ${OBJECTDIR}/_ext/747220533/servoTask.o ${OBJECTDIR}/_ext/747220533/UART1.o ${OBJECTDIR}/_ext/747220533/UART2.o ${OBJECTDIR}/_ext/747220533/UART3.o ${OBJECTDIR}/_ext/747220533/UART4.o ${OBJECTDIR}/Enc.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/configuration_bits.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/system.o.d ${OBJECTDIR}/traps.o.d ${OBJECTDIR}/user.o.d ${OBJECTDIR}/XBeeZBS2.o.d ${OBJECTDIR}/SerialStream.o.d ${OBJECTDIR}/task.o.d ${OBJECTDIR}/clock.o.d ${OBJECTDIR}/idle.o.d ${OBJECTDIR}/sending.o.d ${OBJECTDIR}/getting.o.d ${OBJECTDIR}/echoTask.o.d ${OBJECTDIR}/_ext/747220533/ADC1.o.d ${OBJECTDIR}/_ext/747220533/AnalogInput.o.d ${OBJECTDIR}/_ext/747220533/PWMx.o.d ${OBJECTDIR}/_ext/747220533/Servo.o.d ${OBJECTDIR}/_ext/747220533/servoTask.o.d ${OBJECTDIR}/_ext/747220533/UART1.o.d ${OBJECTDIR}/_ext/747220533/UART2.o.d ${OBJECTDIR}/_ext/747220533/UART3.o.d ${OBJECTDIR}/_ext/747220533/UART4.o.d ${OBJECTDIR}/Enc.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/configuration_bits.o ${OBJECTDIR}/main.o ${OBJECTDIR}/system.o ${OBJECTDIR}/traps.o ${OBJECTDIR}/user.o ${OBJECTDIR}/XBeeZBS2.o ${OBJECTDIR}/SerialStream.o ${OBJECTDIR}/task.o ${OBJECTDIR}/clock.o ${OBJECTDIR}/idle.o ${OBJECTDIR}/sending.o ${OBJECTDIR}/getting.o ${OBJECTDIR}/echoTask.o ${OBJECTDIR}/_ext/747220533/ADC1.o ${OBJECTDIR}/_ext/747220533/AnalogInput.o ${OBJECTDIR}/_ext/747220533/PWMx.o ${OBJECTDIR}/_ext/747220533/Servo.o ${OBJECTDIR}/_ext/747220533/servoTask.o ${OBJECTDIR}/_ext/747220533/UART1.o ${OBJECTDIR}/_ext/747220533/UART2.o ${OBJECTDIR}/_ext/747220533/UART3.o ${OBJECTDIR}/_ext/747220533/UART4.o ${OBJECTDIR}/Enc.o ${OBJECTDIR}/IMU.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/configuration_bits.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/system.o.d ${OBJECTDIR}/traps.o.d ${OBJECTDIR}/user.o.d ${OBJECTDIR}/XBeeZBS2.o.d ${OBJECTDIR}/SerialStream.o.d ${OBJECTDIR}/task.o.d ${OBJECTDIR}/clock.o.d ${OBJECTDIR}/idle.o.d ${OBJECTDIR}/sending.o.d ${OBJECTDIR}/getting.o.d ${OBJECTDIR}/echoTask.o.d ${OBJECTDIR}/_ext/747220533/ADC1.o.d ${OBJECTDIR}/_ext/747220533/AnalogInput.o.d ${OBJECTDIR}/_ext/747220533/PWMx.o.d ${OBJECTDIR}/_ext/747220533/Servo.o.d ${OBJECTDIR}/_ext/747220533/servoTask.o.d ${OBJECTDIR}/_ext/747220533/UART1.o.d ${OBJECTDIR}/_ext/747220533/UART2.o.d ${OBJECTDIR}/_ext/747220533/UART3.o.d ${OBJECTDIR}/_ext/747220533/UART4.o.d ${OBJECTDIR}/Enc.o.d ${OBJECTDIR}/IMU.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/configuration_bits.o ${OBJECTDIR}/main.o ${OBJECTDIR}/system.o ${OBJECTDIR}/traps.o ${OBJECTDIR}/user.o ${OBJECTDIR}/XBeeZBS2.o ${OBJECTDIR}/SerialStream.o ${OBJECTDIR}/task.o ${OBJECTDIR}/clock.o ${OBJECTDIR}/idle.o ${OBJECTDIR}/sending.o ${OBJECTDIR}/getting.o ${OBJECTDIR}/echoTask.o ${OBJECTDIR}/_ext/747220533/ADC1.o ${OBJECTDIR}/_ext/747220533/AnalogInput.o ${OBJECTDIR}/_ext/747220533/PWMx.o ${OBJECTDIR}/_ext/747220533/Servo.o ${OBJECTDIR}/_ext/747220533/servoTask.o ${OBJECTDIR}/_ext/747220533/UART1.o ${OBJECTDIR}/_ext/747220533/UART2.o ${OBJECTDIR}/_ext/747220533/UART3.o ${OBJECTDIR}/_ext/747220533/UART4.o ${OBJECTDIR}/Enc.o
+OBJECTFILES=${OBJECTDIR}/configuration_bits.o ${OBJECTDIR}/main.o ${OBJECTDIR}/system.o ${OBJECTDIR}/traps.o ${OBJECTDIR}/user.o ${OBJECTDIR}/XBeeZBS2.o ${OBJECTDIR}/SerialStream.o ${OBJECTDIR}/task.o ${OBJECTDIR}/clock.o ${OBJECTDIR}/idle.o ${OBJECTDIR}/sending.o ${OBJECTDIR}/getting.o ${OBJECTDIR}/echoTask.o ${OBJECTDIR}/_ext/747220533/ADC1.o ${OBJECTDIR}/_ext/747220533/AnalogInput.o ${OBJECTDIR}/_ext/747220533/PWMx.o ${OBJECTDIR}/_ext/747220533/Servo.o ${OBJECTDIR}/_ext/747220533/servoTask.o ${OBJECTDIR}/_ext/747220533/UART1.o ${OBJECTDIR}/_ext/747220533/UART2.o ${OBJECTDIR}/_ext/747220533/UART3.o ${OBJECTDIR}/_ext/747220533/UART4.o ${OBJECTDIR}/Enc.o ${OBJECTDIR}/IMU.o
 
 # Source Files
-SOURCEFILES=configuration_bits.c main.c system.c traps.c user.c XBeeZBS2.c SerialStream.c task.c clock.c idle.c sending.c getting.c echoTask.c D:/source/fiwt/FlightInWindTunnel.X/ADC1.c D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c D:/source/fiwt/FlightInWindTunnel.X/PWMx.c D:/source/fiwt/FlightInWindTunnel.X/Servo.c D:/source/fiwt/FlightInWindTunnel.X/servoTask.c D:/source/fiwt/FlightInWindTunnel.X/UART1.c D:/source/fiwt/FlightInWindTunnel.X/UART2.c D:/source/fiwt/FlightInWindTunnel.X/UART3.c D:/source/fiwt/FlightInWindTunnel.X/UART4.c Enc.c
+SOURCEFILES=configuration_bits.c main.c system.c traps.c user.c XBeeZBS2.c SerialStream.c task.c clock.c idle.c sending.c getting.c echoTask.c D:/source/fiwt/FlightInWindTunnel.X/ADC1.c D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c D:/source/fiwt/FlightInWindTunnel.X/PWMx.c D:/source/fiwt/FlightInWindTunnel.X/Servo.c D:/source/fiwt/FlightInWindTunnel.X/servoTask.c D:/source/fiwt/FlightInWindTunnel.X/UART1.c D:/source/fiwt/FlightInWindTunnel.X/UART2.c D:/source/fiwt/FlightInWindTunnel.X/UART3.c D:/source/fiwt/FlightInWindTunnel.X/UART4.c Enc.c IMU.c
 
 
 CFLAGS=
@@ -243,6 +243,13 @@ ${OBJECTDIR}/Enc.o: Enc.c  nbproject/Makefile-${CND_CONF}.mk
 	${MP_CC} $(MP_EXTRA_CC_PRE)  Enc.c  -o ${OBJECTDIR}/Enc.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/Enc.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -mno-eds-warn  -omf=elf -fast-math -O0 -falign-arrays -I"../pt" -mcci -msmart-io=1 -Werror -Wall -msfr-warn=on  -save-temps -menable-fixed 
 	@${FIXDEPS} "${OBJECTDIR}/Enc.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
+${OBJECTDIR}/IMU.o: IMU.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/IMU.o.d 
+	@${RM} ${OBJECTDIR}/IMU.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  IMU.c  -o ${OBJECTDIR}/IMU.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/IMU.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -mno-eds-warn  -omf=elf -fast-math -O0 -falign-arrays -I"../pt" -mcci -msmart-io=1 -Werror -Wall -msfr-warn=on  -save-temps -menable-fixed 
+	@${FIXDEPS} "${OBJECTDIR}/IMU.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
 else
 ${OBJECTDIR}/configuration_bits.o: configuration_bits.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
@@ -404,6 +411,13 @@ ${OBJECTDIR}/Enc.o: Enc.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/Enc.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  Enc.c  -o ${OBJECTDIR}/Enc.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/Enc.o.d"      -mno-eds-warn  -g -omf=elf -fast-math -O0 -falign-arrays -I"../pt" -mcci -msmart-io=1 -Werror -Wall -msfr-warn=on  -save-temps -menable-fixed 
 	@${FIXDEPS} "${OBJECTDIR}/Enc.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/IMU.o: IMU.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/IMU.o.d 
+	@${RM} ${OBJECTDIR}/IMU.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  IMU.c  -o ${OBJECTDIR}/IMU.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/IMU.o.d"      -mno-eds-warn  -g -omf=elf -fast-math -O0 -falign-arrays -I"../pt" -mcci -msmart-io=1 -Werror -Wall -msfr-warn=on  -save-temps -menable-fixed 
+	@${FIXDEPS} "${OBJECTDIR}/IMU.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 endif
 
