@@ -74,16 +74,16 @@ static fractional _butter_mat_frac[] = { \
     4810, 21607, 2211
 };
 
-static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER+1]) {
+static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER + 1]) {
     fractional dstM[BUTTER_ORDER];
     int i;
 
     butt[BUTTER_ORDER] = input;
-    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER+1, 1, dstM, _butter_mat_frac, butt);
-    for (i=0; i<BUTTER_ORDER; ++i) {
+    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac, butt);
+    for (i = 0; i < BUTTER_ORDER; ++i) {
         butt[i] = dstM[i];
     }
-    MatrixMultiply(1, BUTTER_ORDER+1, 1, dstM, _butter_mat_frac + BUTTER_ORDER*(BUTTER_ORDER+1), butt);
+    MatrixMultiply(1, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac + BUTTER_ORDER * (BUTTER_ORDER + 1), butt);
     return dstM[0];
 }
 
@@ -144,10 +144,11 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
     if (ch < SEVERONUM) {
         servo = Servos + ch;
 
-        pos = *servo->Position;
+        pos = _butter_update(*servo->Position, servo->butt);
         servo->Reference = ref;
 
         rate = pos - servo->PrevPosition;
+        servo->PrevPosition = pos;
         accel = rate - servo->PrevRate;
         servo->PrevRate = rate;
         /* Accel limitation */
@@ -158,21 +159,16 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
         //    if (rate > 63) rate = 63;
         //    else if (rate < -63) rate = -63;
         // }
-        
-        //    butt1 = servo->butt1;
-        //    servo->butt1 = servo->butt1 * 0.2779 + servo->butt2*-0.4152 + rate * 0.5872;
-        //    servo->butt2 = butt1 * 0.4152 + servo->butt2 * 0.8651 + rate * 0.1908;
-        //    servo->butt3 = servo->butt1 * 0.1468 + servo->butt2 * 0.6594 + rate * 0.0675;
-        //    rate = servo->butt3;
+
         rate = _butter_update(rate, servo->butt);
 
         diff = servo->Reference - pos;
-        if (diff > 1724) diff = 1724; /* 1724 = (2^15)/19*/
-        else if (diff < -1724) diff = -1724;
+        if (diff > SERVO_DIFF_LMT) diff = SERVO_DIFF_LMT; /* 1724 = (2^15)/19*/
+        else if (diff < -SERVO_DIFF_LMT) diff = -SERVO_DIFF_LMT;
         /** python code to generate feedback coefficients
 def pval(fb_coeff, shifts) :
      # unit convert
-     fb_coeff_f = fb_coeff*800/3.8*pi/4096.0 * 2**shifts
+     fb_coeff_f = fb_coeff*(800-343)/3.8*pi/4096.0 * 2**shifts
      # round-off
      fb_coeff_i = int(fb_coeff_f)
      # error percentage
@@ -181,23 +177,27 @@ def pval(fb_coeff, shifts) :
      max_fb_val = 2**15 / fb_coeff_i
      return (fb_coeff_i,err,max_fb_val)
          */
-        duty_circle = (15 *  diff >> 3) /* Proportion */
-                    + (15 * -rate >> 1); /* Difference */
-        if (duty_circle > 1) {
-            duty_circle += 342;
-        } else if (duty_circle < -1){
-            duty_circle -= 342;
+        duty_circle = (SERVO_K * diff >> SERVO_S) /* Proportion */
+                + (SERVO_K * -rate >> (SERVO_S - 2)); /* Difference */
+        if (duty_circle > (SERVO_K >> SERVO_S)) {
+            duty_circle += SERVO_SHAKE;
+            servo->tick = 0u;
+        } else if (duty_circle < -(SERVO_K >> SERVO_S)) {
+            duty_circle -= SERVO_SHAKE;
+            servo->tick = 0u;
         } else {
-            if (++servo->tick & 1) {
-               duty_circle = 343;
+            if (servo->tick < SERVO_SHAKE_TICKS) {
+                if (++servo->tick & 1) {
+                    duty_circle = SERVO_SHAKE;
+                } else {
+                    duty_circle = -SERVO_SHAKE;
+                }
             } else {
-               duty_circle = -343;
+                duty_circle = 0;
             }
         }
 
         _motor_set(servo, duty_circle);
-
-        servo->PrevPosition = pos;
     }
 }
 

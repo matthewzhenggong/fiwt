@@ -27,16 +27,6 @@
 
 #include <dsp.h>
 
-#if AC_MODEL
-#define SEVERONUM (6)
-#elif AEROCOMP
-#define SEVERONUM (4)
-#else
-#define SEVERONUM (0)
-#endif
-
-#define SERVO_ACCEL_LIMIT (35)
-
 #ifdef	__cplusplus
 extern "C" {
 #endif

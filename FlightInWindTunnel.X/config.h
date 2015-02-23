@@ -115,4 +115,24 @@
 #define ENCNUM (3)
 #endif
 
+
+#if AC_MODEL
+#define SERVO_ACCEL_LIMIT (35)
+#define SEVERONUM (4)
+#define SERVO_K (15)
+#define SERVO_S (3)
+#define SERVO_DIFF_LMT ((2^15)/(SERVO_K+1))
+#define SERVO_SHAKE (330)
+#define SERVO_SHAKE_TICKS (20)
+#elif AEROCOMP
+#define SERVO_ACCEL_LIMIT (35)
+#define SEVERONUM (4)
+#define SERVO_K (19)
+#define SERVO_S (3)
+#define SERVO_DIFF_LMT ((2^15)/(SERVO_K+1))
+#define SERVO_SHAKE (343)
+#define SERVO_SHAKE_TICKS (20)
+#endif
+
+
 #endif 	/* CONFIG_H */
