@@ -24,18 +24,20 @@
 #include "config.h"
 #include "clock.h"
 
+#if USE_ENC
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
     extern unsigned int EncPos[ENCNUM];
 
-    clockType_t ENC_TimeStamp;
+    extern clockType_t ENC_TimeStamp;
 
     /**
      * Start Encodes
      */
-    void EncStart(void);
+    void EncInit(void);
 
     /**
      * Read Encodes
@@ -45,6 +47,8 @@ extern "C" {
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* USE_ENC */
 
 #endif	/* ENC_H */
 

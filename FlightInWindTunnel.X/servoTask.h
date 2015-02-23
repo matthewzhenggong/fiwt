@@ -24,10 +24,6 @@
 #include "task.h"
 #include "pt.h"
 
-#define servoPERIOD (10u)
-#define servoDELAY (3u)
-#define servoPRIORITY (100u)
-
 #ifdef	__cplusplus
 extern "C" {
 #endif

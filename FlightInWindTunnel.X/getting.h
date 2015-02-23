@@ -25,9 +25,6 @@
 #include "task.h"
 #include "pt.h"
 
-#define gettingPERIOD (10u)
-#define gettingDELAY (5u)
-#define gettingPRIORITY (9u)
 
 #ifdef	__cplusplus
 extern "C" {

@@ -52,6 +52,9 @@ extern "C" {
      */
     void UpdateAnalogInputs(void);
 
+#if AEROCOMP
+    void UpdateServoPosFromEnc(void);
+#endif
 
 #ifdef	__cplusplus
 }

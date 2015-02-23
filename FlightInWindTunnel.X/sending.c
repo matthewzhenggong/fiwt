@@ -69,7 +69,6 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
     /* We loop forever here. */
     while (1) {
         ++parameters->cnt;
-        UpdateAnalogInputs();
         parameters->tx_req._payloadPtr[0] = '\x06';
         parameters->tx_req._payloadPtr[1] = '\x00';
         pack = (struct SensorPack *) (parameters->tx_req._payloadPtr + 2u);

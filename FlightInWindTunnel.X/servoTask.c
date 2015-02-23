@@ -21,6 +21,7 @@
 #include "servoTask.h"
 #include "Servo.h"
 #include "AnalogInput.h"
+#include "Enc.h"
 
 void servoInit(servoParam_t *parameters) {
     struct pt *pt;
@@ -49,34 +50,38 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
+        UpdateAnalogInputs();
+        EncUpdate();
+#if AEROCOMP
+        UpdateServoPosFromEnc();
+#endif /*AEROCOMP*/
         if (parameters->_loop) {
             switch (parameters->_test_mode) {
-                case 1u :
-                    UpdateAnalogInputs();
+                case 1u:
                     ServoUpdate100Hz(parameters->_ch, parameters->_dc);
                     break;
                 default:
-                    MotorSet(parameters->_ch,parameters->_dc);
+                    MotorSet(parameters->_ch, parameters->_dc);
             }
             if (--parameters->_ticks == 0u) {
                 --parameters->_loop;
                 parameters->_ticks = parameters->_peroid;
 
                 switch (parameters->_test_mode) {
-                    case 1u :
+                    case 1u:
                         if (parameters->_loop & 1) {
-                        parameters->_dc -= 23;
+                            parameters->_dc -= 23;
                         } else {
-                        parameters->_dc += 23;
+                            parameters->_dc += 23;
                         }
                         break;
-                    default :
-                    parameters->_dc = -parameters->_dc;
+                    default:
+                        parameters->_dc = -parameters->_dc;
                 }
             }
         } else {
-            for (i=0u; i<SEVERONUM; ++i) {
-                MotorSet(i,0);
+            for (i = 0u; i < SEVERONUM; ++i) {
+                MotorSet(i, 0);
             }
         }
         PT_YIELD(pt);

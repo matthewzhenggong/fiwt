@@ -21,6 +21,8 @@
 
 #include "Enc.h"
 
+#if USE_ENC
+
 #define ENC_CLOCK	LATHbits.LATH0
 #define ENC1_DATA	PORTHbits.RH2
 #define ENC2_DATA	PORTHbits.RH4
@@ -43,7 +45,9 @@ struct ENC {
 
 unsigned int EncPos[ENCNUM];
 
-void EncStart(void) {
+clockType_t ENC_TimeStamp;
+
+void EncInit(void) {
     /* 1) Configure ENC_CLOCK pin as output and ENC1_DATA, ENC2_DATA, ENC3_DATA pins as inputs*/
     TRISHbits.TRISH0 = 0b0; // ENC_CLOCK ouput in PORTH0
     TRISHbits.TRISH2 = 0b1; // ENC1_DATA input in PORTH2
@@ -104,27 +108,6 @@ void EncUpdate(void) {
 
     // Set ENC_CLOCK to a logical high state
     ENC_CLOCK = 1;
-
-#if AEROCOMP
-    // Correct Encoder 1 Position
-    EncPos[0] = 2692 - EncPos[0];
-    EncPos[0] += 650;
-    // Correct Encoder 2 Position
-    if ((EncPos[1] >= 7000) && (EncPos[1] <= 8191)) {
-        EncPos[1] = 2002 - (EncPos[1] - 8192);
-    } else {
-        EncPos[1] = 2002 - EncPos[1];
-    }
-    EncPos[1] += 650;
-    // Correct Encoder 3 Position
-    EncPos[2] = 4806 - EncPos[2];
-    EncPos[2] += 650;
-    // Correct Encoder 4 Position
-    if ((EncPos[3] >= 7000) && (EncPos[3] <= 8191)) {
-        EncPos[3] = 1380 - (EncPos[3] - 8192);
-    } else {
-        EncPos[3] = 1380 - EncPos[3];
-    }
-    EncPos[3] += 650;
-#endif
 }
+
+#endif /* USE_ENC */

@@ -28,6 +28,8 @@
 #include "ADC1.h"
 #include "PWMx.h"
 #include "Servo.h"
+#include "Enc.h"
+#include "IMU.h"
 
 /* Device header file */
 #include <xc.h>
@@ -60,6 +62,7 @@ __near SerialStream_t Serial4;
 
 /******************************************************************************/
 /* User Functions                                                             */
+
 /******************************************************************************/
 
 void InitApp(void) {
@@ -134,6 +137,10 @@ void InitApp(void) {
     ADC1Start();
 #endif
 
+#if USE_ENC
+    EncInit();
+#endif
+
 #if USE_PWM
     PWMxInit();
     PWMxStart();
@@ -141,7 +148,13 @@ void InitApp(void) {
 
 #if USE_PWM && USE_ADC1
     ServoInit();
-    asm ("repeat #640;");Nop();
+    asm ("repeat #640;");
+    Nop();
     ServoStart();
 #endif /* USE_PWM && USE_ADC1 */
+
+#if USE_IMU
+    IMUInit();
+    IMUStart();
+#endif
 }

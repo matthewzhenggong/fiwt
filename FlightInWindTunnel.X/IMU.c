@@ -22,7 +22,7 @@
 
 #include "IMU.h"
 
-#if AC_MODEL
+#if USE_IMU
 
 unsigned int IMU_Supply;
 unsigned int IMU_XGyro;
@@ -208,7 +208,7 @@ void IMUUpdate(void) {
         SS1 = 1;
 }
 
-#endif /* AC_MODEL */
+#endif /* USE_IMU */
 
 
 

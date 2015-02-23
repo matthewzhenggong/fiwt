@@ -25,10 +25,6 @@
 #include "task.h"
 #include "pt.h"
 
-#define sendingPERIOD (10u)
-#define sendingDELAY (9u)
-#define sendingPRIORITY (10u)
-
 #ifdef	__cplusplus
 extern "C" {
 #endif

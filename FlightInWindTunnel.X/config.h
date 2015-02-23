@@ -44,6 +44,26 @@
 #define USE_UART4 0
 #define USE_ADC1  1
 #define USE_PWM   1
+#define USE_ENC   1
+#define USE_IMU   1
+#elif AEROCOMP
+#define USE_UART1 1
+#define USE_UART2 1
+#define USE_UART3 0
+#define USE_UART4 0
+#define USE_ADC1  1
+#define USE_PWM   1
+#define USE_ENC   1
+#define USE_IMU   0
+#elif GNDBOARD
+#define USE_UART1 1
+#define USE_UART2 1
+#define USE_UART3 1
+#define USE_UART4 1
+#define USE_ADC1  0
+#define USE_PWM   0
+#define USE_ENC   0
+#define USE_IMU   0
 #else
 #define USE_UART1 0
 #define USE_UART2 0
@@ -51,6 +71,8 @@
 #define USE_UART4 0
 #define USE_ADC1  0
 #define USE_PWM   0
+#define USE_ENC   0
+#define USE_IMU   0
 #endif
 
 /**
@@ -75,9 +97,9 @@
  */
 #define TASK_NAME_MAX (8)
 #define MAX_NUM_TASKS (8)
+#define TASK_PERIOD (10u) // 100Hz
 
-/** Hardware config*/
-
+/** common hardware config*/
 #include "config_uart.h"
 #include "config_adc.h"
 

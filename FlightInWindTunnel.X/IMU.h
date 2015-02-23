@@ -24,7 +24,7 @@
 #include "config.h"
 #include "clock.h"
 
-#if AC_MODEL
+#if USE_IMU
 
 #ifdef	__cplusplus
 extern "C" {
@@ -64,7 +64,7 @@ extern clockType_t IMU_TimeStamp;
 }
 #endif
 
-#endif /* AC_MODEL */
+#endif /* USE_IMU */
 
 #endif	/* IMU_H */
 
