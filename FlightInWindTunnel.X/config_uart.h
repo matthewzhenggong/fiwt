@@ -47,7 +47,7 @@
 
 #if USE_UART1
 /** UART1 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART1BAUdRATE  (0x03d090)
+#define UART1BAUdRATE  (115200)//(0x03d090)
 #define UART1TXBUFFLEN (128)
 #define UART1RXBUFFLEN (256)
 #if GNDBOARD  /* Only for GNDBOARD */
@@ -65,7 +65,7 @@
 
 #if USE_UART2
 /** UART2 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART2BAUdRATE  (0x03d090)
+#define UART2BAUdRATE  (115200)//(0x03d090)
 #define UART2TXBUFFLEN (128)
 #define UART2RXBUFFLEN (256)
 #if GNDBOARD  /* Only for GNDBOARD */
@@ -83,7 +83,7 @@
 
 #if USE_UART3
 /** UART3 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART3BAUdRATE  (0x03d090)
+#define UART3BAUdRATE  (115200)//(0x03d090)
 #define UART3TXBUFFLEN (128)
 #define UART3RXBUFFLEN (256)
 #define UART3TXTRIS (_TRISD6)
@@ -94,7 +94,7 @@
 
 #if USE_UART4
 /** UART4 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART4BAUdRATE  (0x03d090)
+#define UART4BAUdRATE  (115200)//(0x03d090)
 #define UART4TXBUFFLEN (128)
 #define UART4RXBUFFLEN (256)
 #define UART4TXTRIS (_TRISD4)

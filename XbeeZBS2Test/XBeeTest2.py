@@ -212,7 +212,8 @@ class MyFrame(wx.Frame):
                 AT_CMD = ['MY','BD']
                 ADDR64_LIST = ["0013a200408a72d2", "0013A200408A72AA", \
                         "0000000000000000","000000000000FFFF", \
-                        "0013a200408A72F0", "0013A200408A72BB", ]
+                        "0013a200408A72F0", "0013A200408A72BB",
+			"0013A200408A72BF","0013A200408A72DD"]
                 ADDR16_LIST = ["0000","FFFE"]
 
                 box = wx.BoxSizer(wx.HORIZONTAL)
