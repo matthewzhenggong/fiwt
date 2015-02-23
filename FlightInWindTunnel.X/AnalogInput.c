@@ -20,6 +20,7 @@
  */
 
 #include "AnalogInput.h"
+#include "Enc.h"
 
 #if USE_PWM && USE_ADC1
 
@@ -61,9 +62,9 @@ void UpdateAnalogInputs(void) {
     ServoPos[2] = ADC1BUF1; // Read data from AN3 input.
     ServoPos[3] = ADC1BUF0; // Read data from AN2 input.
     // Battery Cells readings
-    BattCell[0] = ADC1BUF2; // Read data from AN12 input.
-    BattCell[1] = ADC1BUF3; // Read data from AN13 input.
-    BattCell[2] = ADC1BUF4; // Read data from AN14 input.
+    BattCell[0] = ADC1BUF2 >> 3; // Read data from AN12 input.
+    //BattCell[1] = ADC1BUF3 >> 3; // Read data from AN13 input.
+    BattCell[1] = ADC1BUF4 >> 3; // Read data from AN14 input.
 #endif
 
 }
@@ -72,25 +73,21 @@ void UpdateAnalogInputs(void) {
 
 void UpdateServoPosFromEnc(void) {
     // Correct Encoder 1 Position
-    ServoPos[0] = 2692 - EncPos[0];
-    ServoPos[0] += 650;
+    ServoPos[0] = (2048+1378) - EncPos[0];
     // Correct Encoder 2 Position
-    if ((EncPos[1] >= 7000) && (EncPos[1] <= 8191)) {
-        ServoPos[1] = 2002 - (EncPos[1] - 8192);
+    if (EncPos[1] >= 7000) {
+        ServoPos[1] = (2048+661) - (EncPos[1] - 8192);
     } else {
-        ServoPos[1] = 2002 - EncPos[1];
+        ServoPos[1] = (2048+661) - EncPos[1];
     }
-    ServoPos[1] += 650;
     // Correct Encoder 3 Position
-    ServoPos[2] = 4806 - EncPos[2];
-    ServoPos[2] += 650;
+    ServoPos[2] = (2048+3303) - EncPos[2];
     // Correct Encoder 4 Position
-    if ((EncPos[3] >= 7000) && (EncPos[3] <= 8191)) {
-        ServoPos[3] = 1380 - (EncPos[3] - 8192);
+    if (EncPos[3] >= 7000) {
+        ServoPos[3] = (2048+74) - (EncPos[3] - 8192);
     } else {
-        ServoPos[3] = 1380 - EncPos[3];
+        ServoPos[3] = (2048+74) - EncPos[3];
     }
-    ServoPos[3] += 650;
 }
 #endif
 
