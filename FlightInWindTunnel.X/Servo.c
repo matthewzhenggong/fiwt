@@ -107,16 +107,16 @@ void ServoStart(void) {
 }
 
 static void _motor_set(Servo_p servo, signed int duty_circle) {
-    *(servo->lat_cw) &= servo->lat_cw_mask;
-    *(servo->lat_ccw) &= servo->lat_ccw_mask;
+    *(servo->lat_cw) |= servo->lat_cw_mask;
+    *(servo->lat_ccw) |= servo->lat_ccw_mask;
     if (duty_circle == 0) {
         servo->Ctrl = 0;
     } else if (duty_circle > 0) {
-        *(servo->lat_cw) |= servo->lat_cw_pos;
+        *(servo->lat_cw) &= servo->lat_cw_pos;
         if (duty_circle > PWM_PEROID) duty_circle = PWM_PEROID;
         servo->Ctrl = duty_circle;
     } else if (duty_circle < 0) {
-        *(servo->lat_ccw) |= servo->lat_ccw_pos;
+        *(servo->lat_ccw) &= servo->lat_ccw_pos;
         if (duty_circle < -PWM_PEROID) duty_circle = -PWM_PEROID;
         servo->Ctrl = duty_circle;
         duty_circle = -duty_circle;
@@ -184,14 +184,14 @@ def pval(fb_coeff, shifts) :
         duty_circle = (15 *  diff >> 3) /* Proportion */
                     + (15 * -rate >> 1); /* Difference */
         if (duty_circle > 1) {
-            duty_circle += 250;
+            duty_circle += 342;
         } else if (duty_circle < -1){
-            duty_circle -= 250;
+            duty_circle -= 342;
         } else {
             if (++servo->tick & 1) {
-               duty_circle = 251;
+               duty_circle = 343;
             } else {
-               duty_circle = -251;
+               duty_circle = -343;
             }
         }
 
