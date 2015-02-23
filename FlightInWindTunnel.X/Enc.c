@@ -95,7 +95,8 @@ void EncUpdate(void) {
 
         // Read Encoder data
         for (i = 0; i < ENCNUM; ++i) {
-            EncPos[i] |= *(enc_data[i].port) & enc_data[i].mask;
+            if (*(enc_data[i].port) & enc_data[i].mask)
+                EncPos[i] |= 0b1;
         }
     }
     /* Finally when the LSB is transferred (end of transmission)
