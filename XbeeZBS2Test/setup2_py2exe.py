@@ -93,7 +93,7 @@ setup(
     )  
 
 try :
-    os.remove('XBeeTest.exe')
+    os.remove('XBeeTest2.exe')
 except :
     pass
 shutil.copy('dist\\XBeeTest2.exe', '.')

@@ -23,6 +23,7 @@
 #include "clock.h"
 #include "AnalogInput.h"
 #include "Servo.h"
+#include "Enc.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -46,10 +47,11 @@ void sendingInit(sendingParam_t *parameters, XBee_p xbee1, XBee_p xbee2) {
 
 struct SensorPack {
     clockType_t time;
-    unsigned int ServoPos[SERVOPOSADCNUM];
-    unsigned int BattCell[BATTCELLADCNUM];
-    signed int ServoCtrl[SERVOPOSADCNUM];
-    uint16_t loadmax[2];
+    uint16_t ServoPos[6];
+    uint16_t BattCell[3];
+    int16_t ServoCtrl[6];
+    uint16_t EncPos[4];
+    uint16_t loadmax[4];
 };
 
 extern TaskHandle_p servoTask;
@@ -77,6 +79,9 @@ PT_THREAD(sendingLoop)(TaskHandle_p task) {
         memcpy(pack->BattCell, BattCell, sizeof(BattCell));
         for (i=0u;i<SERVOPOSADCNUM;++i) {
             pack->ServoCtrl[i] = Servos[i].Ctrl;
+        }
+        for (i=0u;i<ENCNUM;++i) {
+            pack->EncPos[i] = EncPos[i];
         }
         pack->loadmax[0] = task->load_max;
         pack->loadmax[1] = servoTask->load_max;

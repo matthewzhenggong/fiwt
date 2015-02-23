@@ -183,6 +183,7 @@ class MyFrame(wx.Frame):
                 wx.Frame.__init__(self, parent, ID, title, pos, size, style)
 
                 panel = wx.Panel(self,-1)
+                panel.SetDoubleBuffered(True)
                 sizer = wx.BoxSizer(wx.VERTICAL)
 
                 box = wx.BoxSizer(wx.HORIZONTAL)
@@ -290,8 +291,8 @@ Unused bits must be set to 0.  ''')
                 self.btnTM.Enable(False)
                 box.Add(self.btnTM, 0, wx.ALIGN_CENTER, 5)
                 box.Add(wx.StaticText(panel, wx.ID_ANY, "CH"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
-		self.chcTMCH = wx.Choice(panel, -1, choices=['1','2','3','4','5','6'])
-		self.chcTMCH.SetSelection(0)
+                self.chcTMCH = wx.Choice(panel, -1, choices=['1','2','3','4','5','6'])
+                self.chcTMCH.SetSelection(0)
                 self.chcTMCH.SetToolTip( wx.ToolTip('Channel'))
                 box.Add(self.chcTMCH, 0, wx.ALIGN_CENTER, 5)
                 box.Add(wx.StaticText(panel, wx.ID_ANY, "DC"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
@@ -307,8 +308,8 @@ Unused bits must be set to 0.  ''')
                 self.txtTMLP.SetToolTip( wx.ToolTip('Loops'))
                 box.Add(self.txtTMLP, 0, wx.ALIGN_CENTER, 5)
                 box.Add(wx.StaticText(panel, wx.ID_ANY, "MD"), 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
-		self.chcTMMD = wx.Choice(panel, -1, choices=['motor','servo'])
-		self.chcTMMD.SetSelection(0)
+                self.chcTMMD = wx.Choice(panel, -1, choices=['motor','servo'])
+                self.chcTMMD.SetSelection(0)
                 self.chcTMMD.SetToolTip( wx.ToolTip('Mode'))
                 box.Add(self.chcTMMD, 0, wx.ALIGN_CENTER, 5)
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
@@ -369,7 +370,7 @@ Unused bits must be set to 0.  ''')
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
 
                 box = wx.BoxSizer(wx.HORIZONTAL)
-                self.txtRX = wx.StaticText(panel, wx.ID_ANY, "")
+                self.txtRX = wx.StaticText(panel, wx.ID_ANY, "",size=(32,32))
                 self.txtRX.SetForegroundColour((0,0,255))
                 box.Add(self.txtRX, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 1)
                 sizer.Add(box, 0, wx.ALIGN_CENTRE|wx.ALL|wx.EXPAND, 1)
@@ -687,7 +688,7 @@ Unused bits must be set to 0.  ''')
 
             self.frame_id = 1
 
-            self.pack06 = struct.Struct("<H2H6H3H6h2H")
+            self.pack06 = struct.Struct("<H2H6H3H6h4H4H")
             self.ch = 0
             self.test_motor_ticks = 0
             self.starting = False
@@ -732,9 +733,18 @@ Unused bits must be set to 0.  ''')
                                     frame_id='\x00')
                       self.last_cnt = cnt
                     elif rf_data[0] == '\x06' :
-                        rslt = self.pack06.unpack(rf_data)
-                        self.txtRXSta.SetLabel('Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d} 1L{18} 2L{19}'.format(*rslt))
-                        if self.test_motor_ticks > 0 :
+                      if self.first_cnt :
+                        self.first_cnt = False
+                        self.start_cnt = time.clock()
+                      else :
+                        self.arrv_cnt += 1
+                        self.arrv_bcnt += len(rf_data)
+                        elapsed = time.clock() - self.start_cnt
+                        self.txtRXSta.SetLabel('C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'\
+                                .format(self.arrv_cnt, elapsed, self.arrv_cnt/elapsed, self.arrv_bcnt*10/elapsed))
+                      rslt = self.pack06.unpack(rf_data)
+                      self.txtRX.SetLabel('Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{22:03d} 2L{23:03d} 3L{24:03d} 4L{25:03d}'.format(*rslt))
+                      if self.test_motor_ticks > 0 :
                             sec = rslt[1]
                             msec = rslt[2]
                             pos = rslt[3+self.ch]
