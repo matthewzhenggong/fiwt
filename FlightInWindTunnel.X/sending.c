@@ -51,6 +51,7 @@ struct SensorPack {
     uint16_t BattCell[3];
     int16_t ServoCtrl[6];
     uint16_t EncPos[4];
+    uint16_t IMU[6];
     uint16_t loadmax[4];
 };
 

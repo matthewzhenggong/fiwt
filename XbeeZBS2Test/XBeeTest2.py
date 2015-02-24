@@ -689,7 +689,7 @@ Unused bits must be set to 0.  ''')
 
             self.frame_id = 1
 
-            self.pack06 = struct.Struct("<H2H6H3H6h4H4H")
+            self.pack06 = struct.Struct("<H2H6H3H6h4H6H4H")
             self.ch = 0
             self.test_motor_ticks = 0
             self.starting = False
@@ -744,7 +744,7 @@ Unused bits must be set to 0.  ''')
                         self.txtRXSta.SetLabel('C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'\
                                 .format(self.arrv_cnt, elapsed, self.arrv_cnt/elapsed, self.arrv_bcnt*10/elapsed))
                       rslt = self.pack06.unpack(rf_data)
-                      self.txtRX.SetLabel('Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{22:03d} 2L{23:03d} 3L{24:03d} 4L{25:03d}'.format(*rslt))
+                      self.txtRX.SetLabel('Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{28:03d} 2L{29:03d} 3L{30:03d} 4L{31:03d}'.format(*rslt))
                       if self.test_motor_ticks > 0 :
                             sec = rslt[1]
                             msec = rslt[2]

@@ -59,7 +59,7 @@ int main(void) {
     //TaskCreate(echoLoop, "ECHO", (void *)&echo, TASK_PERIOD, echoDELAY, echoPRIORITY);
 
     gettingInit(&getting1, &Xbee1);
-    TaskCreate(gettingLoop, "GETMSG1", (void *)&getting1, TASK_PERIOD, 4, 4);
+    TaskCreate(gettingLoop, "GETMSG1", (void *)&getting1, TASK_PERIOD, 6, 4);
     gettingInit(&getting2, &Xbee2);
     TaskCreate(gettingLoop, "GETMSG2", (void *)&getting2, TASK_PERIOD, 6, 4);
 
