@@ -40,6 +40,8 @@ extern "C" {
         volatile unsigned int *lat_ccw;
         unsigned int lat_ccw_pos;
         unsigned int lat_ccw_mask;
+        unsigned int MaxPosition;
+        unsigned int MinPosition;
         signed int  PrevPosition;
         signed int  PrevRate;
         signed int  Reference;
