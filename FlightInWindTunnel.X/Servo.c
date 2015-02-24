@@ -139,12 +139,12 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
     signed int rate;
     signed int diff;
     signed int accel;
-    //    float butt1;
 
     if (ch < SEVERONUM) {
         servo = Servos + ch;
 
         pos = _butter_update(*servo->Position, servo->butt);
+        //pos = *servo->Position;
         servo->Reference = ref;
 
         rate = pos - servo->PrevPosition;
@@ -159,11 +159,10 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
         //    if (rate > 63) rate = 63;
         //    else if (rate < -63) rate = -63;
         // }
-
-        rate = _butter_update(rate, servo->butt);
+        //rate = _butter_update(rate, servo->butt);
 
         diff = servo->Reference - pos;
-        if (diff > SERVO_DIFF_LMT) diff = SERVO_DIFF_LMT; /* 1724 = (2^15)/19*/
+        if (diff > SERVO_DIFF_LMT) diff = SERVO_DIFF_LMT;
         else if (diff < -SERVO_DIFF_LMT) diff = -SERVO_DIFF_LMT;
         /** python code to generate feedback coefficients
 def pval(fb_coeff, shifts) :
@@ -177,14 +176,16 @@ def pval(fb_coeff, shifts) :
      max_fb_val = 2**15 / fb_coeff_i
      return (fb_coeff_i,err,max_fb_val)
          */
-        duty_circle = (SERVO_K * diff >> SERVO_S) /* Proportion */
-                + (SERVO_K * -rate >> (SERVO_S - 2)); /* Difference */
-        if (duty_circle > (SERVO_K >> SERVO_S)) {
-            duty_circle += SERVO_SHAKE;
+        duty_circle = (SERVO_KP * diff >> SERVO_SP) /* Proportion */
+                + (SERVO_KD * -rate >> SERVO_SD); /* Difference */
+        if (diff > SERVO_SHAKE_DZ || diff < -SERVO_SHAKE_DZ
+                || rate > SERVO_SHAKE_RDZ || rate < -SERVO_SHAKE_RDZ) {
             servo->tick = 0u;
-        } else if (duty_circle < -(SERVO_K >> SERVO_S)) {
-            duty_circle -= SERVO_SHAKE;
-            servo->tick = 0u;
+            if (duty_circle > 0) {
+                duty_circle += SERVO_SHAKE;
+            } else {
+                duty_circle -= SERVO_SHAKE;
+            }
         } else {
             if (servo->tick < SERVO_SHAKE_TICKS) {
                 if (++servo->tick & 1) {
