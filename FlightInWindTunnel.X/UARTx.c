@@ -86,13 +86,13 @@ void UARTx(Init)(void) {
     DMAxRX(STAH) = __builtin_dmapage(UARTRXBUFF);
 
     /* Priorities of DMA Interrupts */
+    _DMAxTX(IE) = 0; /*  Enable DMA interrupt */
     _DMAxTX(IP) = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
     _DMAxTX(IF) = 0; /*  Clear DMA Interrupt Flag */
-    _DMAxTX(IE) = 0; /*  Enable DMA interrupt */
 
+    _DMAxRX(IE) = 0; /*  Enable DMA interrupt */
     _DMAxRX(IP) = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
     _DMAxRX(IF) = 0; /*  Clear DMA Interrupt Flag */
-    _DMAxRX(IE) = 0; /*  Enable DMA interrupt */
 }
 
 void UARTx(Start)(void) {

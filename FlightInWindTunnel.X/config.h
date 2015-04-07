@@ -26,8 +26,8 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 0
-#define AC_MODEL 1
+#define GNDBOARD 1
+#define AC_MODEL 0
 #define AEROCOMP 0
 
 #define STARTKITBOARD 0
@@ -46,6 +46,7 @@
 #define USE_PWM   1
 #define USE_ENC   1
 #define USE_IMU   1
+#define USE_SPIS  0
 #elif AEROCOMP
 #define USE_UART1 1
 #define USE_UART2 1
@@ -55,6 +56,7 @@
 #define USE_PWM   1
 #define USE_ENC   1
 #define USE_IMU   0
+#define USE_SPIS  0
 #elif GNDBOARD
 #define USE_UART1 1
 #define USE_UART2 1
@@ -64,6 +66,7 @@
 #define USE_PWM   0
 #define USE_ENC   0
 #define USE_IMU   0
+#define USE_SPIS  1
 #else
 #define USE_UART1 0
 #define USE_UART2 0
@@ -73,6 +76,7 @@
 #define USE_PWM   0
 #define USE_ENC   0
 #define USE_IMU   0
+#define USE_SPIS  0
 #endif
 
 /**

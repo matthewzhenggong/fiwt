@@ -106,6 +106,9 @@ void InitApp(void) {
     mInitAllLEDs();
     mInitAllSwitches();
 #endif
+    
+    /* Configure Nested Interrupts */
+    INTCON1bits.NSTDIS = 0b0; // Interrupt nesting enabled
 
     resetClock();
 
