@@ -22,9 +22,10 @@
 #define	IMU_H
 
 #include "config.h"
-#include "clock.h"
 
 #if USE_IMU
+
+#include "clock.h"
 
 #ifdef	__cplusplus
 extern "C" {
@@ -41,7 +42,6 @@ extern unsigned int IMU_XGyroTemp;
 extern unsigned int IMU_YGyroTemp;
 extern unsigned int IMU_ZGyroTemp;
 extern unsigned int IMU_AUX_ADC;
-extern clockType_t IMU_TimeStamp;
 
     /**
      *  Config and initialize peripheral SPI1

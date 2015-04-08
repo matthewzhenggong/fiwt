@@ -45,8 +45,6 @@ struct ENC {
 
 unsigned int EncPos[ENCNUM];
 
-clockType_t ENC_TimeStamp;
-
 void EncInit(void) {
     /* 1) Configure ENC_CLOCK pin as output and ENC1_DATA, ENC2_DATA, ENC3_DATA pins as inputs*/
     TRISHbits.TRISH0 = 0b0; // ENC_CLOCK ouput in PORTH0
@@ -68,9 +66,6 @@ void EncUpdate(void) {
     for (i = 0; i < ENCNUM; ++i) {
         EncPos[i] = 0;
     }
-
-    /* Store reading time */
-    ENC_TimeStamp = RTclock;
 
     /* Read 13-bit resolution Digital Encoders */
     /* 454.5 kHz Clock, Synchro-Serial Interface reading */

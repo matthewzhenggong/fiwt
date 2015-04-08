@@ -22,17 +22,24 @@
 #define	ENC_H
 
 #include "config.h"
-#include "clock.h"
 
 #if USE_ENC
+
+#include "clock.h"
+
+#if AC_MODEL
+#define ENCNUM (3)
+#elif AEROCOMP
+#define ENCNUM (4)
+#elif GNDBOARD
+#define ENCNUM (0)
+#endif
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
     extern unsigned int EncPos[ENCNUM];
-
-    extern clockType_t ENC_TimeStamp;
 
     /**
      * Start Encodes

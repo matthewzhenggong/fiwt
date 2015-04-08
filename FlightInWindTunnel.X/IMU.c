@@ -35,7 +35,6 @@ unsigned int IMU_XGyroTemp;
 unsigned int IMU_YGyroTemp;
 unsigned int IMU_ZGyroTemp;
 unsigned int IMU_AUX_ADC;
-clockType_t IMU_TimeStamp;
 
 #define SS1 (LATFbits.LATF5)
 
@@ -171,8 +170,6 @@ static unsigned int SPI_WriteWord(unsigned int SPI_word)
 }
 
 void IMUUpdate(void) {
-        /* Store reading time */
-        IMU_TimeStamp = RTclock;
 
         SS1 = 0;
         IFS0bits.SPI1IF = 0b0;
