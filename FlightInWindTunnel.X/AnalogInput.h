@@ -27,6 +27,7 @@
 #if USE_PWM && USE_ADC1
 
 #include "clock.h"
+#include "config_adc.h"
 
 #ifdef	__cplusplus
 extern "C" {
@@ -45,7 +46,7 @@ extern "C" {
     /** Analog Input Time Stamp
      *  Update when call function UpdateAnalogInputs()
      */
-    extern clockType_t AnalogInputTimeStamp;
+    extern uint16_t ADC_TimeStamp[2];
 
     /** Update Analog Inputs from SFRs
      *  call it before visit ADC values

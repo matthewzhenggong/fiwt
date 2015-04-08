@@ -38,10 +38,11 @@ __near unsigned int ServoPos[SERVOPOSADCNUM];
 #endif
 #endif
 
-__near clockType_t AnalogInputTimeStamp;
+__near uint16_t ADC_TimeStamp[2];
 
 void UpdateAnalogInputs(void) {
-    AnalogInputTimeStamp = RTclock;
+    ADC_TimeStamp[0] = RTclock.TimeStampMSW;
+    ADC_TimeStamp[1] = RTclock.TimeStampLSW;
     /* Read ADC conversion result */
 #if AC_MODEL
     // Servo's Potentiometer readings
@@ -52,9 +53,9 @@ void UpdateAnalogInputs(void) {
     ServoPos[4] = ADC1BUF1; // Read data from AN2 input.
     ServoPos[5] = ADC1BUF0; // Read data from AN1 input.
     // Battery Cells readings
-    BattCell[0] = ADC1BUF4 >> 3; // Read data from AN12 input.
-    BattCell[1] = ADC1BUF5 >> 3; // Read data from AN13 input.
-    BattCell[2] = ADC1BUF6 >> 3; // Read data from AN14 input.
+    BattCell[0] = ADC1BUF4; // Read data from AN12 input.
+    BattCell[1] = ADC1BUF5; // Read data from AN13 input.
+    BattCell[2] = ADC1BUF6; // Read data from AN14 input.
 #elif AEROCOMP
     // Servo's Potentiometer readings
     ServoPos[0] = ADC1BUF5; // Read data from AN20 input.
@@ -62,9 +63,9 @@ void UpdateAnalogInputs(void) {
     ServoPos[2] = ADC1BUF1; // Read data from AN3 input.
     ServoPos[3] = ADC1BUF0; // Read data from AN2 input.
     // Battery Cells readings
-    BattCell[0] = ADC1BUF2 >> 3; // Read data from AN12 input.
-    //BattCell[1] = ADC1BUF3 >> 3; // Read data from AN13 input.
-    BattCell[1] = ADC1BUF4 >> 3; // Read data from AN14 input.
+    BattCell[0] = ADC1BUF2; // Read data from AN12 input.
+    BattCell[1] = ADC1BUF3; // Read data from AN13 input.
+    BattCell[2] = ADC1BUF4; // Read data from AN14 input.
 #endif
 
 }
