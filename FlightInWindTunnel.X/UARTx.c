@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "config_uart.h"
 
 /** Allocate two buffers for DMA transfers */
 __eds__ static uint8_t bufferUARTTXA[UARTx(TXBUFFLEN)] __attribute__((eds, space(dma)));
