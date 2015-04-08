@@ -30,6 +30,7 @@
 #include "Servo.h"
 #include "Enc.h"
 #include "IMU.h"
+#include "SPIS.h"
 
 /* Device header file */
 #include <xc.h>
@@ -54,15 +55,15 @@ __near XBee_t Xbee2;
 #endif /*USE_UART2*/
 #if USE_UART3
 __near SerialStream_t Serial3;
+__near XBee_t Xbee3;
 #endif /*USE_UART3*/
 #if USE_UART4
 __near SerialStream_t Serial4;
+__near XBee_t Xbee4;
 #endif /*USE_UART4*/
-
 
 /******************************************************************************/
 /* User Functions                                                             */
-
 /******************************************************************************/
 
 void InitApp(void) {
@@ -128,11 +129,13 @@ void InitApp(void) {
     serial_assign(&Serial3, 3u);
     Serial3.init();
     Serial3.open();
+    XBeeInit(&Xbee3, &Serial3);
 #endif /*USE_UART3*/
 #if USE_UART4
     serial_assign(&Serial4, 4u);
     Serial4.init();
     Serial4.open();
+    XBeeInit(&Xbee4, &Serial4);
 #endif /*USE_UART4*/
 
 #if USE_ADC1
@@ -159,5 +162,10 @@ void InitApp(void) {
 #if USE_IMU
     IMUInit();
     IMUStart();
+#endif
+
+#if USE_SPIS
+    SPISInit();
+    SPISStart();
 #endif
 }
