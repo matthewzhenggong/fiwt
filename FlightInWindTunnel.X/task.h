@@ -81,7 +81,7 @@ extern "C" {
      * @param parameters : Pointer to task parameters
      * @param period : Loop period in milliseconds(greater than zero)
      * @param delay : Call displacement in milliseconds
-     * @param priority : priority in task list
+     * @param priority : priority in task list, greater means higher priority
      * @return Task pointer, NULL for failure
      * 
      * @note If peroid is one, the task will be called every millisecond.
