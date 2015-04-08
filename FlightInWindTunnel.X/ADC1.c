@@ -24,7 +24,10 @@
 
 #if USE_ADC1
 
+#include "config_adc.h"
 #include "ADC1.h"
+
+#include <xc.h>
 
 void ADC1Init(void) {
     /* Function ConfigADC1
