@@ -22,8 +22,10 @@
 #include "Servo.h"
 #include "AnalogInput.h"
 #include "Enc.h"
+#include "IMU.h"
 
-void servoInit(servoParam_t *parameters) {
+
+void servoInit(servoParam_p parameters) {
     struct pt *pt;
 
     pt = &(parameters->PT);
@@ -50,11 +52,18 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
+#if USE_ADC1
         UpdateAnalogInputs();
+#endif
+#if USE_ENC
         EncUpdate();
 #if AEROCOMP
         UpdateServoPosFromEnc();
 #endif /*AEROCOMP*/
+#endif
+#if USE_IMU
+        IMUUpdate();
+#endif
         if (parameters->_loop) {
             switch (parameters->_test_mode) {
                 case 1u:
@@ -91,4 +100,3 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
      pointer to a struct pt. */
     PT_END(pt);
 }
-

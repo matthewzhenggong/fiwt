@@ -23,6 +23,7 @@
 
 #include "task.h"
 #include "pt.h"
+#include "clock.h"
 
 #ifdef	__cplusplus
 extern "C" {
@@ -36,9 +37,9 @@ extern "C" {
         uint8_t _ch;
         uint8_t _loop;
         uint8_t _test_mode;
-    } servoParam_t;
+    } servoParam_t, *servoParam_p;
 
-    void servoInit(servoParam_t *parameters);
+    void servoInit(servoParam_p parameters);
 
     PT_THREAD(servoLoop)(TaskHandle_p task);
 
