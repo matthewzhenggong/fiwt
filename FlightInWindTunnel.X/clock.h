@@ -22,6 +22,7 @@
 #define	CLOCK_H
 
 #include <xc.h>
+#include <stdint.h>
 
 /**
  * @file clock.h
@@ -36,8 +37,10 @@ extern "C" {
 
     /** Clock providing seconds and milliseconds */
     struct clockType {
-        unsigned int seconds; /**< absolute time, seconds */
-        unsigned int ticks; /**< absolute time, milliseconds */
+        uint16_t TimeStampLSW; /**< Store 32-Bit Timer LSW */
+        uint16_t TimeStampMSW; /**< Store 32-Bit Timer MSW */
+        unsigned int milliseconds; /**< absolute time, seconds */
+        unsigned int seconds; /**< absolute time, milliseconds */
     };
     typedef struct clockType clockType_t;
 

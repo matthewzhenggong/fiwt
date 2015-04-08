@@ -39,7 +39,9 @@ __near unsigned int volatile elapsed_ticks = 0;
 
 void resetClock(void) {
     elapsed_ticks = 0; /* clear software registers */
-    RTclock.ticks = 0;
+    RTclock.TimeStampLSW = 0;
+    RTclock.TimeStampMSW = 0;
+    RTclock.milliseconds = 0;
     RTclock.seconds = 0;
 
     T1CONbits.TON = 0; /* Disable Timer*/
@@ -60,10 +62,15 @@ void resetClock(void) {
 
 __interrupt(no_auto_psv) void _T1Interrupt(void) {
     ++elapsed_ticks;
-    if (++RTclock.ticks >= 1000) { /* increment ticks counter */
+    if (++RTclock.milliseconds >= 1000u) { /* increment ticks counter */
         /* if time to rollover */
-        RTclock.ticks = 0u; /* clear seconds ticks */
+        RTclock.milliseconds = 0u; /* clear seconds ticks */
         ++RTclock.seconds; /* and increment seconds */
+    }
+    if (++RTclock.TimeStampLSW == 0u) { /* increment ticks counter */
+        /* if time to rollover */
+        RTclock.TimeStampLSW = 0u; /* clear seconds ticks */
+        ++RTclock.TimeStampMSW; /* and increment seconds */
     }
 
     IFS0bits.T1IF = 0; /* clear interrupt flag */
