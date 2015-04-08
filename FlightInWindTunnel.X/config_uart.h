@@ -23,7 +23,6 @@
 
 #include <xc.h>
 
-
 /* Configure UARTx module to transmit 8 bit data with one stopbit. */
 #define UxMODEvalue (0x0080)
 
