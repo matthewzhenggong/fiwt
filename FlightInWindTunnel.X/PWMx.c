@@ -23,6 +23,7 @@
 #if USE_PWM
 
 #include <xc.h>
+#include "config_pwm.h"
 
 #define RESET_PWM(idx,phase) \
     PWMCON##idx = PWMCONx_CFG; \
