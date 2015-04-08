@@ -24,6 +24,9 @@
 
 /** For PWM */
 
+/** PWM in 10kHz */
+#define PWM_FREQ 10000u
+
 /** PTCON: PWM TIME BASE CONTROL REGISTER
  * bit 15 PTEN = 0.  PWM Module Enable bit
  *                   1 = PWM module is enabled
@@ -250,7 +253,6 @@ pin
 
 /** AUXCONx: PWM AUXILIARY CONTROL REGISTER */
 #define AUXCONx_CFG 0x0000u
-
 
 #endif	/* CONFIG_PWM_H */
 

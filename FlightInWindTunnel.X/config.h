@@ -26,8 +26,8 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 1
-#define AC_MODEL 0
+#define GNDBOARD 0
+#define AC_MODEL 1
 #define AEROCOMP 0
 
 #define STARTKITBOARD 0
@@ -101,45 +101,20 @@
  */
 #define TASK_NAME_MAX (8)
 #define MAX_NUM_TASKS (8)
-#define TASK_PERIOD (10u) // 100Hz
 
-/** common hardware config*/
-#include "config_uart.h"
-#include "config_adc.h"
-
-/** PWM in 10kHz */
-#define PWM_FREQ 10000u
-#include "config_pwm.h"
-
+#if GNDBOARD
+#define BATTCELLADCNUM (0)
+#define SERVOPOSADCNUM (0)
+#define SEVERONUM (0)
+#else
+#define BATTCELLADCNUM (3)
 #if AC_MODEL
-#define ENCNUM (3)
-#elif AEROCOMP
-#define ENCNUM (4)
-#elif GNDBOARD
-#define ENCNUM (3)
-#endif
-
-
-#if AC_MODEL
-#define SERVO_ACCEL_LIMIT (30)
+#define SERVOPOSADCNUM (6)
 #define SEVERONUM (6)
-#define SERVO_KP (20)
-#define SERVO_SP (3)
-#define SERVO_KD (21)
-#define SERVO_SD (1)
-#define SERVO_DIFF_LMT  (1560) //((2^15)/(SERVO_K+1))
-#define SERVO_SHAKE (260)
-#define SERVO_SHAKE_TICKS (10)
-#define SERVO_SHAKE_DZ (1)
-#define SERVO_SHAKE_RDZ (1)
 #elif AEROCOMP
-#define SERVO_ACCEL_LIMIT (35)
+#define SERVOPOSADCNUM (4)
 #define SEVERONUM (4)
-#define SERVO_K (19)
-#define SERVO_S (3)
-#define SERVO_DIFF_LMT (1724) //((2^15)/(SERVO_K+1))
-#define SERVO_SHAKE (343)
-#define SERVO_SHAKE_TICKS (20)
+#endif
 #endif
 
 

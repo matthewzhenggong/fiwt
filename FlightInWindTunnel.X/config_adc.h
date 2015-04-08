@@ -22,17 +22,6 @@
 #define	CONFIG_ADC_H
 
 /** For ADC1 */
-#if GNDBOARD
-#define BATTCELLADCNUM (0)
-#define SERVOPOSADCNUM (0)
-#else
-#define BATTCELLADCNUM (3)
-#if AC_MODEL
-#define SERVOPOSADCNUM (6)
-#elif AEROCOMP
-#define SERVOPOSADCNUM (4)
-#endif
-#endif
 
 //    /* 0) Turn off the ADC module (ADxCON1<15>) */
 //    AD1CON1bits.ADON = 0b00; // ADC Operating Mode bit: 1 = ADC module is operating.
@@ -105,7 +94,6 @@
 #define AD1CON2_CFG 0x0400u
 #define AD1CON3_CFG 0x1f50u
 #define AD1CON4_CFG 0x0000u
-
 
 #endif	/* CONFIG_ADC_H */
 
