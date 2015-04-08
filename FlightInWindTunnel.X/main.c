@@ -22,10 +22,18 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
+#include "config.h"
+
+#if AC_MODEL
 #include "servoTask.h"
-#include "sending.h"
-#include "getting.h"
-#include "echoTask.h"
+#include "msg_ac.h"
+#elif AEROCOMP
+#include "servoTask.h"
+#include "msg_comp.h"
+#elif GNDBOARD
+#include "msg_gnd.h"
+#endif
+
 #include "idle.h"
 #include "task.h"
 #include "user.h"          /* User funct/params, such as InitApp              */
@@ -35,13 +43,26 @@
 /* Main Program                                                               */
 /******************************************************************************/
 
-idleParam_t idle_params;
-sendingParam_t sending;
-gettingParam_t getting1;
-gettingParam_t getting2;
 
-TaskHandle_p servoTask;
+#if AC_MODEL
+#define TASK_PERIOD (10u) // 100Hz
 servoParam_t servo;
+TaskHandle_p servoTask;
+msgParam_t msg;
+
+#elif AEROCOMP
+#define TASK_PERIOD (10u) // 100Hz
+servoParam_t servo;
+TaskHandle_p servoTask;
+msgParam_t msg;
+
+#elif GNDBOARD
+#define TASK_PERIOD (5u) // 200Hz
+msgParam_t msg;
+
+#endif
+
+idleParam_t idle_params;
 
 int main(void) {
 
@@ -55,19 +76,20 @@ int main(void) {
     TaskInit();
 
     /* Add Task */
-    //echoInit(&echo, &Serial3);
-    //TaskCreate(echoLoop, "ECHO", (void *)&echo, TASK_PERIOD, echoDELAY, echoPRIORITY);
-
-    gettingInit(&getting1, &Xbee1);
-    TaskCreate(gettingLoop, "GETMSG1", (void *)&getting1, TASK_PERIOD, 6, 4);
-    gettingInit(&getting2, &Xbee2);
-    TaskCreate(gettingLoop, "GETMSG2", (void *)&getting2, TASK_PERIOD, 6, 4);
-
-    sendingInit(&sending, &Xbee1, &Xbee2);
-    TaskCreate(sendingLoop, "BISEND", (void *)&sending, TASK_PERIOD, 2, 5);
-
+#if AC_MODEL
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERVO", (void *)&servo, TASK_PERIOD, 0, 10);
+    servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
+    msgInit(&msg, &Xbee1, &Xbee2, servoTask);
+    TaskCreate(msgLoop, "MSGA", (void *)&msg, TASK_PERIOD, 3, 5);
+#elif AEROCOMP
+    servoInit(&servo);
+    servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
+    msgInit(&msg, &Xbee1, &Xbee2, servoTask);
+    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 5);
+#elif GNDBOARD
+    msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
+    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 5);
+#endif
 
     idleInit(&idle_params);
     TaskSetIdleHook(idleLoop, (void *)&idle_params);
