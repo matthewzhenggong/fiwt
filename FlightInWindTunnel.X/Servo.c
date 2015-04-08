@@ -28,6 +28,9 @@
 #include <xc.h>
 #include <stddef.h>
 
+#include "config_servo.h"
+#include "config_pwm.h"
+
 /* Servos pin layout */
 /************************************************************************
 System      Servo       Analog Input    PMW Output  Directioning Pins
