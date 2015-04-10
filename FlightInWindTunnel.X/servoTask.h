@@ -31,12 +31,19 @@ extern "C" {
 
     typedef struct {
         struct pt PT;
-        uint16_t _ticks;
-        uint16_t _peroid;
-        int16_t _dc;
-        uint8_t _ch;
-        uint8_t _loop;
-        uint8_t _test_mode;
+
+        uint16_t ServoRef[SEVERONUM];
+        uint16_t Servo_PrevRef[SEVERONUM];
+        uint8_t InputType;
+        uint8_t Srv2Move;
+        uint16_t StartTime;
+        uint16_t TimeDelta;
+        uint8_t NofCycles;
+        uint16_t MaxValue[6];
+        uint16_t MinValue[6];
+        uint8_t Sign[6];
+        unsigned int cnt;
+        int GenerateInput_Flag;
     } servoParam_t, *servoParam_p;
 
     void servoInit(servoParam_p parameters);
