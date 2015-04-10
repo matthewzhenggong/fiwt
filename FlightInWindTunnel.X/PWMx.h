@@ -40,9 +40,7 @@ extern "C" {
 #define PWM3DC SDC3
 #define PWM5DC SDC5
 #define PWM6DC SDC6
-#if defined(__dsPIC33EP512MU814__)
 #define PWM7DC SDC7
-#endif
 
     /**
      *  Config and initialize peripheral PWMx

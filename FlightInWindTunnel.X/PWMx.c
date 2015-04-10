@@ -61,10 +61,8 @@ void PWMxInit(void) {
     IOCON2bits.PENL = 1;
     RESET_PWM(5, PWM_PEROID*3u/7u);
     IOCON5bits.PENL = 1;
-#if defined(__dsPIC33EP512MU814__)
     RESET_PWM(7, PWM_PEROID/7u);
     IOCON7bits.PENL = 1;
-#endif
     #if AC_MODEL	// Only for AC_MODEL board
     RESET_PWM(3, PWM_PEROID*5u/7u);
     IOCON3bits.PENL = 1;
@@ -84,9 +82,7 @@ void PWMxStart(void) {
     SDC3 = 0;
     SDC5 = 0;
     SDC6 = 0;
-#if defined(__dsPIC33EP512MU814__)
     SDC7 = 0;
-#endif
 }
 
 #endif /* USE_PWM*/
