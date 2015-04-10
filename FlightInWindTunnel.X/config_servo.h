@@ -21,11 +21,15 @@
 #define SERVO_SHAKE_RDZ (1)
 #elif AEROCOMP
 #define SERVO_ACCEL_LIMIT (35)
-#define SERVO_K (19)
-#define SERVO_S (3)
+#define SERVO_KP (19)
+#define SERVO_SP (3)
+#define SERVO_KD (20)
+#define SERVO_SD (1)
 #define SERVO_DIFF_LMT (1724) //((2^15)/(SERVO_K+1))
 #define SERVO_SHAKE (343)
 #define SERVO_SHAKE_TICKS (20)
+#define SERVO_SHAKE_DZ (1)
+#define SERVO_SHAKE_RDZ (1)
 #endif
 
 #endif	/* CONFIG_SERVO_H */
