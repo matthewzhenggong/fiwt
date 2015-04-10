@@ -1,5 +1,5 @@
 /*
- * File:   msg_ac.c
+ * File:   msg_comp.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,11 +18,12 @@
  * License along with this library.
  */
 
+
 #include "config.h"
 
-#if AC_MODEL
+#if AEROCOMP
 
-#include "msg_ac.h"
+#include "msg_comp.h"
 #include "servoTask.h"
 #include "AnalogInput.h"
 #include "Enc.h"
@@ -57,7 +58,7 @@ size_t updateSensorPack(uint8_t head[]) {
     uint8_t *pack;
     int i;
     pack = head;
-    *(pack++) = 0x22;
+    *(pack++) = 0x33;
     for (i=0;i<SERVOPOSADCNUM;++i) {
       *(pack++) = ServoPos[i] >> 8;
       *(pack++) = ServoPos[i] & 0xFF;
@@ -66,18 +67,6 @@ size_t updateSensorPack(uint8_t head[]) {
       *(pack++) = EncPos[i] >> 8;
       *(pack++) = EncPos[i] & 0xFF;
     }
-    *(pack++) = IMU_XGyro >> 8;
-    *(pack++) = IMU_XGyro & 0xFF;
-    *(pack++) = IMU_YGyro >> 8;
-    *(pack++) = IMU_YGyro & 0xFF;
-    *(pack++) = IMU_ZGyro >> 8;
-    *(pack++) = IMU_ZGyro & 0xFF;
-    *(pack++) = IMU_XAccl >> 8;
-    *(pack++) = IMU_XAccl & 0xFF;
-    *(pack++) = IMU_YAccl >> 8;
-    *(pack++) = IMU_YAccl & 0xFF;
-    *(pack++) = IMU_ZAccl >> 8;
-    *(pack++) = IMU_ZAccl & 0xFF;
     *(pack++) = ADC_TimeStamp[0] & 0xFF;
     *(pack++) = ADC_TimeStamp[1] >> 8;
     *(pack++) = ADC_TimeStamp[1] & 0xFF;
@@ -88,7 +77,7 @@ size_t updateBattPack(uint8_t head[]){
     uint8_t *pack;
     int i;
     pack = head;
-    *(pack++) = 0x88;
+    *(pack++) = 0x99;
     for (i=0;i<BATTCELLADCNUM;++i) {
       *(pack++) = BattCell[i] >> 8;
       *(pack++) = BattCell[i] & 0xFF;
@@ -102,7 +91,7 @@ size_t updateBattPack(uint8_t head[]){
 size_t updateCommPack(TaskHandle_p task, TaskHandle_p serov_Task, uint8_t head[]){
     uint8_t *pack;
     pack = head;
-    *(pack++) = 0x77;
+    *(pack++) = 0x78;
     *(pack++) = serov_Task->load_max >> 8;
     *(pack++) = serov_Task->load_max & 0xFF;
     *(pack++) = task->load_max >> 8;
@@ -114,50 +103,7 @@ size_t updateCommPack(TaskHandle_p task, TaskHandle_p serov_Task, uint8_t head[]
     return pack-head;
 }
 
-void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
-    int i;
-
-    if (cmd[0] == '\xA5' || cmd[0] == '\xA6') {
-        switch (cmd[1]) {
-            case 1 :
-                for (i=0;i<SEVERONUM;++i) {
-                    parameters->Servo_PrevRef[i] = parameters->ServoRef[i] = ((cmd[2+i*2]<<8) | cmd[2+i*2+1]);
-                }
-                parameters->InputType = 0;
-                parameters->StartTime = 100;
-                parameters->TimeDelta = 100;
-                parameters->NofCycles = 1;
-                parameters->Srv2Move = 0x4;
-                parameters->GenerateInput_Flag = 1;
-                parameters->cnt = 0u;
-                break;
-            case 2 :
-            case 3 :
-            case 4 :
-            case 5 :
-            case 7 :
-                parameters->InputType = cmd[1] - 1u;
-                parameters->Srv2Move = cmd[2];
-                parameters->StartTime = ((cmd[3] << 8) | cmd[4])/10;
-                parameters->TimeDelta = ((cmd[5] << 8) | cmd[6])/10;
-                parameters->NofCycles = cmd[7];
-                for (i=0;i<6;++i) {
-                    parameters->MaxValue[i] = (cmd[8+i]<<1);
-                }
-                for (i=0;i<6;++i) {
-                    parameters->MinValue[i] = (cmd[14+i]<<1);
-                }
-                for (i=0;i<6;++i) {
-                    parameters->Sign[i] = cmd[20+i];
-                }
-                parameters->GenerateInput_Flag = 1;
-                parameters->cnt = 0u;
-                break;
-            case 6 :
-                break;
-        }
-    }
-}
+extern void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]);
 
 PT_THREAD(msgLoop)(TaskHandle_p task) {
     int packin;
@@ -221,4 +167,5 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
     PT_END(pt);
 }
 
-#endif /* AC_MODEL */
+#endif /* AEROCOMP*/
+
