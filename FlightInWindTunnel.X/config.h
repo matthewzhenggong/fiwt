@@ -29,7 +29,6 @@
 #define GNDBOARD 0
 #define AC_MODEL 1
 #define AEROCOMP 0
-
 #define STARTKITBOARD 0
 
 /* Microcontroller MIPs (FCY) */
@@ -67,6 +66,16 @@
 #define USE_ENC   0
 #define USE_IMU   0
 #define USE_SPIS  1
+#elif STARTKITBOARD
+#define USE_UART1 0
+#define USE_UART2 0
+#define USE_UART3 0
+#define USE_UART4 0
+#define USE_ADC1  0
+#define USE_PWM   0
+#define USE_ENC   0
+#define USE_IMU   1
+#define USE_SPIS  0
 #else
 #define USE_UART1 0
 #define USE_UART2 0
