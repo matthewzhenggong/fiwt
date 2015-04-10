@@ -36,20 +36,20 @@ unsigned int IMU_YGyroTemp;
 unsigned int IMU_ZGyroTemp;
 unsigned int IMU_AUX_ADC;
 
-#define SS1 (LATFbits.LATF5)
+#define SS1 _LATF5
 
 void IMUInit(void) {
     /* 1) Configure SDO1,SCK1, SS1 pins as outputs and SDI1 pin as input*/
-    TRISDbits.TRISD15 = 0b0;
-    TRISFbits.TRISF4  = 0b0;
-    TRISFbits.TRISF5  = 0b0;
-    TRISDbits.TRISD14 = 0b1;
+    _TRISD15 = 0b0;
+    _TRISF4  = 0b0;
+    _TRISF5  = 0b0;
+    _TRISD14 = 0b1;
 
     /* 2) Assign SPI1 pins through Peripherial Pin Select */
-    RPOR4bits.RP79R = 0x05;    /*  SDO1 is assigned to RP79,    0x05 = SDO1 */
-    RPOR9bits.RP100R = 0x06;   /*  SCK1 is assigned to RP100,   0x06 = SCK1 */
-    //RPOR9bits.RP101R  = 0x07;  /* SS1 is assigned to RP101,     0x07 = SS1 */
-    RPINR20bits.SDI1R = 0x4E;  /*  SDI1 Input tied to RPI78,    0x4E = RPI78 */
+    _RP79R = 0x05;    /*  SDO1 is assigned to RP79,    0x05 = SDO1 */
+    _RP100R = 0x06;   /*  SCK1 is assigned to RP100,   0x06 = SCK1 */
+    //_RP101R  = 0x07;  /* SS1 is assigned to RP101,     0x07 = SS1 */
+    _SDI1R = 0x4E;  /*  SDI1 Input tied to RPI78,    0x4E = RPI78 */
 
     /* 3) Configure the SPI module status and control register */
     /* SPI1STAT: SPI1 Status and Control Register*/
@@ -77,7 +77,7 @@ void IMUInit(void) {
     SPI1STATbits.SRXMPT = 0b1; /*  Receive FIFO Empty bit (valid in Enhanced Buffer mode): */
     /*                                          0b1 = RX FIFO is empty. */
     /*                                          0b0 = RX FIFO is not empty. */
-    SPI1STATbits.SISEL = 0b001; /*  SPI1 Buffer Interrupt Mode bits (valid in Enhanced Buffer mode): */
+    SPI1STATbits.SISEL = 0b000; /*  SPI1 Buffer Interrupt Mode bits (valid in Enhanced Buffer mode): */
     /*                                          0b111 = Interrupt when the SPI1 transmit buffer is full (SPI1TBF bit */
     /*                                          is set). */
     /*                                          0b110 = Interrupt when last bit is shifted into SPI1SR, and as a */
@@ -126,7 +126,7 @@ void IMUInit(void) {
     /* 5) Configure SPI module clock frequency */
     /*  Working at 64MIPS, and with SPRE = 0b100 and PPRE = 0b01, */
     /*  SPI module clock frequency = 1MHz => 64MIPS/(16*4) */
-    SPI1CON1bits.SPRE = 0b100; /*  Secondary Prescale bits (Master mode): */
+    SPI1CON1bits.SPRE = 0b000; /*  Secondary Prescale bits (Master mode): */
     /*                                          0b111 = Reserved. */
     /*                                          0b110 = Secondary prescale 2:1. */
     /*                                          0b101 = Secondary prescale 3:1. */
@@ -135,7 +135,7 @@ void IMUInit(void) {
     /*                                          0b010 = Secondary prescale 6:1. */
     /*                                          0b001 = Secondary prescale 7:1. */
     /*                                          0b000 = Secondary prescale 8:1. */
-    SPI1CON1bits.PPRE = 0b01; /*  Primary Prescale bits (Master mode): */
+    SPI1CON1bits.PPRE = 0b00; /*  Primary Prescale bits (Master mode): */
     /*                                          0b11 = Reserved. */
     /*                                          0b10 = Primary prescale 4:1. */
     /*                                          0b01 = Primary prescale 16:1. */
@@ -156,27 +156,38 @@ void IMUStart(void) {
     asm ("repeat #64;"); Nop();
 }
 
-static unsigned int SPI_WriteWord(unsigned int SPI_word)
+uint16_t SPI_WriteWord(uint8_t SPI_word)
 {
+        unsigned int SPI_Output;
+        SS1 = 0;
+        asm ("repeat #4;"); Nop(); //T_cs min 48.8ns
 	// Transmit message
-	SPI1BUF = SPI_word;
+        SPI_Output = SPI1BUF;
+	SPI1BUF = SPI_word << 8;
 	// Wait for transmission to finish
-	while(! IFS0bits.SPI1IF);
-	// Clear SPI1 Interrupt flag
-  	IFS0bits.SPI1IF = 0b0;
-        asm ("repeat #64;"); Nop();
+	while(! SPI1STATbits.SPIRBF);
+        SPI_Output = SPI1BUF;
+        asm ("repeat #1;"); Nop(); //T_sfs min 5ns
+        SS1 = 1;
+        asm ("repeat #576;"); Nop(); // T_stall min 9us
 	// Read SPI data in buffer, this is discardable data
-	return SPI1BUF;
+	return SPI_Output;
 }
 
 void IMUUpdate(void) {
 
-        SS1 = 0;
         IFS0bits.SPI1IF = 0b0;
 
+        IMU_XGyro = SPI_WriteWord(0x04) & 0x3FFF;
+        asm ("repeat #2000;"); Nop(); // T_readrate min 40us
+        IMU_YGyro = SPI_WriteWord(0x06) & 0x3FFF;
+        asm ("repeat #2000;"); Nop(); // T_readrate min 40us
+        IMU_ZGyro = SPI_WriteWord(0x08) & 0x3FFF;
+        asm ("repeat #2000;"); Nop(); // T_readrate min 40us
+        /*
 	// Read IMU Data
 	// Initialize IMU Burst Read
-	SPI_WriteWord(0x3E00);
+	SPI_WriteWord(0x3E);
 
 	// Read IMU Output Data Registers
 	// Store IMU Voltage Supply Data
@@ -201,8 +212,7 @@ void IMUUpdate(void) {
 	IMU_ZGyroTemp = SPI_WriteWord(0) & 0x0FFF;
 	// Store IMU Auxiliary ADC Output Data
 	IMU_AUX_ADC = SPI_WriteWord(0) & 0x0FFF;
-
-        SS1 = 1;
+        */
 }
 
 #endif /* USE_IMU */

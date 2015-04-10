@@ -32,7 +32,10 @@
 #include "msg_comp.h"
 #elif GNDBOARD
 #include "msg_gnd.h"
+#elif STARTKITBOARD
+#include "IMU.h"
 #endif
+
 
 #include "idle.h"
 #include "task.h"
@@ -89,6 +92,12 @@ int main(void) {
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
     TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 5);
+#elif STARTKITBOARD
+    while (1) {
+        _LATD0 = 1;
+       IMUUpdate();
+        _LATD0 = 1;
+    }
 #endif
 
     idleInit(&idle_params);
