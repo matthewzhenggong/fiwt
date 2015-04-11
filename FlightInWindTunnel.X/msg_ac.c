@@ -131,7 +131,7 @@ void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
                 parameters->StartTime = 100;
                 parameters->TimeDelta = 100;
                 parameters->NofCycles = 1;
-                parameters->Srv2Move = 0x4;
+                parameters->Srv2Move = 0xFF;
                 parameters->GenerateInput_Flag = 1;
                 parameters->cnt = 0u;
                 break;
