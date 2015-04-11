@@ -91,14 +91,14 @@ int main(void) {
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
     msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
-    TaskCreate(msgLoop, "MSGA", (void *)&msg, TASK_PERIOD, 3, 10);
+    TaskCreate(msgLoop, "MSGA", (void *)&msg, TASK_PERIOD, 0, 5);
 #elif AEROCOMP
     senInit(&sen);
     senTask = TaskCreate(senLoop, "SENS", (void *)&sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
     msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
-    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 10);
+    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 0, 5);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
     TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 10);
