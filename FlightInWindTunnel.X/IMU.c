@@ -41,7 +41,7 @@ unsigned int IMU_AUX_ADC;
 //#define SS1 _LATF5
 #define RST1 _RF2
 
-__eds__ static uint16_t IMUBUFF[11] __attribute__((eds, space(dma)));
+__eds__ static uint16_t IMUBUFF[12] __attribute__((eds, space(dma)));
 
 void IMUInit(void) {
     /* 1) Configure SDO1,SCK1, SS1 pins as outputs and SDI1 pin as input*/
@@ -226,27 +226,27 @@ void IMUUpdate(void) {
 
     // Read IMU Output Data Registers
     // Store IMU Voltage Supply Data
-    IMU_Supply = IMUBUFF[0] & 0x0FFF;
+    IMU_Supply = IMUBUFF[1] & 0x0FFF;
     // Store IMU X Gyro Data
-    IMU_XGyro = IMUBUFF[1] & 0x3FFF;
+    IMU_XGyro = IMUBUFF[2] & 0x3FFF;
     // Store IMU Y Gyro Data
-    IMU_YGyro = IMUBUFF[2] & 0x3FFF;
+    IMU_YGyro = IMUBUFF[3] & 0x3FFF;
     // Store IMU Z Gyro Data
-    IMU_ZGyro = IMUBUFF[3] & 0x3FFF;
+    IMU_ZGyro = IMUBUFF[4] & 0x3FFF;
     // Store IMU X Accl Data
-    IMU_XAccl = IMUBUFF[4] & 0x3FFF;
+    IMU_XAccl = IMUBUFF[5] & 0x3FFF;
     // Store IMU Y Accl Data
-    IMU_YAccl = IMUBUFF[5] & 0x3FFF;
+    IMU_YAccl = IMUBUFF[6] & 0x3FFF;
     // Store IMU Z Accl Data
-    IMU_ZAccl = IMUBUFF[6] & 0x3FFF;
+    IMU_ZAccl = IMUBUFF[7] & 0x3FFF;
     // Store IMU X Gyro Temperature Data
-    IMU_XGyroTemp = IMUBUFF[7] & 0x0FFF;
+    IMU_XGyroTemp = IMUBUFF[8] & 0x0FFF;
     // Store IMU Y Gyro Temperature Data
-    IMU_YGyroTemp = IMUBUFF[8] & 0x0FFF;
+    IMU_YGyroTemp = IMUBUFF[9] & 0x0FFF;
     // Store IMU Z Gyro Temperature Data
-    IMU_ZGyroTemp = IMUBUFF[9] & 0x0FFF;
+    IMU_ZGyroTemp = IMUBUFF[10] & 0x0FFF;
     // Store IMU Auxiliary ADC Output Data
-    IMU_AUX_ADC = IMUBUFF[10] & 0x0FFF;
+    IMU_AUX_ADC = IMUBUFF[11] & 0x0FFF;
 
 }
 
