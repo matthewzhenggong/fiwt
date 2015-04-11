@@ -24,6 +24,8 @@
 
 #if USE_IMU
 
+#include <stdbool.h>
+
 unsigned int IMU_Supply;
 unsigned int IMU_XGyro;
 unsigned int IMU_YGyro;
@@ -36,48 +38,51 @@ unsigned int IMU_YGyroTemp;
 unsigned int IMU_ZGyroTemp;
 unsigned int IMU_AUX_ADC;
 
-#define SS1 _LATF5
+//#define SS1 _LATF5
+#define RST1 _RF2
+
+__eds__ static uint16_t IMUBUFF[11] __attribute__((eds, space(dma)));
 
 void IMUInit(void) {
     /* 1) Configure SDO1,SCK1, SS1 pins as outputs and SDI1 pin as input*/
     _TRISD15 = 0b0;
-    _TRISF4  = 0b0;
-    _TRISF5  = 0b0;
+    _TRISF4 = 0b0;
+    _TRISF5 = 0b0;
     _TRISD14 = 0b1;
 
     /* 2) Assign SPI1 pins through Peripherial Pin Select */
-    _RP79R = 0x05;    /*  SDO1 is assigned to RP79,    0x05 = SDO1 */
-    _RP100R = 0x06;   /*  SCK1 is assigned to RP100,   0x06 = SCK1 */
-    //_RP101R  = 0x07;  /* SS1 is assigned to RP101,     0x07 = SS1 */
-    _SDI1R = 0x4E;  /*  SDI1 Input tied to RPI78,    0x4E = RPI78 */
+    _RP79R = 0x05; /*  SDO1 is assigned to RP79,    0x05 = SDO1 */
+    _RP100R = 0x06; /*  SCK1 is assigned to RP100,   0x06 = SCK1 */
+    _RP101R  = 0x07;  /* SS1 is assigned to RP101,     0x07 = SS1 */
+    _SDI1R = 0x4E; /*  SDI1 Input tied to RPI78,    0x4E = RPI78 */
 
     /* 3) Configure the SPI module status and control register */
     /* SPI1STAT: SPI1 Status and Control Register*/
-    SPI1STATbits.SPIEN = 0b0; /*  SPI1 Enable bit: */
+    //SPI1STATbits.SPIEN = 0b0; /*  SPI1 Enable bit: */
     /*                                  0b1 = Enables the module and configures SCK1, SDO1 and SDI1 as */
     /*                                  serial port pins. */
     /*                                  0b0 = Disables the module. */
-    SPI1STATbits.SPISIDL = 0b0; /*  SPISIDL: Stop in Idle Mode bit: */
+    //SPI1STATbits.SPISIDL = 0b0; /*  SPISIDL: Stop in Idle Mode bit: */
     /*                                          0b1 = Discontinue the module operation when device enters Idle */
     /*                                          mode. */
     /*                                          0b0 = Continue the module operation in Idle mode. */
-    SPI1STATbits.SPIBEC = 0b000; /*  SPI1 Buffer Element Count bits (valid in Enhanced Buffer mode): */
+    //SPI1STATbits.SPIBEC = 0b000; /*  SPI1 Buffer Element Count bits (valid in Enhanced Buffer mode): */
     /*                                          Master mode: Number of SPI1 transfers are pending. */
     /*                                          Slave mode: Number of SPI1 transfers are unread. */
-    SPI1STATbits.SRMPT = 0b1; /*  Shift Register (SPI1SR) Empty bit (valid in Enhanced Buffer */
+    //SPI1STATbits.SRMPT = 0b1; /*  Shift Register (SPI1SR) Empty bit (valid in Enhanced Buffer */
     /*                                          mode): */
     /*                                          0b1 = SPI1 Shift register is empty and ready to send or receive */
     /*                                          the data. */
     /*                                          0b0 = SPI1 Shift register is not empty. */
-    SPI1STATbits.SPIROV = 0b0; /*  Receive Overflow Flag */
+    //SPI1STATbits.SPIROV = 0b0; /*  Receive Overflow Flag */
     /*                                          0b1 = A new byte/word is completely received and discarded. The user */
     /*                                          user application has not read the previous data in the SPI1BUF */
     /*                                          register. */
     /*                                          0b0 = No overflow has ocurred. */
-    SPI1STATbits.SRXMPT = 0b1; /*  Receive FIFO Empty bit (valid in Enhanced Buffer mode): */
+    //SPI1STATbits.SRXMPT = 0b1; /*  Receive FIFO Empty bit (valid in Enhanced Buffer mode): */
     /*                                          0b1 = RX FIFO is empty. */
     /*                                          0b0 = RX FIFO is not empty. */
-    SPI1STATbits.SISEL = 0b000; /*  SPI1 Buffer Interrupt Mode bits (valid in Enhanced Buffer mode): */
+    //SPI1STATbits.SISEL = 0b001; /*  SPI1 Buffer Interrupt Mode bits (valid in Enhanced Buffer mode): */
     /*                                          0b111 = Interrupt when the SPI1 transmit buffer is full (SPI1TBF bit */
     /*                                          is set). */
     /*                                          0b110 = Interrupt when last bit is shifted into SPI1SR, and as a */
@@ -93,40 +98,41 @@ void IMUInit(void) {
     /*                                          bit is set). */
     /*                                          0b000 = Interrupt when the last data in the receive buffer is read, */
     /*                                          as a result, the buffer is empty (SRXMPT bit set). */
+    SPI1STAT = 0u;
 
     /* 4) Configure SPI module */
     /*  SPI1CON1: SPI1 Control Register 1 */
-    SPI1CON1bits.MSTEN = 0b1; /*  Master Mode Enable bit: */
+    //SPI1CON1bits.MSTEN = 0b1; /*  Master Mode Enable bit: */
     /*                                          0b1 = Master mode. */
     /*                                          0b0 = Slave mode. */
-    SPI1CON1bits.DISSCK = 0b0; /*  DISSCK: Disable SCK1 Pin bit (SPI Master modes only): */
+    //SPI1CON1bits.DISSCK = 0b0; /*  DISSCK: Disable SCK1 Pin bit (SPI Master modes only): */
     /*                                          0b1 = Internal SPI clock is disabled; pin functions as I/O. */
     /*                                          0b0 = Internal SPI clock is enabled. */
-    SPI1CON1bits.MODE16 = 0b1; /*  Word/Byte Communication Select bit: */
+    //SPI1CON1bits.MODE16 = 0b1; /*  Word/Byte Communication Select bit: */
     /*                                          0b1 = Communication is word-wide (16 bits). */
     /*                                          0b0 = Communication is byte-wide (8 bits). */
-    SPI1CON1bits.SMP = 0b0; /*  SPI1 Data Input Sample Phase bit: */
+    //SPI1CON1bits.SMP = 0b0; /*  SPI1 Data Input Sample Phase bit: */
     /*                                          Master mode: */
     /*                                          0b1 = Input data is sampled at end of data output time. */
     /*                                          0b0 = Input data is sampled at middle of data output time. */
     /*                                          Slave mode: The SMPbit must be cleared when the SPI1 module is used in */
     /*                                          Slave mode. */
-    SPI1CON1bits.CKE = 0b0; /*  SPI1 Clock Edge Select bit: */
+    //SPI1CON1bits.CKE = 0b0; /*  SPI1 Clock Edge Select bit: */
     /*                                          0b1 = Serial output data changes on transition from active clock state */
     /*                                          to Idle clock state (refer to bit CKP). */
     /*                                          0b0 = Serial output data changes on transition from Idle clock state to */
     /*                                          active clock state (refer to bit CKP). */
-    SPI1CON1bits.CKP = 0b1; /*  Clock Polarity Select bit: */
+    //SPI1CON1bits.CKP = 0b1; /*  Clock Polarity Select bit: */
     /*                                          0b1 = Idle state for clock is a high level; active state is a low level. */
     /*                                          0b0 = Idle state for clock is a low level; active state is a high level. */
-    SPI1CON1bits.DISSDO = 0b0; /*  Disable SDO1 Pin bit: */
+    //SPI1CON1bits.DISSDO = 0b0; /*  Disable SDO1 Pin bit: */
     /*                                          0b1 = SDO1 pin is not used by the module; pin functions as I/O. */
     /*                                          0b0 = SDO1 pin is controlled by the module. */
 
     /* 5) Configure SPI module clock frequency */
     /*  Working at 64MIPS, and with SPRE = 0b100 and PPRE = 0b01, */
-    /*  SPI module clock frequency = 1MHz => 64MIPS/(16*4) */
-    SPI1CON1bits.SPRE = 0b000; /*  Secondary Prescale bits (Master mode): */
+    /*  SPI module clock frequency = 800k => 64MIPS/(16*5) */
+    //SPI1CON1bits.SPRE = 0b011; /*  Secondary Prescale bits (Master mode): */
     /*                                          0b111 = Reserved. */
     /*                                          0b110 = Secondary prescale 2:1. */
     /*                                          0b101 = Secondary prescale 3:1. */
@@ -135,11 +141,37 @@ void IMUInit(void) {
     /*                                          0b010 = Secondary prescale 6:1. */
     /*                                          0b001 = Secondary prescale 7:1. */
     /*                                          0b000 = Secondary prescale 8:1. */
-    SPI1CON1bits.PPRE = 0b00; /*  Primary Prescale bits (Master mode): */
+    //SPI1CON1bits.PPRE = 0b01; /*  Primary Prescale bits (Master mode): */
     /*                                          0b11 = Reserved. */
     /*                                          0b10 = Primary prescale 4:1. */
     /*                                          0b01 = Primary prescale 16:1. */
     /*                                          0b00 = Primary prescale 64:1. */
+    SPI1CON1 = 0x046Du;
+    SPI1CON2 = 0u;
+    
+    /**   Associate DMA Channel with SPI1 */
+    DMA8REQ = 0b00001010; /*  Select SPI1 Transfer Done */
+    DMA8PAD = (volatile uint16_t) & SPI1BUF;
+
+    /*   Configure DMA Channel */
+    DMA8CON = 0x0801;
+    DMA8CNT = 11u - 1u;
+    DMA8STAL = __builtin_dmaoffset(IMUBUFF);
+    DMA8STAH = __builtin_dmapage(IMUBUFF);
+
+    /* Priorities of DMA Interrupts */
+    _DMA8IE = 0; /*  Enable DMA interrupt */
+    _DMA8IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
+    _DMA8IF = 0; /*  Clear DMA Interrupt Flag */
+}
+
+bool imu_reading = false;
+
+__interrupt(no_auto_psv) void _DMA8Interrupt(void) {
+
+    imu_reading = false;
+    DMA8CONbits.CHEN = 0; /* Enable DMA channel */
+    _DMA8IF = 0; /*  Clear the DMAx Interrupt Flag; */
 }
 
 void IMUStart(void) {
@@ -150,69 +182,72 @@ void IMUStart(void) {
     /*                                  0b0 = Disables the module. */
 
     /* 2) De-assert SS1 */
-    SS1 = 1;
+    //SS1 = 1;
+    /* Deselect reset pin on IMU */
+    RST1 = 1;
 
-    /* 3) Wait 1 usecond for clock pulse to stabilize */
-    asm ("repeat #64;"); Nop();
+    IMU_Supply = 0;
+    IMU_XGyro = 0;
+    IMU_YGyro = 0;
+    IMU_ZGyro = 0;
+    IMU_XAccl = 0;
+    IMU_YAccl = 0;
+    IMU_ZAccl = 0;
+    IMU_XGyroTemp = 0;
+    IMU_YGyroTemp = 0;
+    IMU_ZGyroTemp = 0;
+    IMU_AUX_ADC = 0;
+
+    /*   Enable DMA Interrupts */
+    _DMA8IF = 0; /*  Clear DMA Interrupt Flag */
+    _DMA8IE = 1; /*  Enable DMA interrupt */
 }
 
-uint16_t SPI_WriteWord(uint8_t SPI_word)
-{
-        unsigned int SPI_Output;
-        SS1 = 0;
-        asm ("repeat #4;"); Nop(); //T_cs min 48.8ns
-	// Transmit message
-        SPI_Output = SPI1BUF;
-	SPI1BUF = SPI_word << 8;
-	// Wait for transmission to finish
-	while(! SPI1STATbits.SPIRBF);
-        SPI_Output = SPI1BUF;
-        asm ("repeat #1;"); Nop(); //T_sfs min 5ns
-        SS1 = 1;
-        asm ("repeat #576;"); Nop(); // T_stall min 9us
-	// Read SPI data in buffer, this is discardable data
-	return SPI_Output;
+uint16_t SPI_WriteWord(uint16_t SPI_word) {
+    // Transmit message
+    SPI1BUF = SPI_word;
+    // Wait for transmission to finish
+    while (! SPI1STATbits.SPIRBF);
+    // Read SPI data in buffer
+    return SPI1BUF;
+}
+
+void IMUBurstRead(void) {
+    // Initialize IMU Burst Read
+    SPI_WriteWord(0x3E00);
+
+    imu_reading = true;
+    DMA8CONbits.CHEN = 1; /* Enable DMA channel */
+    DMA8REQbits.FORCE = 0b1;
 }
 
 void IMUUpdate(void) {
+    while (imu_reading) ;
 
-        IFS0bits.SPI1IF = 0b0;
+    // Read IMU Output Data Registers
+    // Store IMU Voltage Supply Data
+    IMU_Supply = IMUBUFF[0] & 0x0FFF;
+    // Store IMU X Gyro Data
+    IMU_XGyro = IMUBUFF[1] & 0x3FFF;
+    // Store IMU Y Gyro Data
+    IMU_YGyro = IMUBUFF[2] & 0x3FFF;
+    // Store IMU Z Gyro Data
+    IMU_ZGyro = IMUBUFF[3] & 0x3FFF;
+    // Store IMU X Accl Data
+    IMU_XAccl = IMUBUFF[4] & 0x3FFF;
+    // Store IMU Y Accl Data
+    IMU_YAccl = IMUBUFF[5] & 0x3FFF;
+    // Store IMU Z Accl Data
+    IMU_ZAccl = IMUBUFF[6] & 0x3FFF;
+    // Store IMU X Gyro Temperature Data
+    IMU_XGyroTemp = IMUBUFF[7] & 0x0FFF;
+    // Store IMU Y Gyro Temperature Data
+    IMU_YGyroTemp = IMUBUFF[8] & 0x0FFF;
+    // Store IMU Z Gyro Temperature Data
+    IMU_ZGyroTemp = IMUBUFF[9] & 0x0FFF;
+    // Store IMU Auxiliary ADC Output Data
+    IMU_AUX_ADC = IMUBUFF[10] & 0x0FFF;
 
-        IMU_XGyro = SPI_WriteWord(0x04) & 0x3FFF;
-        asm ("repeat #2000;"); Nop(); // T_readrate min 40us
-        IMU_YGyro = SPI_WriteWord(0x06) & 0x3FFF;
-        asm ("repeat #2000;"); Nop(); // T_readrate min 40us
-        IMU_ZGyro = SPI_WriteWord(0x08) & 0x3FFF;
-        asm ("repeat #2000;"); Nop(); // T_readrate min 40us
-        /*
-	// Read IMU Data
-	// Initialize IMU Burst Read
-	SPI_WriteWord(0x3E);
-
-	// Read IMU Output Data Registers
-	// Store IMU Voltage Supply Data
-	IMU_Supply = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU X Gyro Data
-	IMU_XGyro = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU Y Gyro Data
-	IMU_YGyro = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU Z Gyro Data
-	IMU_ZGyro = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU X Accl Data
-	IMU_XAccl = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU Y Accl Data
-	IMU_YAccl = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU Z Accl Data
-	IMU_ZAccl = SPI_WriteWord(0) & 0x3FFF;
-	// Store IMU X Gyro Temperature Data
-	IMU_XGyroTemp = SPI_WriteWord(0) & 0x0FFF;
-	// Store IMU Y Gyro Temperature Data
-	IMU_YGyroTemp = SPI_WriteWord(0) & 0x0FFF;
-	// Store IMU Z Gyro Temperature Data
-	IMU_ZGyroTemp = SPI_WriteWord(0) & 0x0FFF;
-	// Store IMU Auxiliary ADC Output Data
-	IMU_AUX_ADC = SPI_WriteWord(0) & 0x0FFF;
-        */
 }
 
 #endif /* USE_IMU */

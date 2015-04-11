@@ -56,7 +56,12 @@ extern unsigned int IMU_AUX_ADC;
     void IMUStart(void);
 
     /**
-     * Update IMU data
+     * Start to Burst Read IMU
+     */
+    void IMUBurstRead(void);
+
+    /**
+     * Update IMU data from DMA buffer
      */
     void IMUUpdate(void);
 
