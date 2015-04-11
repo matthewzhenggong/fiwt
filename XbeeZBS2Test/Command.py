@@ -28,6 +28,7 @@ from wx.lib.newevent import NewEvent
 RxEvent, EVT_RSLT1 = NewEvent()
 Rx2Event, EVT_RSLT2 = NewEvent()
 RxStaEvent, EVT_STAT = NewEvent()
+LogEvent, EVT_LOG = NewEvent()
 
 log = logging.getLogger(__name__)
 
@@ -185,12 +186,11 @@ class RedirectInfo(object):
 
 
 class RedirectText(object):
-    def __init__(self, aWxTextCtrl):
-        self.out = aWxTextCtrl
+    def __init__(self, parent):
+        self.parent = parent
 
     def write(self, string):
-        self.out.AppendText(string)
-
+        wx.PostEvent(self.parent, LogEvent(log=string))
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, ID, title,
@@ -617,7 +617,7 @@ Unused bits must be set to 0.  '''))
                                      wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.INFO)
-        self.log_handle = logging.StreamHandler(RedirectText(self.log_txt))
+        self.log_handle = logging.StreamHandler(RedirectText(self))
         self.log_handle.setFormatter(
             logging.Formatter('%(asctime)s:%(message)s'))
         self.log.addHandler(self.log_handle)
@@ -651,8 +651,12 @@ Unused bits must be set to 0.  '''))
         self.Bind(EVT_RSLT1, self.OnRX)
         self.Bind(EVT_RSLT2, self.OnRX2)
         self.Bind(EVT_STAT, self.OnRXSta)
+        self.Bind(EVT_LOG, self.OnLog)
 
         self.timer = None
+
+    def OnLog(self, event) :
+        self.log_txt.AppendText(event.log)
 
     def OnRX(self, event) :
         self.txtRX.SetLabel(event.txt)
