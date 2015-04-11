@@ -33,9 +33,9 @@
  * and interrupt on period match
  */
 
-__near clockType_t volatile RTclock;
+clockType_t volatile RTclock;
 
-__near unsigned int volatile elapsed_ticks = 0;
+unsigned int volatile elapsed_ticks = 0;
 
 void resetClock(void) {
     elapsed_ticks = 0; /* clear software registers */

@@ -34,13 +34,13 @@
 #include <stddef.h>
 #include <string.h>
 
-__near static struct TaskHandle_t tasks[MAX_NUM_TASKS];
-__near uint16_t TaskFlags;
-__near unsigned TaskNumber = 0u;
+static struct TaskHandle_t tasks[MAX_NUM_TASKS];
+uint16_t TaskFlags;
+unsigned TaskNumber = 0u;
 
-__near TaskHandle_p TaskListHeader = NULL;
-__near TaskHandle_p TaskFreeListHeader;
-__near struct TaskHandle_t TaskIdle;
+TaskHandle_p TaskListHeader = NULL;
+TaskHandle_p TaskFreeListHeader;
+struct TaskHandle_t TaskIdle;
 
 void TaskInit(void) {
     unsigned i;

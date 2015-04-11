@@ -45,23 +45,23 @@
 
 static const char SPI_Message[] = " Message from: dsPIC33EP MCU. If you can readthis, Comm workHave a nice day BYE ...";
 
-__near uint8_t volatile SPI1RX_Data;
-__near int volatile SPI1RX_Flow;
-__near unsigned char volatile SPI1RX_DATA_ID;
-__near uint16_t volatile SPI1RX_Bytes2RX;
-__near uint16_t volatile SPI1RX_Bytes4RX;
-__near uint8_t volatile SPI1RX_Checksum;
-__near bool volatile SPI1RX_EscapedChar;
-__near int volatile SPI1TX_Flow;
-__near uint8_t volatile SPI1TX_Data;
-__near uint8_t volatile SPI1TX_Bytes4TX;
-__near uint8_t volatile SPI1TX_Bytes2TX;
+uint8_t volatile SPI1RX_Data;
+int volatile SPI1RX_Flow;
+unsigned char volatile SPI1RX_DATA_ID;
+uint16_t volatile SPI1RX_Bytes2RX;
+uint16_t volatile SPI1RX_Bytes4RX;
+uint8_t volatile SPI1RX_Checksum;
+bool volatile SPI1RX_EscapedChar;
+int volatile SPI1TX_Flow;
+uint8_t volatile SPI1TX_Data;
+uint8_t volatile SPI1TX_Bytes4TX;
+uint8_t volatile SPI1TX_Bytes2TX;
 uint8_t SPI1TX_Bytes[256];
-__near int volatile Msg_idx;
+int volatile Msg_idx;
 
 static DATA_PCKT_Frame SPIRX_RX_PCKT[2];
-__near DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PCKT;
-__near DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PTR;
+DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PCKT;
+DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PTR;
 
 
 // Transmission Handling Queue struct data type definition

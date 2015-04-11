@@ -46,20 +46,20 @@
 /* Global Instances                                                             */
 /******************************************************************************/
 #if USE_UART1
-__near SerialStream_t Serial1;
-__near XBee_t Xbee1;
+SerialStream_t Serial1;
+XBee_t Xbee1;
 #endif /*USE_UART1*/
 #if USE_UART2
-__near SerialStream_t Serial2;
-__near XBee_t Xbee2;
+SerialStream_t Serial2;
+XBee_t Xbee2;
 #endif /*USE_UART2*/
 #if USE_UART3
-__near SerialStream_t Serial3;
-__near XBee_t Xbee3;
+SerialStream_t Serial3;
+XBee_t Xbee3;
 #endif /*USE_UART3*/
 #if USE_UART4
-__near SerialStream_t Serial4;
-__near XBee_t Xbee4;
+SerialStream_t Serial4;
+XBee_t Xbee4;
 #endif /*USE_UART4*/
 
 /******************************************************************************/

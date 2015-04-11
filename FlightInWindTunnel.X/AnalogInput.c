@@ -30,15 +30,15 @@
 extern unsigned int ADC_Input[8];
 #endif
 #else
-__near unsigned int BattCell[BATTCELLADCNUM];
+unsigned int BattCell[BATTCELLADCNUM];
 #if AC_MODEL
-__near unsigned int ServoPos[SERVOPOSADCNUM];
+unsigned int ServoPos[SERVOPOSADCNUM];
 #elif AEROCOMP
-__near unsigned int ServoPos[SERVOPOSADCNUM];
+unsigned int ServoPos[SERVOPOSADCNUM];
 #endif
 #endif
 
-__near uint16_t ADC_TimeStamp[2];
+uint16_t ADC_TimeStamp[2];
 
 void UpdateAnalogInputs(void) {
     ADC_TimeStamp[0] = RTclock.TimeStampMSW;
