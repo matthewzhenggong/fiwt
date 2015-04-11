@@ -33,12 +33,13 @@ extern "C" {
         struct pt PT;
         XBee_p _xbee[2];
         TaskHandle_p serov_Task;
+        TaskHandle_p sen_Task;
         unsigned int cnt;
         ZBRxResponse_t rx_rsp;
         ZBTxRequest_t tx_req;
     } msgParam_t, *msgParam_p;
 
-    void msgInit(msgParam_p parameters, XBee_p, XBee_p, TaskHandle_p);
+    void msgInit(msgParam_p parameters, XBee_p, XBee_p, TaskHandle_p, TaskHandle_p);
 
     PT_THREAD(msgLoop)(TaskHandle_p task);
 

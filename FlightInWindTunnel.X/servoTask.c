@@ -24,9 +24,6 @@
 
 #include "servoTask.h"
 #include "Servo.h"
-#include "AnalogInput.h"
-#include "Enc.h"
-#include "IMU.h"
 
 
 void servoInit(servoParam_p parameters) {
@@ -58,18 +55,6 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
-#if USE_ADC1
-        UpdateAnalogInputs();
-#endif
-#if USE_ENC
-        EncUpdate();
-#if AEROCOMP
-        UpdateServoPosFromEnc();
-#endif /*AEROCOMP*/
-#endif
-#if USE_IMU
-        IMUUpdate();
-#endif
         if (parameters->GenerateInput_Flag == 1u) {
 
             switch (parameters->InputType) {

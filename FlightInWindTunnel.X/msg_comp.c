@@ -35,7 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 
-void msgInit(msgParam_p parameters, XBee_p xbee1, XBee_p xbee2, TaskHandle_p servoTask) {
+void msgInit(msgParam_p parameters, XBee_p xbee1, XBee_p xbee2,
+        TaskHandle_p servoTask, TaskHandle_p senTask) {
     struct pt *pt;
 
     pt = &(parameters->PT);
@@ -43,6 +44,7 @@ void msgInit(msgParam_p parameters, XBee_p xbee1, XBee_p xbee2, TaskHandle_p ser
     parameters->_xbee[0] = xbee1;
     parameters->_xbee[1] = xbee2;
     parameters->serov_Task = servoTask;
+    parameters->sen_Task = senTask;
     parameters->cnt = 0u;
 
     memcpy(parameters->tx_req._addr64, "\00\00\00\00\00\00\00\00", 8);
@@ -88,10 +90,12 @@ size_t updateBattPack(uint8_t head[]){
     return pack-head;
 }
 
-size_t updateCommPack(TaskHandle_p task, TaskHandle_p serov_Task, uint8_t head[]){
+size_t updateCommPack(TaskHandle_p task, TaskHandle_p sen_Task, TaskHandle_p serov_Task, uint8_t head[]){
     uint8_t *pack;
     pack = head;
     *(pack++) = 0x78;
+    *(pack++) = sen_Task->load_max >> 8;
+    *(pack++) = sen_Task->load_max & 0xFF;
     *(pack++) = serov_Task->load_max >> 8;
     *(pack++) = serov_Task->load_max & 0xFF;
     *(pack++) = task->load_max >> 8;
@@ -126,7 +130,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         if ((parameters->cnt & 0x1FE) == 0xFE) {
             parameters->tx_req._payloadLength = updateBattPack(parameters->tx_req._payloadPtr);
         } else if ((parameters->cnt & 0x1FE) == 0x1FE) {
-            parameters->tx_req._payloadLength = updateCommPack(task, parameters->serov_Task, parameters->tx_req._payloadPtr);
+            parameters->tx_req._payloadLength = updateCommPack(task, parameters->sen_Task, parameters->serov_Task, parameters->tx_req._payloadPtr);
         } else {
             parameters->tx_req._payloadLength = updateSensorPack(parameters->tx_req._payloadPtr);
         }

@@ -26,9 +26,11 @@
 
 #if AC_MODEL
 #include "servoTask.h"
+#include "senTask.h"
 #include "msg_ac.h"
 #elif AEROCOMP
 #include "servoTask.h"
+#include "senTask.h"
 #include "msg_comp.h"
 #elif GNDBOARD
 #include "msg_gnd.h"
@@ -51,12 +53,16 @@
 #define TASK_PERIOD (10u) // 100Hz
 servoParam_t servo;
 TaskHandle_p servoTask;
+senParam_t sen;
+TaskHandle_p senTask;
 msgParam_t msg;
 
 #elif AEROCOMP
 #define TASK_PERIOD (10u) // 100Hz
 servoParam_t servo;
 TaskHandle_p servoTask;
+senParam_t sen;
+TaskHandle_p senTask;
 msgParam_t msg;
 
 #elif GNDBOARD
@@ -80,23 +86,26 @@ int main(void) {
 
     /* Add Task */
 #if AC_MODEL
+    senInit(&sen);
+    senTask = TaskCreate(senLoop, "SENS", (void *)&sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
-    msgInit(&msg, &Xbee1, &Xbee2, servoTask);
-    TaskCreate(msgLoop, "MSGA", (void *)&msg, TASK_PERIOD, 3, 5);
+    msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
+    TaskCreate(msgLoop, "MSGA", (void *)&msg, TASK_PERIOD, 3, 10);
 #elif AEROCOMP
+    senInit(&sen);
+    senTask = TaskCreate(senLoop, "SENS", (void *)&sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
-    msgInit(&msg, &Xbee1, &Xbee2, servoTask);
-    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 5);
+    msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
+    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 10);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
-    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 5);
+    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 10);
 #elif STARTKITBOARD
     while (1) {
-        _LATD0 = 1;
+        asm ("repeat #4000;"); Nop();
        IMUUpdate();
-        _LATD0 = 1;
     }
 #endif
 

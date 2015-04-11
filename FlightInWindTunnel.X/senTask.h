@@ -1,5 +1,5 @@
 /*
- * File:   msg.h
+ * File:   senTask.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,10 +18,9 @@
  * License along with this library.
  */
 
-#ifndef MSG_AC_H
-#define	MSG_AC_H
+#ifndef SENTASK_H
+#define	SENTASK_H
 
-#include "XBeeZBS2.h"
 #include "task.h"
 #include "pt.h"
 
@@ -31,21 +30,16 @@ extern "C" {
 
     typedef struct {
         struct pt PT;
-        XBee_p _xbee[2];
-        TaskHandle_p serov_Task;
-        TaskHandle_p sen_Task;
-        unsigned int cnt;
-        ZBRxResponse_t rx_rsp;
-        ZBTxRequest_t tx_req;
-    } msgParam_t, *msgParam_p;
 
-    void msgInit(msgParam_p parameters, XBee_p, XBee_p, TaskHandle_p, TaskHandle_p);
+    } senParam_t, *senParam_p;
 
-    PT_THREAD(msgLoop)(TaskHandle_p task);
+    void senInit(senParam_p parameters);
+
+    PT_THREAD(senLoop)(TaskHandle_p task);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* MSG_AC_H */
+#endif	/* SENTASK_H */
 
