@@ -24,6 +24,7 @@
 
 #if USE_SPIS
 
+#include <xc.h>
 #include <string.h>
 
 // GNDBOARD / dSPACE board SPI interface codes
@@ -58,14 +59,14 @@ __near uint8_t volatile SPI1TX_Bytes2TX;
 uint8_t SPI1TX_Bytes[256];
 __near int volatile Msg_idx;
 
-__near static DATA_PCKT_Frame SPIRX_RX_PCKT[2];
+static DATA_PCKT_Frame SPIRX_RX_PCKT[2];
 __near DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PCKT;
 __near DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PTR;
 
 
 // Transmission Handling Queue struct data type definition
-#define SPITX_MaxSize (100)
-#define SPITX_Buffer_MaxSize (8000)
+#define SPITX_MaxSize (10)
+#define SPITX_Buffer_MaxSize (1700)
 typedef struct QueueSPITX_{
         uint8_t Heads[SPITX_MaxSize];
 	uint8_t Payloads[SPITX_Buffer_MaxSize];
@@ -77,7 +78,7 @@ typedef struct QueueSPITX_{
 	size_t used_count;
 }SPITX, *SPITX_Ptr;
 
-static SPITX SPI_TXHQ;
+SPITX SPI_TXHQ;
 
 void QueueSPITX_Init(SPITX_Ptr p) {
     p->Elem_count = 0u;
