@@ -697,7 +697,6 @@ Unused bits must be set to 0.  '''))
         self.last_arrv_cnt = 0
         self.arrv_bcnt = 0
         self.periodic_count = 0
-        self.last_T = 0
 
     def OnClose(self, event):
         try:
@@ -816,11 +815,28 @@ Unused bits must be set to 0.  '''))
                        int(self.Sign5.GetValue()),
                        int(self.Sign6.GetValue()),
                      ]
+            starttime = int(self.StartTime.GetValue())
+            nofcyc = int(self.NofCycles.GetValue())
             data = struct.pack('>3B2HB6B6B6B', 0xA5, InputType, Srv2Move,
-                    int(self.StartTime.GetValue()),
-                    int(self.TimeDelta.GetValue()),
-                    int(self.NofCycles.GetValue()),
-                    *others)
+                    starttime, int(self.TimeDelta.GetValue()),
+                    nofcyc, *others)
+            if InputType == 7 :
+                self.OutputSrv2Move = Srv2Move
+                self.OutputCnt = starttime*nofcyc/5+6+30
+                txt = '#Time,'
+                if self.OutputSrv2Move & 1 :
+                    txt += 'Servo1,Ctrl1,'
+                if self.OutputSrv2Move & 2 :
+                    txt += 'Servo2,Ctrl2,'
+                if self.OutputSrv2Move & 4 :
+                    txt += 'Servo3,Ctrl3,'
+                if self.OutputSrv2Move & 8 :
+                    txt += 'Servo4,Ctrl4,'
+                if self.OutputSrv2Move & 16 :
+                    txt += 'Servo5,Ctrl5,'
+                if self.OutputSrv2Move & 32 :
+                    txt += 'Servo6,Ctrl6,'
+                self.log.info(txt)
         self.send(data, no_response=True)
 
     def OnTX(self, event):
@@ -994,13 +1010,16 @@ Unused bits must be set to 0.  '''))
         self.frame_id = 1
 
         self.pack06 = struct.Struct("<H2H6H3H6h4H6H4H")
-        self.pack22 = struct.Struct(">B6H3H6HBH")
+        self.pack22 = struct.Struct(">B6H3H6HBH6h")
         self.pack77 = struct.Struct(">B3HBH")
         self.pack88 = struct.Struct(">B3HBH")
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
-        self.last_T = 0
+
+        self.OutputSrv2Move = 0
+        self.OutputCnt = 0
+
         print 'start'
 
     def updateStatistics(self, bcnt):
@@ -1036,28 +1055,45 @@ Unused bits must be set to 0.  '''))
                 elif rf_data[0] == '\x22':
                     rslt = self.pack22.unpack(rf_data)
                     T = (rslt[16]*0x10000+rslt[17])*0.001
-                    if T > self.last_T :
-                        GX = Get14bit(rslt[10])*0.05
-                        GY = Get14bit(rslt[11])*-0.05
-                        GZ = Get14bit(rslt[12])*-0.05
-                        AX = Get14bit(rslt[13])*-0.003333
-                        AY = Get14bit(rslt[14])*0.003333
-                        AZ = Get14bit(rslt[15])*0.003333
-                        self.last_T = T
-                        if self.arrv_cnt > self.last_arrv_cnt+4 :
-                            self.last_arrv_cnt = self.arrv_cnt
-                            txt = ('T{0:08.2f} SenPack '
-                                '1S{1:04d} 2S{2:04d} '
-                                '3S{3:04d} 4S{4:04d} 5S{5:04d} 6S{6:04d} '
-                                '1E{7:04d} 2E{8:04d} 3E{9:04d}\n'
-                                'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
-                                'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} ').format(T,
-                                        rslt[1],rslt[2],rslt[3],
-                                        rslt[4],rslt[5],rslt[6],
-                                        rslt[7],rslt[8],rslt[9],
-                                        GX,GY,GZ, AX,AY,AZ)
-                            wx.PostEvent(self, RxEvent(txt=txt))
-                            self.log.debug(txt)
+                    GX = Get14bit(rslt[10])*0.05
+                    GY = Get14bit(rslt[11])*-0.05
+                    GZ = Get14bit(rslt[12])*-0.05
+                    AX = Get14bit(rslt[13])*-0.003333
+                    AY = Get14bit(rslt[14])*0.003333
+                    AZ = Get14bit(rslt[15])*0.003333
+                    if self.OutputCnt > 0 :
+                        self.OutputCnt -= 1
+                        txt = '{:.2f},'.format(T)
+                        if self.OutputSrv2Move & 1 :
+                            txt += '{},{},'.format(rslt[1], rslt[18])
+                        if self.OutputSrv2Move & 2 :
+                            txt += '{},{},'.format(rslt[2], rslt[19])
+                        if self.OutputSrv2Move & 4 :
+                            txt += '{},{},'.format(rslt[3], rslt[20])
+                        if self.OutputSrv2Move & 8 :
+                            txt += '{},{},'.format(rslt[4], rslt[21])
+                        if self.OutputSrv2Move & 16 :
+                            txt += '{},{},'.format(rslt[5], rslt[22])
+                        if self.OutputSrv2Move & 32 :
+                            txt += '{},{},'.format(rslt[6], rslt[23])
+                        self.log.info(txt)
+                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.last_arrv_cnt = self.arrv_cnt
+                        txt = ('T{0:08.2f} SenPack '
+                            '1S{1:04d}/{16:+04d} 2S{2:04d}/{17:+04d} '
+                            '3S{3:04d}/{18:+04d} 4S{4:04d}/{19:+04d} '
+                            '5S{5:04d}/{20:+04d} 6S{6:04d}/{21:+04d}\n'
+                            '1E{7:04d} 2E{8:04d} 3E{9:04d} '
+                            'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
+                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} ').format(T,
+                                    rslt[1],rslt[2],rslt[3],
+                                    rslt[4],rslt[5],rslt[6],
+                                    rslt[7],rslt[8],rslt[9],
+                                    GX,GY,GZ, AX,AY,AZ,
+                                    rslt[18],rslt[19],rslt[20],rslt[21],
+                                    rslt[22],rslt[23] )
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                        self.log.debug(txt)
                 elif rf_data[0] == '\x77':
                     rslt = self.pack77.unpack(rf_data)
                     T = rslt[4]*0x10000+rslt[5]

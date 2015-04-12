@@ -27,6 +27,7 @@
 #include "AnalogInput.h"
 #include "Enc.h"
 #include "IMU.h"
+#include "Servo.h"
 
 #include <xc.h>
 #include <stddef.h>
@@ -83,6 +84,10 @@ size_t updateSensorPack(uint8_t head[]) {
     *(pack++) = ADC_TimeStamp[0] & 0xFF;
     *(pack++) = ADC_TimeStamp[1] >> 8;
     *(pack++) = ADC_TimeStamp[1] & 0xFF;
+    for (i=0;i<SEVERONUM;++i) {
+      *(pack++) = Servos[i].Ctrl >> 8;
+      *(pack++) = Servos[i].Ctrl & 0xFF;
+    }
     return pack-head;
 }
 
