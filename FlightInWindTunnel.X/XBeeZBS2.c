@@ -214,6 +214,8 @@ void XBeeRequestSend(XBee_p _xbee) {
     /*  send checksum */
     XBeeSendByte(_xbee, checksum, true);
 
+    /* send one dummy byte*/
+    _xbee->_serial->write(0xFE);
     /*  send packet */
     _xbee->_serial->flush();
 }

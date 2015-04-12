@@ -167,7 +167,8 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
     int packin;
     msgParam_p parameters;
     struct pt *pt;
-    XBee_p _xbee;
+    XBee_p _xbee_in;
+    XBee_p _xbee_out;
     servoParam_p servo;
 
     parameters = (msgParam_p) (task->parameters);
@@ -190,27 +191,31 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         }
         if (parameters->cnt & 1) {
             XBeeZBTxRequest(parameters->_xbee[0], &parameters->tx_req, 0u);
+            _xbee_out = parameters->_xbee[1];
         } else {
             XBeeZBTxRequest(parameters->_xbee[1], &parameters->tx_req, 0u);
+            _xbee_out = parameters->_xbee[0];
         }
 
-        packin = 0;
-        if (parameters->_xbee[0]) {
-            packin = XBeeReadPacket(parameters->_xbee[0]);
-            _xbee = parameters->_xbee[0];
-        }
-        if (packin <= 0 && parameters->_xbee[1]) {
+        packin = XBeeReadPacket(parameters->_xbee[0]);
+        _xbee_in = parameters->_xbee[0];
+        if (packin <= 0) {
             packin = XBeeReadPacket(parameters->_xbee[1]);
-            _xbee = parameters->_xbee[1];
+            _xbee_in = parameters->_xbee[1];
         }
         if (packin > 0) {
             switch (packin) {
                 case ZB_RX_RESPONSE:
-                    if (XBeeZBRxResponse(_xbee, &parameters->rx_rsp)) {
+                    if (XBeeZBRxResponse(_xbee_in, &parameters->rx_rsp)) {
                         switch (parameters->rx_rsp._payloadPtr[0]) {
                             case '\xa5':
                             case '\xa6':
                                 servoProcA5Cmd(servo, parameters->rx_rsp._payloadPtr);
+                                break;
+                            case 'P' :
+                                parameters->tx_req._payloadLength = parameters->rx_rsp._payloadLength;
+                                memcpy(parameters->tx_req._payloadPtr ,  parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
+                                XBeeZBTxRequest(_xbee_out, &parameters->tx_req, 0u);
                                 break;
                         }
                     }
