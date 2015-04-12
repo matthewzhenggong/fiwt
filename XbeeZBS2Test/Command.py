@@ -538,7 +538,7 @@ Unused bits must be set to 0.  '''))
 
         box = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.btnTX = wx.Button(panel, -1, "Send TX", size=(100, -1))
+        self.btnTX = wx.Button(panel, -1, "Send Ping", size=(100, -1))
         self.btnTX.Enable(False)
         box.Add(self.btnTX, 0, wx.ALIGN_CENTER, 5)
         self.txtTX = wx.TextCtrl(panel, -1, "", size=(130, -1))
@@ -591,10 +591,6 @@ Unused bits must be set to 0.  '''))
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.txtRXSta = wx.StaticText(panel, wx.ID_ANY, "")
         box.Add(self.txtRXSta, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        self.cbEcho = wx.CheckBox(panel, -1, "Echo RX pack")
-        self.cbEcho.SetToolTip(wx.ToolTip(
-            'If checked, any received ping pack will be sent back.'))
-        box.Add(self.cbEcho, 0, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -697,12 +693,11 @@ Unused bits must be set to 0.  '''))
         self.txtRX.SetLabel('')
         self.txtRX2.SetLabel('')
         self.first_cnt = True
-        self.last_cnt = 0
         self.arrv_cnt = 0
+        self.last_arrv_cnt = 0
         self.arrv_bcnt = 0
-        self.lost_cnt = 0
-        self.dup_cnt = 0
         self.periodic_count = 0
+        self.last_T = 0
 
     def OnClose(self, event):
         try:
@@ -830,7 +825,8 @@ Unused bits must be set to 0.  '''))
 
     def OnTX(self, event):
         data = self.txtTX.GetValue().encode()
-        self.send(data)
+        self.send('P'+data, no_response=True)
+        self.ping_tick = time.clock()
 
     def OnTXc(self, event):
         if self.cbUseFrameId.GetValue():
@@ -982,11 +978,9 @@ Unused bits must be set to 0.  '''))
         self.remote_at_frame_id = 0
         self.sending = False
         self.first_cnt = True
-        self.last_cnt = 0
         self.arrv_cnt = 0
+        self.last_arrv_cnt = 0
         self.arrv_bcnt = 0
-        self.lost_cnt = 0
-        self.dup_cnt = 0
         self.periodic_count = 0
         self.periodic_sending = 0
 
@@ -1006,7 +1000,22 @@ Unused bits must be set to 0.  '''))
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
+        self.last_T = 0
         print 'start'
+
+    def updateStatistics(self, bcnt):
+        if self.first_cnt:
+            self.first_cnt = False
+            self.start_cnt = time.clock()
+        else:
+            self.arrv_cnt += 1
+            self.arrv_bcnt += bcnt
+            elapsed = time.clock() - self.start_cnt
+            if (self.arrv_cnt % 100) == 0 :
+                wx.PostEvent(self, RxStaEvent(txt=
+                'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
+                    self.arrv_cnt, elapsed, self.arrv_cnt / elapsed,
+                    self.arrv_bcnt * 10 / elapsed)))
 
     def get_frame_data(self, data):
         if self.starting:
@@ -1019,85 +1028,37 @@ Unused bits must be set to 0.  '''))
                 addr16 = data['source_addr']
                 options = ord(data['options'])
                 rf_data = data['rf_data']
+                self.updateStatistics(len(rf_data))
                 if rf_data[0] == 'P':
-                    cnt = int(rf_data[1:6])
-                    if self.first_cnt:
-                        self.first_cnt = False
-                        self.start_cnt = time.clock()
-                    else:
-                        pnum = cnt - self.last_cnt
-                        if pnum <= 0:
-                            self.dup_cnt += 1
-                        else:
-                            self.arrv_cnt += 1
-                            self.arrv_bcnt += len(rf_data)
-                            self.lost_cnt += pnum - 1
-                            elapsed = time.clock() - self.start_cnt
-                            wx.PostEvent(self, RxStaEvent(txt=
-                                'Ping {:0>5d}/{:0>3d}/{:0>3d} C{}/T{:<.2f} {:.1f}Pps/{:.0f}bps'.format(
-                                    self.arrv_cnt, self.lost_cnt, self.dup_cnt,
-                                    cnt, elapsed, self.arrv_cnt / elapsed,
-                                    self.arrv_bcnt * 10 / elapsed)))
-                            wx.PostEvent(self, RxEvent(txt=rf_data[6:]))
-                    if self.cbEcho.GetValue() and options & 0x01:
-                        broadcast_radius = self.txtTXrad.GetValue().encode(
-                        )[:2].decode('hex')
-                        options = self.txtTXopt.GetValue().encode()[:2].decode(
-                            'hex')
-                        self.xbee.tx(dest_addr_long=addr64,
-                                     dest_addr=addr16,
-                                     broadcast_radius=broadcast_radius,
-                                     options=options,
-                                     data=rf_data,
-                                     frame_id='\x00')
-                    self.last_cnt = cnt
+                    deltaT = int((time.clock() - self.ping_tick)*1000)
+                    self.log.info('Ping back in {}ms:{}'.format(
+                        deltaT, rf_data[1:]))
                 elif rf_data[0] == '\x22':
-                    if self.first_cnt:
-                        self.first_cnt = False
-                        self.start_cnt = time.clock()
-                    else:
-                        self.arrv_cnt += 1
-                        self.arrv_bcnt += len(rf_data)
-                        elapsed = time.clock() - self.start_cnt
-                        if (self.arrv_cnt % 100) == 0 :
-                            wx.PostEvent(self, RxStaEvent(txt=
-                            'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
-                                self.arrv_cnt, elapsed, self.arrv_cnt / elapsed,
-                                self.arrv_bcnt * 10 / elapsed)))
                     rslt = self.pack22.unpack(rf_data)
                     T = (rslt[16]*0x10000+rslt[17])*0.001
-                    GX = Get14bit(rslt[10])*0.05
-                    GY = Get14bit(rslt[11])*-0.05
-                    GZ = Get14bit(rslt[12])*-0.05
-                    AX = Get14bit(rslt[13])*-0.003333
-                    AY = Get14bit(rslt[14])*0.003333
-                    AZ = Get14bit(rslt[15])*0.003333
-                    if self.arrv_cnt % 4 == 0 :
-                        txt = ('T{0:08.2f} SenPack '
-                            '1S{1:04d} 2S{2:04d} '
-                            '3S{3:04d} 4S{4:04d} 5S{5:04d} 6S{6:04d} '
-                            '1E{7:04d} 2E{8:04d} 3E{9:04d}\n'
-                            'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
-                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} ').format(T,
-                                    rslt[1],rslt[2],rslt[3],
-                                    rslt[4],rslt[5],rslt[6],
-                                    rslt[7],rslt[8],rslt[9],
-                                    GX,GY,GZ, AX,AY,AZ)
-                        wx.PostEvent(self, RxEvent(txt=txt))
-                        self.log.debug(txt)
+                    if T > self.last_T :
+                        GX = Get14bit(rslt[10])*0.05
+                        GY = Get14bit(rslt[11])*-0.05
+                        GZ = Get14bit(rslt[12])*-0.05
+                        AX = Get14bit(rslt[13])*-0.003333
+                        AY = Get14bit(rslt[14])*0.003333
+                        AZ = Get14bit(rslt[15])*0.003333
+                        self.last_T = T
+                        if self.arrv_cnt > self.last_arrv_cnt+4 :
+                            self.last_arrv_cnt = self.arrv_cnt
+                            txt = ('T{0:08.2f} SenPack '
+                                '1S{1:04d} 2S{2:04d} '
+                                '3S{3:04d} 4S{4:04d} 5S{5:04d} 6S{6:04d} '
+                                '1E{7:04d} 2E{8:04d} 3E{9:04d}\n'
+                                'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
+                                'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} ').format(T,
+                                        rslt[1],rslt[2],rslt[3],
+                                        rslt[4],rslt[5],rslt[6],
+                                        rslt[7],rslt[8],rslt[9],
+                                        GX,GY,GZ, AX,AY,AZ)
+                            wx.PostEvent(self, RxEvent(txt=txt))
+                            self.log.debug(txt)
                 elif rf_data[0] == '\x77':
-                    if self.first_cnt:
-                        self.first_cnt = False
-                        self.start_cnt = time.clock()
-                    else:
-                        self.arrv_cnt += 1
-                        self.arrv_bcnt += len(rf_data)
-                        elapsed = time.clock() - self.start_cnt
-                        if (self.arrv_cnt % 100) == 0 :
-                            wx.PostEvent(self, RxStaEvent(txt=
-                            'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
-                                self.arrv_cnt, elapsed, self.arrv_cnt / elapsed,
-                                self.arrv_bcnt * 10 / elapsed)))
                     rslt = self.pack77.unpack(rf_data)
                     T = rslt[4]*0x10000+rslt[5]
                     T = (rslt[4]*0x10000+rslt[5])*0.001
@@ -1106,18 +1067,6 @@ Unused bits must be set to 0.  '''))
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\x88':
-                    if self.first_cnt:
-                        self.first_cnt = False
-                        self.start_cnt = time.clock()
-                    else:
-                        self.arrv_cnt += 1
-                        self.arrv_bcnt += len(rf_data)
-                        elapsed = time.clock() - self.start_cnt
-                        if (self.arrv_cnt % 100) == 0 :
-                            wx.PostEvent(self, RxStaEvent(txt=
-                            'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
-                                self.arrv_cnt, elapsed, self.arrv_cnt / elapsed,
-                                self.arrv_bcnt * 10 / elapsed)))
                     rslt = self.pack88.unpack(rf_data)
                     B1 = rslt[1]*1.294e-2*1.515
                     B2 = rslt[2]*1.294e-2*3.0606
@@ -1134,18 +1083,6 @@ Unused bits must be set to 0.  '''))
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\x06':
-                    if self.first_cnt:
-                        self.first_cnt = False
-                        self.start_cnt = time.clock()
-                    else:
-                        self.arrv_cnt += 1
-                        self.arrv_bcnt += len(rf_data)
-                        elapsed = time.clock() - self.start_cnt
-                        if (self.arrv_cnt % 100) == 0 :
-                            wx.PostEvent(self, RxStaEvent(txt=
-                            'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
-                                self.arrv_cnt, elapsed, self.arrv_cnt / elapsed,
-                                self.arrv_bcnt * 10 / elapsed)))
                     rslt = self.pack06.unpack(rf_data)
                     wx.PostEvent(self, RxEvent(txt=
                         'Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{28:03d} 2L{29:03d} 3L{30:03d} 4L{31:03d}'.format(
