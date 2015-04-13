@@ -145,6 +145,8 @@ void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
             case 4 :
             case 5 :
             case 7 :
+            case 8 :
+            case 9 :
                 parameters->InputType = cmd[1] - 1u;
                 parameters->Srv2Move = cmd[2];
                 parameters->StartTime = ((cmd[3] << 8) | cmd[4])/10;

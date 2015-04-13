@@ -10,9 +10,9 @@
 
 #if AC_MODEL
 #define SERVO_ACCEL_LIMIT (30)
-#define SERVO_KP (7)
+#define SERVO_KP (8)
 #define SERVO_SP (3)
-#define SERVO_KD (7)
+#define SERVO_KD (9)
 #define SERVO_SD (1)
 #define SERVO_DIFF_LMT  (4681) //((2^15)/(SERVO_K+1))
 #define SERVO_SHAKE (450)

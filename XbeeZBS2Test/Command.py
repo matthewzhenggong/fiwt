@@ -333,7 +333,7 @@ Unused bits must be set to 0.  '''))
         boxH = wx.BoxSizer(wx.HORIZONTAL)
         self.InputType = wx.Choice(panel, wx.ID_ANY,
             choices=['Reset','Step','Doublet','3-2-1-1','Ramp',
-                'pitch rate','open loop'])
+                'pitch rate','open loop','LinFreq Sweep','ExpFreq Sweep'])
         self.InputType.SetSelection(0)
         boxH.Add(self.InputType, 0, wx.ALIGN_CENTER, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "StartTime"), 0,
@@ -363,7 +363,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move1, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef1 = wx.TextCtrl(panel, -1, "2000",
+        self.ServoRef1 = wx.TextCtrl(panel, -1, "1967",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef1, 0, wx.ALIGN_CENTER, 5)
@@ -392,7 +392,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move2, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef2 = wx.TextCtrl(panel, -1, "2000",
+        self.ServoRef2 = wx.TextCtrl(panel, -1, "2259",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef2, 0, wx.ALIGN_CENTER, 5)
@@ -450,7 +450,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move4, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef4 = wx.TextCtrl(panel, -1, "2000",
+        self.ServoRef4 = wx.TextCtrl(panel, -1, "1700",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef4, 0, wx.ALIGN_CENTER, 5)
@@ -479,7 +479,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move5, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef5 = wx.TextCtrl(panel, -1, "2000",
+        self.ServoRef5 = wx.TextCtrl(panel, -1, "1820",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef5, 0, wx.ALIGN_CENTER, 5)
@@ -508,7 +508,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move6, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef6 = wx.TextCtrl(panel, -1, "2000",
+        self.ServoRef6 = wx.TextCtrl(panel, -1, "2067",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef6, 0, wx.ALIGN_CENTER, 5)
@@ -816,27 +816,31 @@ Unused bits must be set to 0.  '''))
                        int(self.Sign6.GetValue()),
                      ]
             starttime = int(self.StartTime.GetValue())
+            deltatime = int(self.TimeDelta.GetValue())
             nofcyc = int(self.NofCycles.GetValue())
             data = struct.pack('>3B2HB6B6B6B', 0xA5, InputType, Srv2Move,
-                    starttime, int(self.TimeDelta.GetValue()),
-                    nofcyc, *others)
-            if InputType == 7 :
-                self.OutputSrv2Move = Srv2Move
+                    starttime, deltatime, nofcyc, *others)
+            if InputType == 1 :
+                self.OutputCnt = starttime*nofcyc/10+6+30
+            elif InputType == 2 :
+                self.OutputCnt = (starttime+deltatime)*nofcyc/10+6+30
+            elif InputType == 7 :
                 self.OutputCnt = starttime*nofcyc/5+6+30
-                txt = '#Time,'
-                if self.OutputSrv2Move & 1 :
-                    txt += 'Servo1,Ctrl1,'
-                if self.OutputSrv2Move & 2 :
-                    txt += 'Servo2,Ctrl2,'
-                if self.OutputSrv2Move & 4 :
-                    txt += 'Servo3,Ctrl3,'
-                if self.OutputSrv2Move & 8 :
-                    txt += 'Servo4,Ctrl4,'
-                if self.OutputSrv2Move & 16 :
-                    txt += 'Servo5,Ctrl5,'
-                if self.OutputSrv2Move & 32 :
-                    txt += 'Servo6,Ctrl6,'
-                self.log.info(txt)
+            self.OutputSrv2Move = Srv2Move
+            txt = '#Time,'
+            if self.OutputSrv2Move & 1 :
+                txt += 'Servo1,Ctrl1,'
+            if self.OutputSrv2Move & 2 :
+                txt += 'Servo2,Ctrl2,'
+            if self.OutputSrv2Move & 4 :
+                txt += 'Servo3,Ctrl3,'
+            if self.OutputSrv2Move & 8 :
+                txt += 'Servo4,Ctrl4,'
+            if self.OutputSrv2Move & 16 :
+                txt += 'Servo5,Ctrl5,'
+            if self.OutputSrv2Move & 32 :
+                txt += 'Servo6,Ctrl6,'
+            self.log.info(txt)
         self.send(data, no_response=True)
 
     def OnTX(self, event):

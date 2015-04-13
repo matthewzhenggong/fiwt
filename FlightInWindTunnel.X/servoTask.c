@@ -45,6 +45,13 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
     struct pt *pt;
     unsigned int i;
     int s;
+    float sfun;
+    static float tht;
+    static float last_omega;
+    static float min_omega=0.0f;
+    static float max_omega=5.12f;
+    float omega;
+    float k;
 
     parameters = (servoParam_t *) (task->parameters);
     pt = &(parameters->PT);
@@ -203,6 +210,50 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                             parameters->cnt = 0u;
                         } else {
                             parameters->GenerateInput_Flag = 0u;
+                        }
+                    }
+                    break;
+                case 7u: //Frequency Sweep
+                case 8u: //Frequency Sweep
+                    if (parameters->cnt < parameters->StartTime) {
+                        sfun = 0;
+                    }
+                    else if (parameters->cnt == parameters->StartTime) {
+                        sfun = 0;
+                        tht = 0;
+                        last_omega = 0;
+                        min_omega = parameters->MinValue[0]*0.062831853f;  // Hz -> rad/s
+                        max_omega = parameters->MinValue[1]*0.062831853f;  // Hz -> rad/s
+                    } else {
+                        if (parameters->InputType == 8u) {
+                            k = 0.0187*(exp(4*parameters->StartTime/(float)parameters->TimeDelta)-1);
+                        } else {
+                            k = (parameters->cnt - parameters->StartTime)/(float)parameters->TimeDelta;
+                        }
+                        if (k < 0.0f) k = 0.0f; else if (k > 1.0f) k = 1.0f;
+                        omega = min_omega+(max_omega-min_omega)*k;
+
+                        tht += (omega+last_omega) * 0.005;
+                        sfun = sin(tht);
+                        last_omega = omega;
+                    }
+                    for (i = 0u; i < SEVERONUM; ++i) {
+                        if ((1<<i) &parameters->Srv2Move) {
+                            if (parameters->Sign[i] == 2u) {
+                                ServoUpdate100Hz(i, parameters->ServoRef[i]-(int16_t)(sfun*parameters->MaxValue[i]));
+                            } else {
+                                ServoUpdate100Hz(i, parameters->ServoRef[i]+(int16_t)(sfun*parameters->MaxValue[i]));
+                            }
+                        }
+                    }
+                    if (++parameters->cnt > (parameters->StartTime+parameters->TimeDelta)) {
+                        --parameters->NofCycles;
+                        if (parameters->NofCycles > 0u) {
+                            parameters->cnt = 0u;
+                        } else {
+                            parameters->cnt = 0u;
+                            parameters->StartTime = 100u;
+                            parameters->InputType = 0u;
                         }
                     }
                     break;
