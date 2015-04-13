@@ -15,7 +15,7 @@
 #define SERVO_KD (9)
 #define SERVO_SD (1)
 #define SERVO_DIFF_LMT  (4681) //((2^15)/(SERVO_K+1))
-#define SERVO_SHAKE (450)
+#define SERVO_SHAKE (455)
 #define SERVO_SHAKE_TICKS (50)
 #define SERVO_SHAKE_DZ (1)
 #define SERVO_SHAKE_RDZ (1)
