@@ -30,17 +30,25 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+    enum XbeeGroup {
+        XB_AC,
+        XB_COMP,
+        XB_NON
+    };
     
     typedef struct remote {
         XBee_p xbee;
         ZBTxRequest_t tx_req;
-        bool valid;
     } RemoteNode;
 
     typedef struct {
         struct pt PT;
         RemoteNode node[4];
-        unsigned int cnt;
+        RemoteNode* nodeAC[2];
+        RemoteNode* nodeCOMP[2];
+        unsigned int tx_cnt;
+        unsigned int rx_cnt;
         ZBRxResponse_t rx_rsp;
     } msgParam_t, *msgParam_p;
 

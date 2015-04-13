@@ -38,16 +38,22 @@ void msgInit(msgParam_t *parameters, XBee_p xb1, XBee_p xb2, XBee_p xb3, XBee_p 
     parameters->node[1].xbee = xb2;
     parameters->node[2].xbee = xb3;
     parameters->node[3].xbee = xb4;
-    
-    for (i=0;i<4;++i) {
-        memcpy(parameters->node[i].tx_req._addr64, "\00\00\00\00\00\00\00\00", 8);
-        parameters->node[i].tx_req._addr16 = 0xFFFE;
+    for (i = 0; i < 4; ++i) {
+        //memcpy(parameters->node[i].tx_req._addr64, "\00\00\00\00\00\00\00\00", 8);
+        parameters->node[i].tx_req._addr16 = 0xFFFF;
         parameters->node[i].tx_req._broadcastRadius = 1u;
         parameters->node[i].tx_req._option = 1u;
-        parameters->node[i].tx_req._payloadLength = 1u;
-        parameters->node[i].tx_req._payloadPtr[0] = 'P';
-        parameters->node[i].valid = false;
+        //parameters->node[i].tx_req._payloadLength = 1u;
+        //parameters->node[i].tx_req._payloadPtr[0] = 'P';
     }
+
+    parameters->nodeAC[0] = NULL;
+    parameters->nodeAC[1] = NULL;
+    parameters->nodeCOMP[0] = NULL;
+    parameters->nodeCOMP[1] = NULL;
+
+    parameters->tx_cnt = 0u;
+    parameters->rx_cnt = 0u;
 }
 
 PT_THREAD(msgLoop)(TaskHandle_p task) {
@@ -56,6 +62,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
     msgParam_p parameters;
     struct pt *pt;
     RemoteNode *node;
+    enum XbeeGroup flag;
 
     parameters = (msgParam_p) (task->parameters);
     pt = &(parameters->PT);
@@ -66,64 +73,86 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
-        ++parameters->cnt;
+        
         if (SPIRX_RX_PCKT_PTR) {
             node = NULL;
             switch (SPIRX_RX_PCKT_PTR->RF_DATA[0]) {
-                case  0xa5 :
-                    if (parameters->cnt & 1 && parameters->node[0].valid) {
-                        node = parameters->node;
-                    } else if (parameters->node[1].valid) {
-                        node = parameters->node+1;
+                case 0xa5:
+                    if (parameters->tx_cnt & 1 && parameters->nodeAC[0]) {
+                        node = parameters->nodeAC[0];
+                    } else if (parameters->nodeAC[1]) {
+                        node = parameters->nodeAC[1];
                     }
                     break;
-                case 0xa6 :
-                    if (parameters->cnt & 1 && parameters->node[2].valid) {
-                        node = parameters->node+2;
-                    } else if (parameters->node[3].valid) {
-                        node = parameters->node+3;
+                case 0xa6:
+                    if (parameters->tx_cnt & 1 && parameters->nodeCOMP[0]) {
+                        node = parameters->nodeCOMP[0];
+                    } else if (parameters->nodeCOMP[1]) {
+                        node = parameters->nodeCOMP[1];
                     }
                     break;
             }
             if (node) {
+                ++parameters->tx_cnt;
                 node->tx_req._payloadLength = (SPIRX_RX_PCKT_PTR->PCKT_LENGTH_MSB << 8) + SPIRX_RX_PCKT_PTR->PCKT_LENGTH_LSB;
                 memcpy(node->tx_req._payloadPtr, SPIRX_RX_PCKT_PTR->RF_DATA, node->tx_req._payloadLength);
                 SPIRX_RX_PCKT_PTR = NULL; //clear for sent
                 XBeeZBTxRequest(parameters->node[0].xbee, &parameters->node[0].tx_req, 0u);
             }
         }
-        if ((parameters->cnt & 0x1FE) == 0xFE) {
-            SPIS_push((const uint8_t *)"\x79hello from ground board.",15);
-        }
 
-        for (i=0;i<4; ++i) {
-                 node = parameters->node+i;
-                packin = XBeeReadPacket(node->xbee);
-                switch (packin) {
-                    case ZB_RX_RESPONSE:
+        ++parameters->rx_cnt;
+        if ((parameters->rx_cnt & 0x1FE) == 0xFE) {
+            SPIS_push((const uint8_t *) "\x79hello from ground board.", 15);
+        }
+        for (i = 0; i < 4; ++i) {
+            node = parameters->node + i;
+            packin = XBeeReadPacket(node->xbee);
+            switch (packin) {
+                case ZB_RX_RESPONSE:
                     if (XBeeZBRxResponse(node->xbee, &parameters->rx_rsp)) {
-                        if (memcmp(parameters->rx_rsp._addr64, node->tx_req._addr64,8)) {
-                            memcpy(node->tx_req._addr64, parameters->rx_rsp._addr64, 8);
-                            node->tx_req._addr16 = parameters->rx_rsp._addr16;
-                            node->valid = true;
-                        }
                         switch (parameters->rx_rsp._payloadPtr[0]) {
                             case '\x22':
+                                flag = XB_AC;
                                 break;
                             case '\x33':
+                                flag = XB_COMP;
                                 break;
                             case '\x88':
+                                flag = XB_AC;
                                 break;
                             case '\x99':
+                                flag = XB_COMP;
                                 break;
                             case '\x77':
+                                flag = XB_AC;
                                 break;
                             case '\x78':
+                                flag = XB_COMP;
                                 break;
+                            default :
+                                flag = XB_NON;
+                        }
+                        if (flag != XB_NON && parameters->rx_rsp._addr16 == 0xFFFF) {
+                            memcpy(node->tx_req._addr64, parameters->rx_rsp._addr64, 8);
+                            node->tx_req._addr16 = parameters->rx_rsp._addr16;
+                            if (flag == XB_AC) {
+                                if (!parameters->nodeAC[0]) {
+                                    parameters->nodeAC[0] = node;
+                                }else if (!parameters->nodeAC[1]) {
+                                   parameters->nodeAC[0] = node;
+                                }
+                            } else if (flag == XB_COMP) {
+                                if (!parameters->nodeCOMP[0]) {
+                                    parameters->nodeCOMP[0] = node;
+                                } else if (!parameters->nodeCOMP[1]) {
+                                    parameters->nodeCOMP[0] = node;
+                                }
+                            }
                         }
                     }
                     break;
-                }
+            }
         }
 
         PT_YIELD(pt);

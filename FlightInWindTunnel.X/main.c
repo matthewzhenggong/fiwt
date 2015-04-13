@@ -34,6 +34,7 @@
 #include "msg_comp.h"
 #elif GNDBOARD
 #include "msg_gnd.h"
+#include <xc.h>
 #elif STARTKITBOARD
 #include "IMU.h"
 #endif
@@ -112,7 +113,7 @@ int main(void) {
     TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 0, 5);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
-    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 3, 10);
+    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 0, 10);
 #elif STARTKITBOARD
     while (1) {
         asm ("repeat #4000;"); Nop();

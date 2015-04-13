@@ -64,7 +64,7 @@ typedef struct {
     /**
      * Push a message into queue to dspace
      */
-    bool SPIS_push(const uint8_t *Payload, size_t length);
+    void SPIS_push(const uint8_t *Payload, size_t length);
 
 #ifdef	__cplusplus
 }

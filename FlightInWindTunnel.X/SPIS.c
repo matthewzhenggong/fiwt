@@ -67,16 +67,17 @@ DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PTR;
 // Transmission Handling Queue struct data type definition
 #define SPITX_MaxSize (10)
 #define SPITX_Buffer_MaxSize (1700)
-typedef struct QueueSPITX_{
-        uint8_t Heads[SPITX_MaxSize];
-	uint8_t Payloads[SPITX_Buffer_MaxSize];
-	size_t Head_idx;
-	size_t Payload_idx;
-	size_t Tail_idx;
-	size_t Payload_tail_idx;
-	size_t Elem_count;
-	size_t used_count;
-}SPITX, *SPITX_Ptr;
+
+typedef struct QueueSPITX_ {
+    uint8_t Heads[SPITX_MaxSize];
+    uint8_t Payloads[SPITX_Buffer_MaxSize];
+    size_t Head_idx;
+    size_t Payload_idx;
+    size_t Tail_idx;
+    size_t Payload_tail_idx;
+    size_t Elem_count;
+    size_t used_count;
+} SPITX, *SPITX_Ptr;
 
 SPITX SPI_TXHQ;
 
@@ -89,7 +90,7 @@ void QueueSPITX_Init(SPITX_Ptr p) {
     p->used_count = 0u;
 }
 
-size_t QueueSPITX_pop(SPITX_Ptr p, unsigned char *Payload){
+size_t QueueSPITX_pop(SPITX_Ptr p, unsigned char *Payload) {
     size_t length;
     size_t i;
     if (p->Elem_count > 0u) {
@@ -101,17 +102,23 @@ size_t QueueSPITX_pop(SPITX_Ptr p, unsigned char *Payload){
         }
         if (p->Payload_idx + length > SPITX_Buffer_MaxSize) {
             i = SPITX_Buffer_MaxSize - p->Payload_idx;
-            memcpy(Payload, p->Payloads+p->Payload_idx, i);
-            Payload += i;
+            if (Payload) {
+                memcpy(Payload, p->Payloads + p->Payload_idx, i);
+                Payload += i;
+            }
             i = length - i;
-            memcpy(Payload, p->Payloads, i);
+            if (Payload) {
+                memcpy(Payload, p->Payloads, i);
+            }
             p->Payload_idx = i;
         } else {
-          memcpy(Payload, p->Payloads+p->Payload_idx, length);
-          p->Payload_idx += length;
-          if (p->Payload_idx >= SPITX_Buffer_MaxSize) {
-              p->Payload_idx = 0u;
-          }
+            if (Payload) {
+                memcpy(Payload, p->Payloads + p->Payload_idx, length);
+            }
+            p->Payload_idx += length;
+            if (p->Payload_idx >= SPITX_Buffer_MaxSize) {
+                p->Payload_idx = 0u;
+            }
         }
         return length;
     } else {
@@ -119,38 +126,36 @@ size_t QueueSPITX_pop(SPITX_Ptr p, unsigned char *Payload){
     }
 }
 
-bool QueueSPITX_push(SPITX_Ptr p, const uint8_t *Payload, size_t length){
+void QueueSPITX_push(SPITX_Ptr p, const uint8_t *Payload, size_t length) {
     size_t i;
 
-    if (length < 1u || p->used_count + length > SPITX_Buffer_MaxSize || p->Elem_count >= SPITX_MaxSize) {
-        return false;
+    while (p->used_count + length > SPITX_Buffer_MaxSize || p->Elem_count >= SPITX_MaxSize) {
+        QueueSPITX_pop(p, NULL);
+    }
+    ++p->Elem_count;
+    p->used_count += length;
+    p->Heads[p->Tail_idx] = length;
+    if (++p->Tail_idx >= SPITX_MaxSize) {
+        p->Tail_idx = 0u;
+    }
+    if (p->Payload_tail_idx + length > SPITX_Buffer_MaxSize) {
+        i = SPITX_Buffer_MaxSize - p->Payload_tail_idx;
+        memcpy(p->Payloads + p->Payload_tail_idx, Payload, i);
+        Payload += i;
+        i = length - i;
+        memcpy(p->Payloads, Payload, i);
+        p->Payload_tail_idx = i;
     } else {
-        ++p->Elem_count;
-        p->used_count += length;
-        p->Heads[p->Tail_idx] = length;
-        if (++p->Tail_idx >= SPITX_MaxSize) {
-            p->Tail_idx = 0u;
+        memcpy(p->Payloads + p->Payload_tail_idx, Payload, length);
+        p->Payload_tail_idx += length;
+        if (p->Payload_tail_idx >= SPITX_Buffer_MaxSize) {
+            p->Payload_tail_idx = 0u;
         }
-        if (p->Payload_tail_idx + length > SPITX_Buffer_MaxSize) {
-            i = SPITX_Buffer_MaxSize - p->Payload_tail_idx;
-            memcpy(p->Payloads+p->Payload_tail_idx, Payload, i);
-            Payload += i;
-            i = length - i;
-            memcpy(p->Payloads, Payload, i);
-            p->Payload_tail_idx = i;
-        } else {
-          memcpy(p->Payloads+p->Payload_tail_idx, Payload, length);
-          p->Payload_tail_idx += length;
-          if (p->Payload_tail_idx >= SPITX_Buffer_MaxSize) {
-              p->Payload_tail_idx = 0u;
-          }
-        }
-        return true;
     }
 }
 
-bool SPIS_push(const uint8_t *Payload, size_t length){
-    return QueueSPITX_push(&SPI_TXHQ, Payload, length);
+void SPIS_push(const uint8_t *Payload, size_t length) {
+    QueueSPITX_push(&SPI_TXHQ, Payload, length);
 }
 
 void SPISInit(void) {
@@ -245,7 +250,6 @@ void SPISInit(void) {
 
 }
 
-
 void SPISStart(void) {
     SPI1RX_Data = 0;
     SPI1RX_Flow = 0;
@@ -260,7 +264,7 @@ void SPISStart(void) {
     SPI1TX_Bytes4TX = 0;
     SPI1TX_Bytes2TX = 0;
     Msg_idx = 0;
-    
+
     SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT;
     SPIRX_RX_PCKT_PTR = NULL;
 
@@ -304,7 +308,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
 
                 // Extract Bytes4TX from SPI_TXHQ
                 if (SPI_TXHQ.Elem_count) {
-                   SPI1TX_Bytes4TX = SPI_TXHQ.Heads[SPI_TXHQ.Head_idx];
+                    SPI1TX_Bytes4TX = SPI_TXHQ.Heads[SPI_TXHQ.Head_idx];
                 } else {
                     SPI1TX_Bytes4TX = 0u;
                 }
@@ -334,13 +338,13 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                     SPI1RX_Flow = 4;
                 } else {
                     // There IS data in SPI_TXHQ.
-                        // Data HAS been fully transfered, SPI_TXQ IS NOT empty,
-                        // the current package IS NOT empty.
-                        // Send DATA_RDY
-                        SPI1TX_Data = DATA_RDY;
-                        SPI1TX_Bytes2TX = 0u;
-                        // Set SPI1RX_Flow = 3
-                        SPI1RX_Flow = 3;
+                    // Data HAS been fully transfered, SPI_TXQ IS NOT empty,
+                    // the current package IS NOT empty.
+                    // Send DATA_RDY
+                    SPI1TX_Data = DATA_RDY;
+                    SPI1TX_Bytes2TX = 0u;
+                    // Set SPI1RX_Flow = 3
+                    SPI1RX_Flow = 3;
                 }
                 // Send SPI1TX_Data
                 SPI1BUF = SPI1TX_Data;
@@ -396,11 +400,10 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                 // Discard received byte, and send corresponding DATA byte back.
                 if (SPI1TX_Bytes2TX < SPI1TX_Bytes4TX) {
                     // Extract DATA byte from SPI_TXQ
-                    SPI1TX_Data = SPI1TX_Bytes[SPI1TX_Bytes2TX];
+                    SPI1TX_Data = SPI1TX_Bytes[SPI1TX_Bytes2TX++];
                     // Send SPI1TX_Data
                     SPI1BUF = SPI1TX_Data;
                     // Transmission will continue.
-                    ++SPI1TX_Bytes2TX;
                 }
                 if (SPI1TX_Bytes2TX == SPI1TX_Bytes4TX) {
                     // Set SPI1RX_Flow = 0
@@ -437,96 +440,96 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
             SPI1TX_Flow = 0;
             break;
         default:
-                if (SPI1RX_EscapedChar) // If previous Char was ESCAPE
-                {
-                    // Apply a XOR with 0x20 to the incoming Char,
-                    // and store byte in SPI1RX_Data
-                    SPI1RX_Data ^= 0x20;
-                    // Reset EscapedChar
-                    SPI1RX_EscapedChar = false;
-                }
-                switch (SPI1TX_Flow) {
-                    case 1:
-                        // Send CONTINUE_RX
-                        SPI1TX_Data = CONTINUE_RX;
-                        // Send SPI1TX_Data
-                        SPI1BUF = SPI1TX_Data;
-                        // Store SPI1RX_Data in higher byte of SPI1RX_Bytes2RX
-                        SPI1RX_Bytes2RX = SPI1RX_Data;
-                        SPI1RX_Bytes2RX <<= 8;
-                        // Store SPI1RX_Data in SPIRX_RX_PCKT_PCKT.PCKT_LENGTH_MSB
-                        SPIRX_RX_PCKT_PCKT->PCKT_LENGTH_MSB = SPI1RX_Data;
-                        // Set SPI1TX_Flow = 2
-                        SPI1TX_Flow = 2;
-                        break;
-                    case 2:
-                        // Store SPI1RX_Data in lower byte of SPI1RX_Bytes2RX
-                        SPI1RX_Bytes2RX |= SPI1RX_Data;
-                        if (SPI1RX_Bytes2RX > MaximumPayload) {
-                            // Send PRCS_STP
-                            SPI1TX_Data = PRCS_STP;
-                            // Send SPI1TX_Data
-                            SPI1BUF = SPI1TX_Data;
-                            SPI1TX_Flow = 0;
-                        } else {
-                            // Send CONTINUE_RX
-                            SPI1TX_Data = CONTINUE_RX;
-                            // Send SPI1TX_Data
-                            SPI1BUF = SPI1TX_Data;
-                            // Store SPI1RX_Data in SPIRX_RX_PCKT_PCKT.PCKT_LENGTH_LSB
-                            SPIRX_RX_PCKT_PCKT->PCKT_LENGTH_LSB = SPI1RX_Data;
-                            // Set SPI1TX_Flow = 3
-                            SPI1TX_Flow = 3;                            
-                        }
-                        break;
-                    case 3:
-                        // Send CONTINUE_RX
-                        SPI1TX_Data = CONTINUE_RX;
-                        // Send SPI1TX_Data
-                        SPI1BUF = SPI1TX_Data;
-                        // Store SPI1RX_Data in SPIRX_RX_PCKT_PCKT.RF_DATA[i]
-                        SPIRX_RX_PCKT_PCKT->RF_DATA[SPI1RX_Bytes4RX] = SPI1RX_Data;
-                        // Update Checksum
-                        SPI1RX_Checksum += SPI1RX_Data;
-
-                        // Verify that there is data left to be received
-                        if (++SPI1RX_Bytes4RX >= SPI1RX_Bytes2RX) {
-                            // This was the last byte to be received.
-                            // Set SPI1TX_Flow = 4
-                            SPI1TX_Flow = 4;
-                        }
-                        break;
-                    case 4:
-                        // Send CONTINUE_RX
-                        SPI1TX_Data = CONTINUE_RX;
-                        // Send SPI1TX_Data
-                        SPI1BUF = SPI1TX_Data;
-
-                        // Compute final value of SPI1RX_Checksum
-                        SPI1RX_Checksum = 0xFF - SPI1RX_Checksum;
-                        // Verify that the received data is valid by comparing
-                        // SPIRX_RX_PCKT_PCKT.PCKT_CHECKSUM with SPI1RX_Checksum.
-                        if (SPI1RX_Data == SPI1RX_Checksum) {
-                            // A Valid Package has been received.
-                            // Set SPI1RX_ValidPackage
-                            SPIRX_RX_PCKT_PTR = SPIRX_RX_PCKT_PCKT;
-                            if (SPIRX_RX_PCKT_PCKT == SPIRX_RX_PCKT) {
-                                SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT+1u;
-                            } else {
-                                SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT;
-                            }
-                        }
-                        // Set SPI1TX_Flow = 0
-                        SPI1TX_Flow = 0;
-                        break;
-                    default :
+            if (SPI1RX_EscapedChar) // If previous Char was ESCAPE
+            {
+                // Apply a XOR with 0x20 to the incoming Char,
+                // and store byte in SPI1RX_Data
+                SPI1RX_Data ^= 0x20;
+                // Reset EscapedChar
+                SPI1RX_EscapedChar = false;
+            }
+            switch (SPI1TX_Flow) {
+                case 1:
+                    // Send CONTINUE_RX
+                    SPI1TX_Data = CONTINUE_RX;
+                    // Send SPI1TX_Data
+                    SPI1BUF = SPI1TX_Data;
+                    // Store SPI1RX_Data in higher byte of SPI1RX_Bytes2RX
+                    SPI1RX_Bytes2RX = SPI1RX_Data;
+                    SPI1RX_Bytes2RX <<= 8;
+                    // Store SPI1RX_Data in SPIRX_RX_PCKT_PCKT.PCKT_LENGTH_MSB
+                    SPIRX_RX_PCKT_PCKT->PCKT_LENGTH_MSB = SPI1RX_Data;
+                    // Set SPI1TX_Flow = 2
+                    SPI1TX_Flow = 2;
+                    break;
+                case 2:
+                    // Store SPI1RX_Data in lower byte of SPI1RX_Bytes2RX
+                    SPI1RX_Bytes2RX |= SPI1RX_Data;
+                    if (SPI1RX_Bytes2RX > MaximumPayload) {
                         // Send PRCS_STP
                         SPI1TX_Data = PRCS_STP;
                         // Send SPI1TX_Data
                         SPI1BUF = SPI1TX_Data;
-                        // Set SPI1TX_Flow = 0
                         SPI1TX_Flow = 0;
-                }
+                    } else {
+                        // Send CONTINUE_RX
+                        SPI1TX_Data = CONTINUE_RX;
+                        // Send SPI1TX_Data
+                        SPI1BUF = SPI1TX_Data;
+                        // Store SPI1RX_Data in SPIRX_RX_PCKT_PCKT.PCKT_LENGTH_LSB
+                        SPIRX_RX_PCKT_PCKT->PCKT_LENGTH_LSB = SPI1RX_Data;
+                        // Set SPI1TX_Flow = 3
+                        SPI1TX_Flow = 3;
+                    }
+                    break;
+                case 3:
+                    // Send CONTINUE_RX
+                    SPI1TX_Data = CONTINUE_RX;
+                    // Send SPI1TX_Data
+                    SPI1BUF = SPI1TX_Data;
+                    // Store SPI1RX_Data in SPIRX_RX_PCKT_PCKT.RF_DATA[i]
+                    SPIRX_RX_PCKT_PCKT->RF_DATA[SPI1RX_Bytes4RX] = SPI1RX_Data;
+                    // Update Checksum
+                    SPI1RX_Checksum += SPI1RX_Data;
+
+                    // Verify that there is data left to be received
+                    if (++SPI1RX_Bytes4RX >= SPI1RX_Bytes2RX) {
+                        // This was the last byte to be received.
+                        // Set SPI1TX_Flow = 4
+                        SPI1TX_Flow = 4;
+                    }
+                    break;
+                case 4:
+                    // Send CONTINUE_RX
+                    SPI1TX_Data = CONTINUE_RX;
+                    // Send SPI1TX_Data
+                    SPI1BUF = SPI1TX_Data;
+
+                    // Compute final value of SPI1RX_Checksum
+                    SPI1RX_Checksum = 0xFF - SPI1RX_Checksum;
+                    // Verify that the received data is valid by comparing
+                    // SPIRX_RX_PCKT_PCKT.PCKT_CHECKSUM with SPI1RX_Checksum.
+                    if (SPI1RX_Data == SPI1RX_Checksum) {
+                        // A Valid Package has been received.
+                        // Set SPI1RX_ValidPackage
+                        SPIRX_RX_PCKT_PTR = SPIRX_RX_PCKT_PCKT;
+                        if (SPIRX_RX_PCKT_PCKT == SPIRX_RX_PCKT) {
+                            SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT + 1u;
+                        } else {
+                            SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT;
+                        }
+                    }
+                    // Set SPI1TX_Flow = 0
+                    SPI1TX_Flow = 0;
+                    break;
+                default:
+                    // Send PRCS_STP
+                    SPI1TX_Data = PRCS_STP;
+                    // Send SPI1TX_Data
+                    SPI1BUF = SPI1TX_Data;
+                    // Set SPI1TX_Flow = 0
+                    SPI1TX_Flow = 0;
+            }
     }
 
     _SPI1IF = 0; /* clear interrupt flag */
