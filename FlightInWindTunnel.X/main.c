@@ -74,9 +74,14 @@ msgParam_t msg;
 idleParam_t idle_params;
 
 int main(void) {
+    int i;
 
     /* Configure the oscillator for the device */
     ConfigureOscillator();
+
+    for (i=0;i<50000;++i) {
+            asm ("repeat #6400;");
+    }
 
     /* Initialize IO ports, peripherals */
     InitApp();
