@@ -45,8 +45,8 @@ char idleLoop(TaskHandle_p task) {
         parameters->cnt = 0u;
 #if USE_LEDEXTBOARD
         mLED_1_Toggle();
+        mLED_3_Off();
         mLED_4_Off();
-        mLED_5_Off();
 #endif
         return 1;
     }
