@@ -1017,6 +1017,7 @@ Unused bits must be set to 0.  '''))
         self.pack22 = struct.Struct(">B6H3H6HBH6h")
         self.pack77 = struct.Struct(">B3HBH")
         self.pack88 = struct.Struct(">B3HBH")
+        self.pack33 = struct.Struct(">B4H4HBH4h")
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
@@ -1098,15 +1099,41 @@ Unused bits must be set to 0.  '''))
                                     rslt[22],rslt[23] )
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
-                elif rf_data[0] == '\x77':
+                elif rf_data[0] == '\x33':
+                    rslt = self.pack33.unpack(rf_data)
+                    T = (rslt[9]*0x10000+rslt[10])*0.001
+                    if self.OutputCnt > 0 :
+                        self.OutputCnt -= 1
+                        txt = '{:.2f},'.format(T)
+                        if self.OutputSrv2Move & 1 :
+                            txt += '{},{},'.format(rslt[1], rslt[11])
+                        if self.OutputSrv2Move & 2 :
+                            txt += '{},{},'.format(rslt[2], rslt[12])
+                        if self.OutputSrv2Move & 4 :
+                            txt += '{},{},'.format(rslt[3], rslt[13])
+                        if self.OutputSrv2Move & 8 :
+                            txt += '{},{},'.format(rslt[4], rslt[14])
+                        self.log.info(txt)
+                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.last_arrv_cnt = self.arrv_cnt
+                        txt = ('T{0:08.2f} SenPack '
+                            '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
+                            '3S{3:04d}/{11:+04d} 4S{4:04d}/{12:+04d}\n'
+                            '1E{5:04d} 2E{6:04d} 3E{7:04d} 4E{8:04d} '
+                            ).format(T, rslt[1],rslt[2],rslt[3], rslt[4],
+                                    rslt[5],rslt[6], rslt[7],rslt[8],
+                                    rslt[11],rslt[12],rslt[13],rslt[14])
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                        self.log.debug(txt)
+                elif rf_data[0] == '\x77' or rf_data[0] == '\x78' :
                     rslt = self.pack77.unpack(rf_data)
                     T = rslt[4]*0x10000+rslt[5]
                     T = (rslt[4]*0x10000+rslt[5])*0.001
-                    txt = ('T{0:08.2f} CommPack '
-                        'ATask{2:d}us STask{3:d}us CTask{4:d}us').format(T,*rslt)
+                    txt = ('T{0:08.2f} CommPack ATask{2:d}us '
+                           'STask{3:d}us CTask{4:d}us').format(T,*rslt)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
-                elif rf_data[0] == '\x88':
+                elif rf_data[0] == '\x88' or rf_data[0] == '\x99':
                     rslt = self.pack88.unpack(rf_data)
                     B1 = rslt[1]*1.294e-2*1.515
                     B2 = rslt[2]*1.294e-2*3.0606
