@@ -50,8 +50,8 @@
 #define UART1TXBUFFLEN (128)
 #define UART1RXBUFFLEN (256)
 #if GNDBOARD  /* Only for GNDBOARD */
-#define UART1TXTRIS (_TRISG0)
-#define UART1RXTRIS (_TRISG1)
+#define UART1TXTRIS (_TRISG1)
+#define UART1RXTRIS (_TRISG0)
 #define UART1RXPR (112) /* U1RX Input tied to RP112 */
 #define UART1TXPR (_RP113R) /* U1TX is assigned to RP113 -> U1TX*/
 #else    /* Only for AC_MODEL and AEROCOMP boards */
