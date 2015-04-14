@@ -21,6 +21,8 @@
 #include "idle.h"
 #include "clock.h"
 
+#include "LedExtBoard.h"
+
 void idleInit(idleParam_p parameters) {
     parameters->call_per_second = 0u;
     parameters->cnt = 0u;
@@ -41,6 +43,11 @@ char idleLoop(TaskHandle_p task) {
         parameters->seconds = RTclock.seconds;
         parameters->call_per_second = parameters->cnt;
         parameters->cnt = 0u;
+#if USE_LEDEXTBOARD
+        mLED_1_Toggle();
+        mLED_4_Off();
+        mLED_5_Off();
+#endif
         return 1;
     }
 }

@@ -66,6 +66,7 @@
 #define USE_ENC   0
 #define USE_IMU   0
 #define USE_SPIS  1
+#define USE_LEDEXTBOARD 1
 #elif STARTKITBOARD
 #define USE_UART1 0
 #define USE_UART2 0

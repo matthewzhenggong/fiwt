@@ -30,6 +30,7 @@
       <itemPath>msg_ac.h</itemPath>
       <itemPath>msg_gnd.h</itemPath>
       <itemPath>senTask.h</itemPath>
+      <itemPath>LedExtBoard.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"

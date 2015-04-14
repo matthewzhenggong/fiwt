@@ -80,17 +80,17 @@ int main(void) {
     /* Configure the oscillator for the device */
     ConfigureOscillator();
 
-    for (i=0u;i<40000u;++i) {
-            asm ("repeat #6400;");
-            Nop();
+    for (i = 0u; i < 10000u; ++i) {
+        asm ("repeat #6400;");
+        Nop();
     }
 
     /* Initialize IO ports, peripherals */
     InitApp();
 
-    for (i=0u;i<10000u;++i) {
-            asm ("repeat #6400;");
-            Nop();
+    for (i = 0u; i < 5000u; ++i) {
+        asm ("repeat #6400;");
+        Nop();
     }
 
     /* Init Task */
@@ -99,30 +99,31 @@ int main(void) {
     /* Add Task */
 #if AC_MODEL
     senInit(&sen);
-    senTask = TaskCreate(senLoop, "SENS", (void *)&sen, TASK_PERIOD, 0, 20);
+    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
+    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
     msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
-    TaskCreate(msgLoop, "MSGA", (void *)&msg, TASK_PERIOD, 0, 5);
+    TaskCreate(msgLoop, "MSGA", (void *) &msg, TASK_PERIOD, 0, 5);
 #elif AEROCOMP
     senInit(&sen);
-    senTask = TaskCreate(senLoop, "SENS", (void *)&sen, TASK_PERIOD, 0, 20);
+    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERV", (void *)&servo, TASK_PERIOD, 0, 10);
+    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
     msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
-    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 0, 5);
+    TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 5);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
-    TaskCreate(msgLoop, "MSGC", (void *)&msg, TASK_PERIOD, 0, 10);
+    TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 10);
 #elif STARTKITBOARD
     while (1) {
-        asm ("repeat #4000;"); Nop();
-       IMUUpdate();
+        asm ("repeat #4000;");
+        Nop();
+        IMUUpdate();
     }
 #endif
 
     idleInit(&idle_params);
-    TaskSetIdleHook(idleLoop, (void *)&idle_params);
+    TaskSetIdleHook(idleLoop, (void *) &idle_params);
 
     /**
      * Start the RTOS scheduler, this function should not return.

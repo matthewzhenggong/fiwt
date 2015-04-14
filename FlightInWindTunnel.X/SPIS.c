@@ -66,7 +66,7 @@ DATA_PCKT_Frame_Ptr SPIRX_RX_PCKT_PTR;
 
 // Transmission Handling Queue struct data type definition
 #define SPITX_MaxSize (10)
-#define SPITX_Buffer_MaxSize (1700)
+#define SPITX_Buffer_MaxSize (1500)
 
 typedef struct QueueSPITX_ {
     uint8_t Heads[SPITX_MaxSize];

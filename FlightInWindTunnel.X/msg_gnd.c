@@ -24,6 +24,7 @@
 #if GNDBOARD
 
 #include "msg_gnd.h"
+#include "LedExtBoard.h"
 #include "SPIS.h"
 #include <string.h>
 
@@ -73,7 +74,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
-        
+
         if (SPIRX_RX_PCKT_PTR) {
             node = NULL;
             switch (SPIRX_RX_PCKT_PTR->RF_DATA[0]) {
@@ -83,6 +84,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                     } else if (parameters->nodeAC[1]) {
                         node = parameters->nodeAC[1];
                     }
+                    mLED_2_Toggle();
                     break;
                 case 0xa6:
                     if (parameters->tx_cnt & 1 && parameters->nodeCOMP[0]) {
@@ -90,6 +92,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                     } else if (parameters->nodeCOMP[1]) {
                         node = parameters->nodeCOMP[1];
                     }
+                    mLED_3_Toggle();
                     break;
             }
             if (node) {
@@ -114,9 +117,11 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                         switch (parameters->rx_rsp._payloadPtr[0]) {
                             case '\x22':
                                 flag = XB_AC;
+                                mLED_4_Toggle();
                                 break;
                             case '\x33':
                                 flag = XB_COMP;
+                                mLED_5_Toggle();
                                 break;
                             case '\x88':
                                 flag = XB_AC;
@@ -130,23 +135,25 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                             case '\x78':
                                 flag = XB_COMP;
                                 break;
-                            default :
+                            default:
                                 flag = XB_NON;
                         }
-                        if (flag != XB_NON && parameters->rx_rsp._addr16 == 0xFFFF) {
+                        if (flag != XB_NON && node->tx_req._addr16 == 0xFFFF) {
                             memcpy(node->tx_req._addr64, parameters->rx_rsp._addr64, 8);
                             node->tx_req._addr16 = parameters->rx_rsp._addr16;
                             if (flag == XB_AC) {
-                                if (!parameters->nodeAC[0]) {
+                                if (!parameters->nodeAC[1]) {
+                                    parameters->nodeAC[1] = node;
+                                    mLED_6_On();
+                                } else if (!parameters->nodeAC[0]) {
                                     parameters->nodeAC[0] = node;
-                                }else if (!parameters->nodeAC[1]) {
-                                   parameters->nodeAC[0] = node;
+                                    mLED_7_On();
                                 }
                             } else if (flag == XB_COMP) {
                                 if (!parameters->nodeCOMP[0]) {
                                     parameters->nodeCOMP[0] = node;
                                 } else if (!parameters->nodeCOMP[1]) {
-                                    parameters->nodeCOMP[0] = node;
+                                    parameters->nodeCOMP[1] = node;
                                 }
                             }
                         }
