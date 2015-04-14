@@ -71,10 +71,16 @@ void ConfigureOscillator(void)
 #else
     // Configure Oscillator to operate the device at 64Mhz
     // Fosc= Fin*M/(N1*N2), Fcy=Fosc/2
-    // Fosc= 10M*128/(5*2)=128Mhz for 8M input clock
-    PLLFBD = 126;                                // M=128
+#if NOT_USE_EXTOSC // Fosc= 7.4M*104/(3*2)=128.27Mhz for 7.4M input clock
+    OSCTUNbits.TUN = 1                          // Fin = 7.4M
+    PLLFBD = 102;                               // M=104
+    CLKDIVbits.PLLPRE = 1;                      // N1=3
+    CLKDIVbits.PLLPOST = 0;                     // N2=2
+#else  // Fosc= 10M*128/(5*2)=128Mhz for 10M input clock
+    PLLFBD = 126;                               // M=128
     CLKDIVbits.PLLPRE = 3;                      // N1=5
     CLKDIVbits.PLLPOST = 0;                     // N2=2
+#endif
     asm ("repeat #6400;");Nop();
 #endif
 }

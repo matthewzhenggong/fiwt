@@ -86,12 +86,21 @@
 #pragma config GSSK = OFF               // General Segment Key bits (General Segment Write Protection and Code Protection is Disabled)
 
 // FOSCSEL
+#if NOT_USE_EXTOSC
+#pragma config FNOSC = FRCPLL           // Fast Oscillator Source Selection bits
+#else
 #pragma config FNOSC = PRIPLL           // Oscillator Source Selection bits (Primary Oscillator (XT, HS, EC) with PLL)
+#endif
 #pragma config IESO = ON                // Two-speed Oscillator Start-up Enable bit (Start up device with FRC, then switch to user-selected oscillator source)
 
 // FOSC
+#if NOT_USE_EXTOSC
+#pragma config POSCMD = NONE            // Primary Oscillator Mode Select Bit (XT Crystal Oscillator Mode)
+#pragma config OSCIOFNC = ON            // OSC2 Pin Function Bit (OSC2 is clock output)
+#else
 #pragma config POSCMD = XT              // Primary Oscillator Mode Select Bit (XT Crystal Oscillator Mode)
 #pragma config OSCIOFNC = OFF           // OSC2 Pin Function Bit (OSC2 is clock output)
+#endif
 #pragma config IOL1WAY = ON             // Peripheral pin select configuration (Allow only one reconfiguration)
 #pragma config FCKSM = CSDCMD           // Clock Switching Mode bits (Both Clock switching and Fail-safe Clock Monitor are disabled)
 
