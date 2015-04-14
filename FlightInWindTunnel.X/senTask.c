@@ -50,21 +50,18 @@ PT_THREAD(senLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
-#if USE_IMU
-        IMUBurstRead();
-#endif
-#if USE_ADC1
-        UpdateAnalogInputs();
-#endif
 #if USE_ENC
         EncUpdate();
-#if AEROCOMP
-        UpdateServoPosFromEnc();
-#endif /*AEROCOMP*/
 #endif
 #if USE_IMU
         IMUUpdate();
 #endif
+#if USE_ADC1
+        UpdateAnalogInputs();
+#endif
+#if AEROCOMP
+        UpdateServoPosFromEnc();
+#endif /*AEROCOMP*/
         PT_YIELD(pt);
     }
 

@@ -44,17 +44,20 @@ unsigned int IMU_AUX_ADC;
 __eds__ static uint16_t IMUBUFF[12] __attribute__((eds, space(dma)));
 
 void IMUInit(void) {
-    /* 1) Configure SDO1,SCK1, SS1 pins as outputs and SDI1 pin as input*/
+    /* 1) Configure SDO1,SCK1, SS1, RST pins as outputs and SDI1,DIO1 pin as input*/
     _TRISD15 = 0b0;
     _TRISF4 = 0b0;
     _TRISF5 = 0b0;
+    _TRISF2 = 0b0;
     _TRISD14 = 0b1;
+    _TRISF3 = 0b1;
 
     /* 2) Assign SPI1 pins through Peripherial Pin Select */
     _RP79R = 0x05; /*  SDO1 is assigned to RP79,    0x05 = SDO1 */
     _RP100R = 0x06; /*  SCK1 is assigned to RP100,   0x06 = SCK1 */
-    _RP101R  = 0x07;  /* SS1 is assigned to RP101,     0x07 = SS1 */
-    _SDI1R = 0x4E; /*  SDI1 Input tied to RPI78,    0x4E = RPI78 */
+    _RP101R = 0x07; /* SS1 is assigned to RP101,     0x07 = SS1 */
+    _SDI1R = 78; /*  SDI1 Input tied to RPI78,    0x4E = RPI78 */
+    _INT4R = 99; /* INT4 Input tied to PR99 */
 
     /* 3) Configure the SPI module status and control register */
     /* SPI1STAT: SPI1 Status and Control Register*/
@@ -148,7 +151,7 @@ void IMUInit(void) {
     /*                                          0b00 = Primary prescale 64:1. */
     SPI1CON1 = 0x046Du;
     SPI1CON2 = 0u;
-    
+
     /**   Associate DMA Channel with SPI1 */
     DMA8REQ = 0b00001010; /*  Select SPI1 Transfer Done */
     DMA8PAD = (volatile uint16_t) & SPI1BUF;
@@ -163,12 +166,30 @@ void IMUInit(void) {
     _DMA8IE = 0; /*  Enable DMA interrupt */
     _DMA8IP = HARDWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  DMAx priority out 5 of 7 */
     _DMA8IF = 0; /*  Clear DMA Interrupt Flag */
+
+    INTCON2bits.INT4EP = 0b0;
+    _INT4IE = 0;
+    _INT4IP = SOFTWARE_INTERRUPT_PRIORITY_LEVEL_LOW; /*  INT4 priority out 1 of 7 */
+    _INT4IF = 0; /*  Clear INT Interrupt Flag */
 }
 
-bool imu_reading = false;
+__near bool volatile imu_reading = false;
+
+__interrupt(no_auto_psv) void _INT4Interrupt(void) {
+    if (!imu_reading) {
+        // Initialize IMU Burst Read
+        SPI1BUF = 0x3E00;
+        // Wait for transmission to finish
+        while (!SPI1STATbits.SPIRBF);
+
+        imu_reading = true;
+        DMA8CONbits.CHEN = 1; /* Enable DMA channel */
+        DMA8REQbits.FORCE = 0b1;
+    }
+    _INT4IF = 0; /*  Clear INT Interrupt Flag */
+}
 
 __interrupt(no_auto_psv) void _DMA8Interrupt(void) {
-
     imu_reading = false;
     DMA8CONbits.CHEN = 0; /* Enable DMA channel */
     _DMA8IF = 0; /*  Clear the DMAx Interrupt Flag; */
@@ -198,32 +219,18 @@ void IMUStart(void) {
     IMU_ZGyroTemp = 0;
     IMU_AUX_ADC = 0;
 
+    imu_reading = false;
+
     /*   Enable DMA Interrupts */
     _DMA8IF = 0; /*  Clear DMA Interrupt Flag */
     _DMA8IE = 1; /*  Enable DMA interrupt */
-}
 
-uint16_t SPI_WriteWord(uint16_t SPI_word) {
-    // Transmit message
-    SPI1BUF = SPI_word;
-    // Wait for transmission to finish
-    while (! SPI1STATbits.SPIRBF);
-    // Read SPI data in buffer
-    return SPI1BUF;
-}
-
-void IMUBurstRead(void) {
-    // Initialize IMU Burst Read
-    SPI_WriteWord(0x3E00);
-
-    imu_reading = true;
-    DMA8CONbits.CHEN = 1; /* Enable DMA channel */
-    DMA8REQbits.FORCE = 0b1;
+    /*   Enable INT Interrupts */
+    _INT4IF = 0; /*  Clear INT Interrupt Flag */
+    _INT4IE = 1; /*  Enable INT interrupt */
 }
 
 void IMUUpdate(void) {
-    while (imu_reading) ;
-
     // Read IMU Output Data Registers
     // Store IMU Voltage Supply Data
     IMU_Supply = IMUBUFF[1] & 0x0FFF;
@@ -247,7 +254,6 @@ void IMUUpdate(void) {
     IMU_ZGyroTemp = IMUBUFF[10] & 0x0FFF;
     // Store IMU Auxiliary ADC Output Data
     IMU_AUX_ADC = IMUBUFF[11] & 0x0FFF;
-
 }
 
 #endif /* USE_IMU */
