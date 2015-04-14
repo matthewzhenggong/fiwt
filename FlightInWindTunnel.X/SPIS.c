@@ -27,6 +27,8 @@
 #include <xc.h>
 #include <string.h>
 
+#include "LedExtBoard.h"
+
 // GNDBOARD / dSPACE board SPI interface codes
 #define DUMMY_DATA      '\x56'    // 0x12 -> "V": If connected to IMU-ADIS16360,
 // the Product identification is retrieved.
@@ -345,6 +347,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                     SPI1TX_Bytes2TX = 0u;
                     // Set SPI1RX_Flow = 3
                     SPI1RX_Flow = 3;
+                    mLED_5_On();
                 }
                 // Send SPI1TX_Data
                 SPI1BUF = SPI1TX_Data;
@@ -405,9 +408,10 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                     SPI1BUF = SPI1TX_Data;
                     // Transmission will continue.
                 }
-                if (SPI1TX_Bytes2TX == SPI1TX_Bytes4TX) {
+                if (SPI1TX_Bytes2TX >= SPI1TX_Bytes4TX) {
                     // Set SPI1RX_Flow = 0
                     SPI1RX_Flow = 0;
+                    mLED_6_On();
                     // Transmission will stop.
                 }
             } else {
@@ -430,6 +434,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
             SPI1RX_Bytes4RX = 0u;
             // Set SPI1TX_Flow = 1
             SPI1TX_Flow = 1;
+            mLED_7_On();
             break;
         case MESSAGE_END:
             // Store MESSAGE_END in SPI1TX_Data
@@ -518,6 +523,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                         } else {
                             SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT;
                         }
+                        mLED_8_On();
                     }
                     // Set SPI1TX_Flow = 0
                     SPI1TX_Flow = 0;

@@ -31,6 +31,8 @@
 extern "C" {
 #endif
 
+#define SPI_PKG_MAXLEN 86
+
     enum XbeeGroup {
         XB_AC,
         XB_COMP,
@@ -50,6 +52,7 @@ extern "C" {
         unsigned int tx_cnt;
         unsigned int rx_cnt;
         ZBRxResponse_t rx_rsp;
+        uint8_t spis_pkg_buff[SPI_PKG_MAXLEN];
     } msgParam_t, *msgParam_p;
 
     void msgInit(msgParam_t *parameters, XBee_p, XBee_p, XBee_p, XBee_p);
