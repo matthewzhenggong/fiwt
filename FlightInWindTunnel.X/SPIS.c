@@ -345,7 +345,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                     SPI1TX_Bytes2TX = 0u;
                     // Set SPI1RX_Flow = 3
                     SPI1RX_Flow = 3;
-                    mLED_5_On();
+                    mLED_5_Toggle();
                 }
                 // Send SPI1TX_Data
                 SPI1BUF = SPI1TX_Data;
@@ -409,7 +409,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                 if (SPI1TX_Bytes2TX >= SPI1TX_Bytes4TX) {
                     // Set SPI1RX_Flow = 0
                     SPI1RX_Flow = 0;
-                    mLED_6_On();
+                    mLED_6_Toggle();
                     // Transmission will stop.
                 }
             } else {
@@ -432,7 +432,6 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
             SPI1RX_Bytes4RX = 0u;
             // Set SPI1TX_Flow = 1
             SPI1TX_Flow = 1;
-            mLED_7_On();
             break;
         case MESSAGE_END:
             // Store MESSAGE_END in SPI1TX_Data
@@ -483,6 +482,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                         SPIRX_RX_PCKT_PCKT->PCKT_LENGTH_LSB = SPI1RX_Data;
                         // Set SPI1TX_Flow = 3
                         SPI1TX_Flow = 3;
+                        mLED_7_Toggle();
                     }
                     break;
                 case 3:
@@ -521,7 +521,7 @@ __interrupt(auto_psv) void _SPI1Interrupt(void) {
                         } else {
                             SPIRX_RX_PCKT_PCKT = SPIRX_RX_PCKT;
                         }
-                        mLED_8_On();
+                        mLED_8_Toggle();
                     }
                     // Set SPI1TX_Flow = 0
                     SPI1TX_Flow = 0;
