@@ -172,7 +172,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                                 //8-10	Time Stamp	TimeStampH, TimeStampM, TimeStampL
                                 memcpy(spis_pkg_buff+23, parameters->rx_rsp._payloadPtr+31, 3);
                                 //DATA_ID ==	CODE_AC_MODEL_IMU_DATA
-                                spis_pkg_buff[26] = CODE_AC_MODEL_ENCOD_POS;
+                                spis_pkg_buff[26] = CODE_AC_MODEL_IMU_DATA;
                                 //2-21		Data    GxH,GxL,GyH,GyL...
                                 memcpy(spis_pkg_buff+27+2, parameters->rx_rsp._payloadPtr+19, 12);
                                 //22-24	Time Stamp	TimeStampH, TimeStampM, TimeStampL
@@ -217,7 +217,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                                 /*self.pack88 = struct.Struct(">B3HBH")*/
                                 /* 1+6+3 */
                                 flag = XB_COMP;
-                                //DATA_ID == 	CODE_AC_MODEL_BAT_LEV
+                                //DATA_ID == 	CODE_AEROCOMP_BAT_LEV
                                 spis_pkg_buff[0] = CODE_AEROCOMP_BAT_LEV;
                                 //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
                                 spis_pkg_buff[1] = parameters->rx_rsp._payloadPtr[2];
