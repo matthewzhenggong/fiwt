@@ -106,7 +106,7 @@ uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
     for (i=0u;i<length;++i) {
         if (*buff == MASK_BYTE) {
             ++buff; ++i;
-            *(spis_pkg_buff++) = *(++buff) ^ 0x3D;
+            *(spis_pkg_buff++) = *(buff++) ^ 0x3D;
         } else {
             *(spis_pkg_buff++) = *(buff++);
         }
@@ -167,18 +167,18 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
             node = NULL;
             switch (SPIRX_RX_PCKT_PTR->RF_DATA[0]) {
                 case 0xa5:
-                    if (parameters->tx_cnt & 1 && parameters->nodeAC[0]) {
-                        node = parameters->nodeAC[0];
-                    } else if (parameters->nodeAC[1]) {
+                    if (parameters->tx_cnt & 1 && parameters->nodeAC[1]) {
                         node = parameters->nodeAC[1];
+                    } else if (parameters->nodeAC[0]) {
+                        node = parameters->nodeAC[0];
                     }
                     mLED_2_On();
                     break;
                 case 0xa6:
-                    if (parameters->tx_cnt & 1 && parameters->nodeCOMP[0]) {
-                        node = parameters->nodeCOMP[0];
-                    } else if (parameters->nodeCOMP[1]) {
+                    if (parameters->tx_cnt & 1 && parameters->nodeCOMP[1]) {
                         node = parameters->nodeCOMP[1];
+                    } else if (parameters->nodeCOMP[0]) {
+                        node = parameters->nodeCOMP[0];
                     }
                     mLED_2_On();
                     break;
@@ -187,7 +187,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                 ++parameters->tx_cnt;
                 node->tx_req._payloadLength = pull_payload(node->tx_req._payloadPtr, SPIRX_RX_PCKT_PTR->RF_DATA, (SPIRX_RX_PCKT_PTR->PCKT_LENGTH_MSB << 8) + SPIRX_RX_PCKT_PTR->PCKT_LENGTH_LSB) - node->tx_req._payloadPtr;
                 SPIRX_RX_PCKT_PTR = NULL; //clear for sent
-                XBeeZBTxRequest(parameters->node[0].xbee, &parameters->node[0].tx_req, 0u);
+                XBeeZBTxRequest(node->xbee, &node->tx_req, 0u);
             }
         }
 
