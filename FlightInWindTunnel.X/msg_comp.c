@@ -110,7 +110,52 @@ size_t updateCommPack(TaskHandle_p task, TaskHandle_p sen_Task, TaskHandle_p ser
     return pack-head;
 }
 
-extern void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]);
+void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
+    int i;
+
+    if (cmd[0] == '\xA5' || cmd[0] == '\xA6') {
+        switch (cmd[1]) {
+            case 1 :
+                for (i=0;i<SEVERONUM;++i) {
+                    parameters->Servo_PrevRef[i] = parameters->ServoRef[i] = ((cmd[2+i*2]<<8) | cmd[2+i*2+1]);
+                }
+                parameters->InputType = 0;
+                parameters->StartTime = 100;
+                parameters->TimeDelta = 100;
+                parameters->NofCycles = 1;
+                parameters->Srv2Move = 0xFF;
+                parameters->GenerateInput_Flag = 1;
+                parameters->cnt = 0u;
+                break;
+            case 2 :
+            case 3 :
+            case 4 :
+            case 5 :
+            case 7 :
+            case 8 :
+            case 9 :
+                parameters->InputType = cmd[1] - 1u;
+                parameters->Srv2Move = cmd[2];
+                parameters->StartTime = ((cmd[3] << 8) | cmd[4])/10;
+                parameters->TimeDelta = ((cmd[5] << 8) | cmd[6])/10;
+                parameters->NofCycles = cmd[7];
+                for (i=0;i<6;++i) {
+                    parameters->MaxValue[i] = (cmd[8+i]<<1);
+                }
+                for (i=0;i<6;++i) {
+                    parameters->MinValue[i] = (cmd[14+i]<<1);
+                }
+                for (i=0;i<6;++i) {
+                    parameters->Sign[i] = cmd[20+i];
+                }
+                parameters->GenerateInput_Flag = 1;
+                parameters->cnt = 0u;
+                break;
+            case 6 :
+                break;
+        }
+    }
+}
 
 PT_THREAD(msgLoop)(TaskHandle_p task) {
     int packin;
