@@ -30,7 +30,7 @@
 extern unsigned int ADC_Input[8];
 #endif
 #else
-unsigned int BattCell[BATTCELLADCNUM];
+uint8_t BattCell[BATTCELLADCNUM];
 #if AC_MODEL
 unsigned int ServoPos[SERVOPOSADCNUM];
 #elif AEROCOMP
