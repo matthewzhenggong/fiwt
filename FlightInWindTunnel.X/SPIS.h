@@ -33,7 +33,8 @@
 extern "C" {
 #endif
 
-
+// GNDBOARD / dSPACE board SPI interface codes
+#define DUMMY_DATA      '\x56'
 
 #define MaximumPayload 86
 /* Define struct DATA_PCKT_Frame data type */

@@ -29,8 +29,6 @@
 
 #include "LedExtBoard.h"
 
-// GNDBOARD / dSPACE board SPI interface codes
-#define DUMMY_DATA      '\x56'    // 0x12 -> "V": If connected to IMU-ADIS16360,
 // the Product identification is retrieved.
 #define SPI_DELIMITER   '\x7E'    // 0x7E -> "~": Message start delimiter
 #define SPI_ESCAPE      '\x7D'    // 0x7D -> "}": Following data is ESCAPE
