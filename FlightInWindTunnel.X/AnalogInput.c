@@ -74,20 +74,20 @@ void UpdateAnalogInputs(void) {
 
 void UpdateServoPosFromEnc(void) {
     // Correct Encoder 1 Position
-    ServoPos[0] = (2048+1378) - EncPos[0];
+    ServoPos[0] = EncPos[0] = 3342 - EncPos[0];
     // Correct Encoder 2 Position
     if (EncPos[1] >= 7000) {
-        ServoPos[1] = (2048+661) - (EncPos[1] - 8192);
+        ServoPos[1] = EncPos[1] = 2652 - (EncPos[1] - 8192);
     } else {
-        ServoPos[1] = (2048+661) - EncPos[1];
+        ServoPos[1] = EncPos[1] = 2652 - EncPos[1];
     }
     // Correct Encoder 3 Position
-    ServoPos[2] = (2048+3303) - EncPos[2];
+    ServoPos[2] = EncPos[2] = 5456 - EncPos[2];
     // Correct Encoder 4 Position
     if (EncPos[3] >= 7000) {
-        ServoPos[3] = (2048+74) - (EncPos[3] - 8192);
+        ServoPos[3] = EncPos[3] = 2030 - (EncPos[3] - 8192);
     } else {
-        ServoPos[3] = (2048+74) - EncPos[3];
+        ServoPos[3] = EncPos[3] = 2030 - EncPos[3];
     }
 }
 #endif
