@@ -36,7 +36,7 @@ extern "C" {
     /** BattCell ADC Value
      * Unit : 10mV
      */
-    extern unsigned int BattCell[BATTCELLADCNUM];
+    extern uint8_t BattCell[BATTCELLADCNUM];
 
     /** ServoPos ADC Value
      * from 0-180deg, 0-4096 output

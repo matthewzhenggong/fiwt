@@ -97,8 +97,7 @@ size_t updateBattPack(uint8_t head[]){
     pack = head;
     *(pack++) = 0x88;
     for (i=0;i<BATTCELLADCNUM;++i) {
-      *(pack++) = BattCell[i] >> 8;
-      *(pack++) = BattCell[i] & 0xFF;
+      *(pack++) = BattCell[i];
     }
     *(pack++) = ADC_TimeStamp[0] & 0xFF;
     *(pack++) = ADC_TimeStamp[1] >> 8;
