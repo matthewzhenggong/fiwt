@@ -147,6 +147,7 @@ void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
         servo = Servos + ch;
 
         pos = _butter_update(*servo->Position, servo->butt);
+        *servo->Position = pos;
         if (ref > servo->MaxPosition) {
             ref = servo->MaxPosition;
         } else if (ref < servo->MinPosition) {
