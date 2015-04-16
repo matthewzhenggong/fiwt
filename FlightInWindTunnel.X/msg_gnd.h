@@ -34,8 +34,10 @@ extern "C" {
 #define SPI_PKG_MAXLEN 86
 
     enum XbeeGroup {
-        XB_AC,
-        XB_COMP,
+        XB_AC_TX,
+        XB_AC_RX,
+        XB_COMP_TX,
+        XB_COMP_RX,
         XB_NON
     };
     
@@ -47,8 +49,10 @@ extern "C" {
     typedef struct {
         struct pt PT;
         RemoteNode node[4];
-        RemoteNode* nodeAC[2];
-        RemoteNode* nodeCOMP[2];
+        RemoteNode* nodeACTx;
+        RemoteNode* nodeACRx;
+        RemoteNode* nodeCOMPTx;
+        RemoteNode* nodeCOMPRx;
         unsigned int tx_cnt;
         unsigned int rx_cnt;
         ZBRxResponse_t rx_rsp;

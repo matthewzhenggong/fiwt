@@ -1,5 +1,5 @@
 /*
- * File:   msg.h
+ * File:   msg_recv.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,8 +18,8 @@
  * License along with this library.
  */
 
-#ifndef MSG_COMP_H
-#define	MSG_COMP_H
+#ifndef MSG_RECV_H
+#define	MSG_RECV_H
 
 #include "XBeeZBS2.h"
 #include "task.h"
@@ -31,21 +31,23 @@ extern "C" {
 
     typedef struct {
         struct pt PT;
-        XBee_p _xbee[2];
+        XBee_p _xbee;
         TaskHandle_p serov_Task;
         TaskHandle_p sen_Task;
+        unsigned int rx_cnt;
+        unsigned int tx_cnt;
         unsigned int cnt;
         ZBRxResponse_t rx_rsp;
         ZBTxRequest_t tx_req;
-    } msgParam_t, *msgParam_p;
+    } msgRecvParam_t, *msgRecvParam_p;
 
-    void msgInit(msgParam_p parameters, XBee_p, XBee_p, TaskHandle_p, TaskHandle_p);
+    void msgRecvInit(msgRecvParam_p parameters, XBee_p, TaskHandle_p, TaskHandle_p);
 
-    PT_THREAD(msgLoop)(TaskHandle_p task);
+    PT_THREAD(msgRecvLoop)(TaskHandle_p task);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* MSG_COMP_H */
+#endif	/* MSG_RECV_H */
 

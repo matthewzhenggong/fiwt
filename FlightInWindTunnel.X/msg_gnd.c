@@ -24,73 +24,29 @@
 #if GNDBOARD
 
 #include "msg_gnd.h"
+#include "msg_code.h"
 #include "LedExtBoard.h"
 #include "SPIS.h"
 #include <string.h>
 
-// Data masking, MASK_BYTE definition
-#define MASK_BYTE       		0xEF
-
-/* Data Identifier Codes */
-// Servos Read Data
-#define CODE_AC_MODEL_SERVO_POS		0x22
-#define CODE_AEROCOMP_SERVO_POS		0x33
-
-// Encoders Read Data
-#define CODE_AC_MODEL_ENCOD_POS 	0x55
-#define CODE_AEROCOMP_ENCOD_POS 	0x66
-
-// Battery Read Data
-#define CODE_AC_MODEL_BAT_LEV		0x88
-#define CODE_AEROCOMP_BAT_LEV		0x99
-
-// Low Battery codes
-#define CODE_AC_MODEL_LOW_BAT		0xBB
-#define CODE_AEROCOMP_LOW_BAT	 	0xCC
-
-// IMU Read Data
-#define CODE_AC_MODEL_IMU_DATA		0xEE
-
-// Communication Statistics
-#define CODE_AC_MODEL_COM_STATS		0x75
-#define CODE_AEROCOMP_COM_STATS		0x76
-
-// GNDBOARD Sensors Read
-#define CODE_GNDBOARD_ADCM_READ		0x44
-#define CODE_GNDBOARD_ENCOD_POS 	0x77
-#define CODE_GNDBOARD_COM_STATS		0xAA
-
-// Servos New Position
-#define CODE_AC_MODEL_NEW_SERV_CMD	0xA5
-#define CODE_AEROCOMP_NEW_SERV_CMD	0xA6
-
-// Command Message
-#define CODE_AC_MODEL_COMMAND		0x45
-#define CODE_AEROCOMP_COMMAND		0x46
-#define CODE_GNDBOARD_COMMAND		0x47
-
-static bool Equal2DataHeader(uint8_t Byte2Vrfy)
-{
+static bool Equal2DataHeader(uint8_t Byte2Vrfy) {
     if ((Byte2Vrfy == CODE_AC_MODEL_SERVO_POS) || (Byte2Vrfy == CODE_AEROCOMP_SERVO_POS) || (Byte2Vrfy == CODE_AC_MODEL_ENCOD_POS) ||
-            (Byte2Vrfy == CODE_AEROCOMP_ENCOD_POS) ||  (Byte2Vrfy == CODE_AC_MODEL_BAT_LEV) || (Byte2Vrfy == CODE_AEROCOMP_BAT_LEV) ||
+            (Byte2Vrfy == CODE_AEROCOMP_ENCOD_POS) || (Byte2Vrfy == CODE_AC_MODEL_BAT_LEV) || (Byte2Vrfy == CODE_AEROCOMP_BAT_LEV) ||
             (Byte2Vrfy == CODE_AC_MODEL_LOW_BAT) || (Byte2Vrfy == CODE_AEROCOMP_LOW_BAT) || (Byte2Vrfy == CODE_AC_MODEL_IMU_DATA) ||
             (Byte2Vrfy == CODE_AC_MODEL_COM_STATS) ||
             (Byte2Vrfy == CODE_AEROCOMP_COM_STATS) || (Byte2Vrfy == CODE_AC_MODEL_NEW_SERV_CMD) || (Byte2Vrfy == CODE_AEROCOMP_NEW_SERV_CMD) ||
             (Byte2Vrfy == CODE_GNDBOARD_ADCM_READ) || (Byte2Vrfy == CODE_GNDBOARD_ENCOD_POS) || (Byte2Vrfy == CODE_GNDBOARD_COM_STATS) ||
             (Byte2Vrfy == CODE_AC_MODEL_COMMAND) || (Byte2Vrfy == CODE_AEROCOMP_COMMAND) || (Byte2Vrfy == CODE_GNDBOARD_COMMAND) ||
-            (Byte2Vrfy == MASK_BYTE) || (Byte2Vrfy == DUMMY_DATA))
-    {
+            (Byte2Vrfy == MASK_BYTE) || (Byte2Vrfy == DUMMY_DATA)) {
         return 1;
-    }
-    else
-    {
+    } else {
         return 0;
     }
 }
 
 uint8_t * push_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length) {
     size_t i;
-    for (i=0u;i<length;++i) {
+    for (i = 0u; i < length; ++i) {
         if (Equal2DataHeader(*buff)) {
             *(spis_pkg_buff++) = MASK_BYTE;
             *(spis_pkg_buff++) = *(buff++) ^ 0x3D;
@@ -103,9 +59,10 @@ uint8_t * push_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
 
 uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length) {
     size_t i;
-    for (i=0u;i<length;++i) {
+    for (i = 0u; i < length; ++i) {
         if (*buff == MASK_BYTE) {
-            ++buff; ++i;
+            ++buff;
+            ++i;
             *(spis_pkg_buff++) = *(buff++) ^ 0x3D;
         } else {
             *(spis_pkg_buff++) = *(buff++);
@@ -113,7 +70,6 @@ uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
     }
     return spis_pkg_buff;
 }
-
 
 void msgInit(msgParam_t *parameters, XBee_p xb1, XBee_p xb2, XBee_p xb3, XBee_p xb4) {
     struct pt *pt;
@@ -135,10 +91,10 @@ void msgInit(msgParam_t *parameters, XBee_p xb1, XBee_p xb2, XBee_p xb3, XBee_p 
         //parameters->node[i].tx_req._payloadPtr[0] = 'P';
     }
 
-    parameters->nodeAC[0] = NULL;
-    parameters->nodeAC[1] = NULL;
-    parameters->nodeCOMP[0] = NULL;
-    parameters->nodeCOMP[1] = NULL;
+    parameters->nodeACTx = NULL;
+    parameters->nodeACRx = NULL;
+    parameters->nodeCOMPTx = NULL;
+    parameters->nodeCOMPRx = NULL;
 
     parameters->tx_cnt = 0u;
     parameters->rx_cnt = 0u;
@@ -166,20 +122,12 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         if (SPIRX_RX_PCKT_PTR) {
             node = NULL;
             switch (SPIRX_RX_PCKT_PTR->RF_DATA[0]) {
-                case 0xa5:
-                    if (parameters->tx_cnt & 1 && parameters->nodeAC[1]) {
-                        node = parameters->nodeAC[1];
-                    } else if (parameters->nodeAC[0]) {
-                        node = parameters->nodeAC[0];
-                    }
+                case CODE_AC_MODEL_NEW_SERV_CMD:
+                    node = parameters->nodeACTx;
                     mLED_2_On();
                     break;
-                case 0xa6:
-                    if (parameters->tx_cnt & 1 && parameters->nodeCOMP[1]) {
-                        node = parameters->nodeCOMP[1];
-                    } else if (parameters->nodeCOMP[0]) {
-                        node = parameters->nodeCOMP[0];
-                    }
+                case CODE_AEROCOMP_NEW_SERV_CMD:
+                    node = parameters->nodeCOMPTx;
                     mLED_2_On();
                     break;
             }
@@ -192,7 +140,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         }
 
         ++parameters->rx_cnt;
-        if ((parameters->rx_cnt & 0x1FE) == 0xFE) {
+        if ((parameters->rx_cnt & 0x1FF) == 500) {
             SPIS_push((const uint8_t *) "\x79hello from ground board.", 15);
         }
         for (i = 0; i < 4; ++i) {
@@ -203,28 +151,28 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                     if (XBeeZBRxResponse(node->xbee, &parameters->rx_rsp)) {
                         spis_pkg_buff = parameters->spis_pkg_buff;
                         switch (parameters->rx_rsp._payloadPtr[0]) {
-                            case '\x22':
+                            case CODE_AC_MODEL_SERVO_POS:
                                 /* self.pack22 = struct.Struct(">B6H3H6HBH6h") */
                                 /* 1+12+6+12+3+12 = 46 */
-                                flag = XB_AC;
+                                flag = XB_AC_RX;
                                 // DATA_ID == CODE_AC_MODEL_SERVO_POS
                                 *(spis_pkg_buff++) = CODE_AC_MODEL_SERVO_POS;
                                 //2-13	Data		SERVOx_H, SERVOx_L
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+1, 12);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 1, 12);
                                 //14-16	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+31, 3);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 31, 3);
                                 // DATA_ID ==  CODE_AC_MODEL_ENCOD_POS
                                 *(spis_pkg_buff++) = CODE_AC_MODEL_ENCOD_POS;
                                 //2- 7	Data		DIGENCx_H, DIGENCx_L
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+13, 6);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 13, 6);
                                 //8-10	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+31, 3);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 31, 3);
                                 //DATA_ID ==	CODE_AC_MODEL_IMU_DATA
                                 *(spis_pkg_buff++) = CODE_AC_MODEL_IMU_DATA;
                                 //2-21		Data    GxH,GxL,GyH,GyL...
                                 *(spis_pkg_buff++) = 0;
                                 *(spis_pkg_buff++) = 0;
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+19, 12);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 19, 12);
                                 *(spis_pkg_buff++) = 0;
                                 *(spis_pkg_buff++) = 0;
                                 *(spis_pkg_buff++) = 0;
@@ -234,58 +182,58 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                                 *(spis_pkg_buff++) = 0;
                                 *(spis_pkg_buff++) = 0;
                                 //22-24	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+31, 3);
-                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff-parameters->spis_pkg_buff);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 31, 3);
+                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
                                 mLED_3_Toggle();
                                 break;
-                            case '\x33':
+                            case CODE_AEROCOMP_SERVO_POS:
                                 /* self.pack33 = struct.Struct(">B4H4HBH4h") */
                                 /* 1+8+8+3+8 = 28 */
-                                flag = XB_COMP;
+                                flag = XB_COMP_RX;
                                 //DATA_ID == 	CODE_AC_MODEL_SERVO_POS
                                 *(spis_pkg_buff++) = CODE_AEROCOMP_SERVO_POS;
                                 //2- 9	Data		SERVOx_H, SERVOx_L
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+1, 8);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 1, 8);
                                 //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+17, 3);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 17, 3);
                                 // DATA_ID ==  CODE_AEROCOMP_ENCOD_POS
                                 *(spis_pkg_buff++) = CODE_AEROCOMP_ENCOD_POS;
                                 //2-9	Data		DIGENCx_H, DIGENCx_L
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+9, 8);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 9, 8);
                                 //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+17, 3);
-                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff-parameters->spis_pkg_buff);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 17, 3);
+                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
                                 mLED_4_Toggle();
                                 break;
-                            case '\x88':
+                            case CODE_AC_MODEL_BAT_LEV:
                                 /*self.pack88 = struct.Struct(">B3BBH")*/
                                 /* 1+3+3 */
-                                flag = XB_AC;
+                                flag = XB_AC_TX;
                                 //DATA_ID == 	CODE_AC_MODEL_BAT_LEV
                                 *(spis_pkg_buff++) = CODE_AC_MODEL_BAT_LEV;
                                 //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+1, 3);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 1, 3);
                                 //5- 7	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+4, 3);
-                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff-parameters->spis_pkg_buff);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 4, 3);
+                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
                                 break;
-                            case '\x99':
+                            case CODE_AEROCOMP_BAT_LEV:
                                 /*self.pack88 = struct.Struct(">B3HBH")*/
                                 /* 1+3+3 */
-                                flag = XB_COMP;
+                                flag = XB_COMP_TX;
                                 //DATA_ID == 	CODE_AEROCOMP_BAT_LEV
                                 *(spis_pkg_buff++) = CODE_AEROCOMP_BAT_LEV;
                                 //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+1, 3);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 1, 3);
                                 //5- 7	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr+4, 3);
-                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff-parameters->spis_pkg_buff);
+                                spis_pkg_buff = push_payload(spis_pkg_buff, parameters->rx_rsp._payloadPtr + 4, 3);
+                                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
                                 break;
-                            case '\x77':
-                                flag = XB_AC;
+                            case CODE_AC_MODEL_COM_STATS:
+                                flag = XB_AC_TX;
                                 break;
-                            case '\x78':
-                                flag = XB_COMP;
+                            case CODE_AEROCOMP_COM_STATS:
+                                flag = XB_COMP_TX;
                                 break;
                             default:
                                 flag = XB_NON;
@@ -293,18 +241,29 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                         if (flag != XB_NON && node->tx_req._addr16 == 0xFFFF) {
                             memcpy(node->tx_req._addr64, parameters->rx_rsp._addr64, 8);
                             node->tx_req._addr16 = parameters->rx_rsp._addr16;
-                            if (flag == XB_AC) {
-                                if (!parameters->nodeAC[1]) {
-                                    parameters->nodeAC[1] = node;
-                                } else if (!parameters->nodeAC[0]) {
-                                    parameters->nodeAC[0] = node;
-                                }
-                            } else if (flag == XB_COMP) {
-                                if (!parameters->nodeCOMP[0]) {
-                                    parameters->nodeCOMP[0] = node;
-                                } else if (!parameters->nodeCOMP[1]) {
-                                    parameters->nodeCOMP[1] = node;
-                                }
+                            switch (flag) {
+                                case XB_AC_RX:
+                                    if (!parameters->nodeACRx) {
+                                        parameters->nodeACRx = node;
+                                    }
+                                    break;
+                                case XB_AC_TX:
+                                    if (!parameters->nodeACTx) {
+                                        parameters->nodeACTx = node;
+                                    }
+                                    break;
+                                case XB_COMP_RX:
+                                    if (!parameters->nodeCOMPRx) {
+                                        parameters->nodeCOMPRx = node;
+                                    }
+                                    break;
+                                case XB_COMP_TX:
+                                    if (!parameters->nodeCOMPTx) {
+                                        parameters->nodeCOMPTx = node;
+                                    }
+                                    break;
+                                default:
+                                    break;
                             }
                         }
                     }

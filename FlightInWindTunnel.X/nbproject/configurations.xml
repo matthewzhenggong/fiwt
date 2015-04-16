@@ -26,11 +26,12 @@
       <itemPath>IMU.h</itemPath>
       <itemPath>SPIS.h</itemPath>
       <itemPath>config_servo.h</itemPath>
-      <itemPath>msg_comp.h</itemPath>
-      <itemPath>msg_ac.h</itemPath>
       <itemPath>msg_gnd.h</itemPath>
       <itemPath>senTask.h</itemPath>
       <itemPath>LedExtBoard.h</itemPath>
+      <itemPath>msg_recv.h</itemPath>
+      <itemPath>msg_send.h</itemPath>
+      <itemPath>msg_code.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -61,10 +62,10 @@
       <itemPath>Enc.c</itemPath>
       <itemPath>IMU.c</itemPath>
       <itemPath>SPIS.c</itemPath>
-      <itemPath>msg_comp.c</itemPath>
-      <itemPath>msg_ac.c</itemPath>
       <itemPath>msg_gnd.c</itemPath>
       <itemPath>senTask.c</itemPath>
+      <itemPath>msg_recv.c</itemPath>
+      <itemPath>msg_send.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

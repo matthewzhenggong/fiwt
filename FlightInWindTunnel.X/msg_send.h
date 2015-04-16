@@ -1,5 +1,5 @@
 /*
- * File:   msg.h
+ * File:   msg_send.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,8 +18,8 @@
  * License along with this library.
  */
 
-#ifndef MSG_AC_H
-#define	MSG_AC_H
+#ifndef MSG_SEND_H
+#define	MSG_SEND_H
 
 #include "XBeeZBS2.h"
 #include "task.h"
@@ -31,21 +31,18 @@ extern "C" {
 
     typedef struct {
         struct pt PT;
-        XBee_p _xbee[2];
-        TaskHandle_p serov_Task;
-        TaskHandle_p sen_Task;
+        XBee_p _xbee;
         unsigned int cnt;
-        ZBRxResponse_t rx_rsp;
         ZBTxRequest_t tx_req;
-    } msgParam_t, *msgParam_p;
+    } msgSendParam_t, *msgSendParam_p;
 
-    void msgInit(msgParam_p parameters, XBee_p, XBee_p, TaskHandle_p, TaskHandle_p);
+    void msgSendInit(msgSendParam_p parameters, XBee_p);
 
-    PT_THREAD(msgLoop)(TaskHandle_p task);
+    PT_THREAD(msgSendLoop)(TaskHandle_p task);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* MSG_AC_H */
+#endif	/* MSG_SEND_H */
 

@@ -24,14 +24,11 @@
 
 #include "config.h"
 
-#if AC_MODEL
+#if AC_MODEL || AEROCOMP
 #include "servoTask.h"
 #include "senTask.h"
-#include "msg_ac.h"
-#elif AEROCOMP
-#include "servoTask.h"
-#include "senTask.h"
-#include "msg_comp.h"
+#include "msg_recv.h"
+#include "msg_send.h"
 #elif GNDBOARD
 #include "msg_gnd.h"
 #include <xc.h>
@@ -50,24 +47,17 @@
 /******************************************************************************/
 
 
-#if AC_MODEL
-#define TASK_PERIOD (10u) // 100Hz
+#if AC_MODEL || AEROCOMP
+#define TASK_PERIOD (5u) // 200Hz
 servoParam_t servo;
 TaskHandle_p servoTask;
 senParam_t sen;
 TaskHandle_p senTask;
-msgParam_t msg;
-
-#elif AEROCOMP
-#define TASK_PERIOD (10u) // 100Hz
-servoParam_t servo;
-TaskHandle_p servoTask;
-senParam_t sen;
-TaskHandle_p senTask;
-msgParam_t msg;
+msgRecvParam_t msg_recv;
+msgSendParam_t msg_send;
 
 #elif GNDBOARD
-#define TASK_PERIOD (5u) // 200Hz
+#define TASK_PERIOD (2u) // 500Hz
 msgParam_t msg;
 
 #endif
@@ -97,20 +87,15 @@ int main(void) {
     TaskInit();
 
     /* Add Task */
-#if AC_MODEL
+#if AC_MODEL || AEROCOMP
+    msgRecvInit(&msg_recv, &Xbee2, servoTask, senTask);
+    TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
     senInit(&sen);
     senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
-    msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
-    TaskCreate(msgLoop, "MSGA", (void *) &msg, TASK_PERIOD, 0, 5);
-#elif AEROCOMP
-    senInit(&sen);
-    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
-    servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
-    msgInit(&msg, &Xbee1, &Xbee2, servoTask, senTask);
-    TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 5);
+    msgSendInit(&msg_send, &Xbee1);
+    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*4, 0, 0);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
     TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 10);
