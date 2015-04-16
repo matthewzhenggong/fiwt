@@ -70,7 +70,7 @@ extern "C" {
      * @param ch Servo channel
      * @param ref
      */
-    void ServoUpdate100Hz(unsigned int ch, unsigned int ref);
+    void ServoUpdate(unsigned int ch, unsigned int ref);
 
 #ifdef	__cplusplus
 }

@@ -68,7 +68,7 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                 case 0u:
                     for (i = 0u; i < SEVERONUM; ++i) {
                         if ((1<<i) &parameters->Srv2Move) {
-                            ServoUpdate100Hz(i, parameters->ServoRef[i]);
+                            ServoUpdate(i, parameters->ServoRef[i]);
                         }
                     }
                     if (++parameters->cnt > parameters->StartTime) {
@@ -84,9 +84,9 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                     for (i = 0u; i < SEVERONUM; ++i) {
                         if ((1<<i) &parameters->Srv2Move) {
                             if (parameters->Sign[i] == 2u) {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]-s*parameters->MaxValue[i]);
+                                ServoUpdate(i, parameters->ServoRef[i]-s*parameters->MaxValue[i]);
                             } else {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]+s*parameters->MaxValue[i]);
+                                ServoUpdate(i, parameters->ServoRef[i]+s*parameters->MaxValue[i]);
                             }
                         }
                     }
@@ -112,9 +112,9 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                     for (i = 0u; i < SEVERONUM; ++i) {
                         if ((1<<i) &parameters->Srv2Move) {
                             if (parameters->Sign[i] == 2u) {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]-s*parameters->MaxValue[i]);
+                                ServoUpdate(i, parameters->ServoRef[i]-s*parameters->MaxValue[i]);
                             } else {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]+s*parameters->MaxValue[i]);
+                                ServoUpdate(i, parameters->ServoRef[i]+s*parameters->MaxValue[i]);
                             }
                         }
                     }
@@ -144,9 +144,9 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                     for (i = 0u; i < SEVERONUM; ++i) {
                         if ((1<<i) &parameters->Srv2Move) {
                             if (parameters->Sign[i] == 2u) {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]-s*parameters->MaxValue[i]);
+                                ServoUpdate(i, parameters->ServoRef[i]-s*parameters->MaxValue[i]);
                             } else {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]+s*parameters->MaxValue[i]);
+                                ServoUpdate(i, parameters->ServoRef[i]+s*parameters->MaxValue[i]);
                             }
                         }
                     }
@@ -172,9 +172,9 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                     for (i = 0u; i < SEVERONUM; ++i) {
                         if ((1<<i) &parameters->Srv2Move) {
                             if (parameters->Sign[i] == 2u) {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]-(uint16_t)(((uint32_t)s*parameters->MaxValue[i])/(uint32_t)parameters->TimeDelta));
+                                ServoUpdate(i, parameters->ServoRef[i]-(uint16_t)(((uint32_t)s*parameters->MaxValue[i])/(uint32_t)parameters->TimeDelta));
                             } else {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]+(uint16_t)(((uint32_t)s*parameters->MaxValue[i])/(uint32_t)parameters->TimeDelta));
+                                ServoUpdate(i, parameters->ServoRef[i]+(uint16_t)(((uint32_t)s*parameters->MaxValue[i])/(uint32_t)parameters->TimeDelta));
                             }
                         }
                     }
@@ -240,9 +240,9 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                     for (i = 0u; i < SEVERONUM; ++i) {
                         if ((1<<i) &parameters->Srv2Move) {
                             if (parameters->Sign[i] == 2u) {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]-(int16_t)(sfun*parameters->MaxValue[i]));
+                                ServoUpdate(i, parameters->ServoRef[i]-(int16_t)(sfun*parameters->MaxValue[i]));
                             } else {
-                                ServoUpdate100Hz(i, parameters->ServoRef[i]+(int16_t)(sfun*parameters->MaxValue[i]));
+                                ServoUpdate(i, parameters->ServoRef[i]+(int16_t)(sfun*parameters->MaxValue[i]));
                             }
                         }
                     }

@@ -67,14 +67,14 @@ Servo_t Servos[] = {
 
 /** two-order butterwolf filter 10Hz */
 #define BUTTER_ORDER (2)
-//    0.2779,-0.4152, 0.5872,
-//    0.4152, 0.8651, 0.1908,
-//    0.1468, 0.6594, 0.0675
+//    0.6012  -0.2536 0.3586
+//    0.2536   0.9598 0.0568
+//    0.08966  0.6929 0.02008
 // x 2^15 = 
 static fractional _butter_mat_frac[] = { \
-     9106, -13605, 19241,
-    13605, 28347, 6252,
-    4810, 21607, 2211
+     19700, -8310, 11752,
+      8310, 31452,  1861,
+      2938, 22705,   658,
 };
 
 static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER + 1]) {
@@ -135,7 +135,7 @@ void MotorSet(unsigned int ch, signed int duty_circle) {
     }
 }
 
-void ServoUpdate100Hz(unsigned int ch, unsigned int ref) {
+void ServoUpdate(unsigned int ch, unsigned int ref) {
     Servo_p servo;
     signed int duty_circle;
     signed int pos;
