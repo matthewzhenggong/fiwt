@@ -58,9 +58,9 @@ size_t updateSensorPack(uint8_t head[]) {
     int i;
     pack = head;
 #if AEROCOMP
-    *(pack++) = CODE_AC_MODEL_SERVO_POS;
-#else 
     *(pack++) = CODE_AEROCOMP_SERVO_POS;
+#else 
+    *(pack++) = CODE_AC_MODEL_SERVO_POS;
 #endif
     for (i=0;i<SERVOPOSADCNUM;++i) {
       *(pack++) = ServoPos[i] >> 8;
@@ -70,6 +70,20 @@ size_t updateSensorPack(uint8_t head[]) {
       *(pack++) = EncPos[i] >> 8;
       *(pack++) = EncPos[i] & 0xFF;
     }
+#if USE_IMU
+    *(pack++) = IMU_XGyro >> 8;
+    *(pack++) = IMU_XGyro & 0xFF;
+    *(pack++) = IMU_YGyro >> 8;
+    *(pack++) = IMU_YGyro & 0xFF;
+    *(pack++) = IMU_ZGyro >> 8;
+    *(pack++) = IMU_ZGyro & 0xFF;
+    *(pack++) = IMU_XAccl >> 8;
+    *(pack++) = IMU_XAccl & 0xFF;
+    *(pack++) = IMU_YAccl >> 8;
+    *(pack++) = IMU_YAccl & 0xFF;
+    *(pack++) = IMU_ZAccl >> 8;
+    *(pack++) = IMU_ZAccl & 0xFF;
+#endif
     *(pack++) = ADC_TimeStamp[0] & 0xFF;
     *(pack++) = ADC_TimeStamp[1] >> 8;
     *(pack++) = ADC_TimeStamp[1] & 0xFF;
