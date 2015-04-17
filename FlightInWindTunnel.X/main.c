@@ -88,14 +88,14 @@ int main(void) {
 
     /* Add Task */
 #if AC_MODEL || AEROCOMP
-    msgRecvInit(&msg_recv, &Xbee2, servoTask, senTask);
-    TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
     senInit(&sen);
     senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
     msgSendInit(&msg_send, &Xbee1);
     TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*4, 0, 0);
+    msgRecvInit(&msg_recv, &Xbee2, servoTask, senTask);
+    TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
     TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 10);
