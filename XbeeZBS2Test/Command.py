@@ -218,7 +218,7 @@ class MyFrame(wx.Frame):
         box.Add(self.txtPort2, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Baudrate:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtBR = wx.TextCtrl(panel, -1, "115200",
+        self.txtBR = wx.TextCtrl(panel, -1, "250000",
                                  size=(100, -1),
                                  validator=MyValidator(DIGIT_ONLY))
         box.Add(self.txtBR, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -821,11 +821,11 @@ Unused bits must be set to 0.  '''))
             data = struct.pack('>3B2HB6B6B6B', 0xA5, InputType, Srv2Move,
                     starttime, deltatime, nofcyc, *others)
             if InputType == 1 :
-                self.OutputCnt = starttime*nofcyc/10+6+30
+                self.OutputCnt = starttime*nofcyc/20+3+10
             elif InputType == 2 :
-                self.OutputCnt = (starttime+deltatime)*nofcyc/10+6+30
+                self.OutputCnt = (starttime+deltatime)*nofcyc/20+3+10
             elif InputType == 7 :
-                self.OutputCnt = starttime*nofcyc/5+6+30
+                self.OutputCnt = starttime*nofcyc/20+3+10
             self.OutputSrv2Move = Srv2Move
             txt = '#Time,'
             if self.OutputSrv2Move & 1 :
@@ -1016,7 +1016,7 @@ Unused bits must be set to 0.  '''))
         self.pack06 = struct.Struct("<H2H6H3H6h4H6H4H")
         self.pack22 = struct.Struct(">B6H3H6HBH6h")
         self.pack77 = struct.Struct(">B3HBH")
-        self.pack88 = struct.Struct(">B3HBH")
+        self.pack88 = struct.Struct(">B3BBH")
         self.pack33 = struct.Struct(">B4H4HBH4h")
         self.ch = 0
         self.test_motor_ticks = 0
