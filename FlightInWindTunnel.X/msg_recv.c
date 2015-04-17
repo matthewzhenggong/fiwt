@@ -121,8 +121,8 @@ void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
         case 9:
             parameters->InputType = cmd[1] - 1u;
             parameters->Srv2Move = cmd[2];
-            parameters->StartTime = ((cmd[3] << 8) | cmd[4]) / 10;
-            parameters->TimeDelta = ((cmd[5] << 8) | cmd[6]) / 10;
+            parameters->StartTime = ((cmd[3] << 8) | cmd[4]) / 5;
+            parameters->TimeDelta = ((cmd[5] << 8) | cmd[6]) / 5;
             parameters->NofCycles = cmd[7];
             for (i = 0; i < 6; ++i) {
                 parameters->MaxValue[i] = (cmd[8 + i] << 1);
