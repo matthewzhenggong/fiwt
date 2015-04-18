@@ -33,6 +33,7 @@
       <itemPath>msg_send.h</itemPath>
       <itemPath>msg_code.h</itemPath>
       <itemPath>EKFF.h</itemPath>
+      <itemPath>ekfTask.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -68,6 +69,7 @@
       <itemPath>msg_recv.c</itemPath>
       <itemPath>msg_send.c</itemPath>
       <itemPath>EKFF.c</itemPath>
+      <itemPath>ekfTask.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

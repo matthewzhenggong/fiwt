@@ -1,5 +1,5 @@
 /*
- * File:   msg_recv.h
+ * File:   ekfTask.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,10 +18,10 @@
  * License along with this library.
  */
 
-#ifndef MSG_RECV_H
-#define	MSG_RECV_H
+#ifndef EKFTASK_H
+#define	EKFTASK_H
 
-#include "XBeeZBS2.h"
+#include "EKFF.h"
 #include "task.h"
 #include "pt.h"
 
@@ -31,25 +31,20 @@ extern "C" {
 
     typedef struct {
         struct pt PT;
-        XBee_p _xbee;
-        TaskHandle_p serov_Task;
-        TaskHandle_p sen_Task;
-        TaskHandle_p ekf_Task;
-        TaskHandle_p send_Task;
-        unsigned int rx_cnt;
-        unsigned int tx_cnt;
-        unsigned int cnt;
-        ZBRxResponse_t rx_rsp;
-        ZBTxRequest_t tx_req;
-    } msgRecvParam_t, *msgRecvParam_p;
+        EKFF_t ekff;
+        enum OP_TYPE op;
+        float y0[16];
+    } ekfParam_t, *ekfParam_p;
 
-    void msgRecvInit(msgRecvParam_p parameters, XBee_p, TaskHandle_p, TaskHandle_p, TaskHandle_p, TaskHandle_p);
+    void ekfInit(ekfParam_p parameters, float dt);
 
-    PT_THREAD(msgRecvLoop)(TaskHandle_p task);
+    PT_THREAD(ekfLoop)(TaskHandle_p task);
+
+
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* MSG_RECV_H */
+#endif	/* EKFTASK_H */
 

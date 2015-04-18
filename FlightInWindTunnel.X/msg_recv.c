@@ -37,7 +37,8 @@
 #include <string.h>
 
 void msgRecvInit(msgRecvParam_p parameters, XBee_p xbee,
-        TaskHandle_p servoTask, TaskHandle_p senTask) {
+        TaskHandle_p senTask, TaskHandle_p servoTask,
+        TaskHandle_p ekfTask, TaskHandle_p sendTask) {
     struct pt *pt;
 
     pt = &(parameters->PT);
@@ -45,6 +46,8 @@ void msgRecvInit(msgRecvParam_p parameters, XBee_p xbee,
     parameters->_xbee = xbee;
     parameters->serov_Task = servoTask;
     parameters->sen_Task = senTask;
+    parameters->ekf_Task = ekfTask;
+    parameters->send_Task = sendTask;
     parameters->rx_cnt = 0u;
     parameters->tx_cnt = 0u;
     parameters->cnt = 0u;
@@ -75,7 +78,8 @@ size_t updateBattPack(uint8_t head[]) {
     return pack - head;
 }
 
-size_t updateCommPack(TaskHandle_p task, TaskHandle_p sen_Task, TaskHandle_p serov_Task, uint8_t head[]) {
+size_t updateCommPack(TaskHandle_p task, TaskHandle_p sen_Task,
+TaskHandle_p serov_Task, TaskHandle_p ekf_Task, TaskHandle_p send_Task, uint8_t head[]) {
     uint8_t *pack;
     pack = head;
 #if AEROCOMP
@@ -83,12 +87,18 @@ size_t updateCommPack(TaskHandle_p task, TaskHandle_p sen_Task, TaskHandle_p ser
 #else
     *(pack++) = CODE_AC_MODEL_COM_STATS;
 #endif
+    *(pack++) = task->load_max >> 8;
+    *(pack++) = task->load_max & 0xFF;
     *(pack++) = sen_Task->load_max >> 8;
     *(pack++) = sen_Task->load_max & 0xFF;
     *(pack++) = serov_Task->load_max >> 8;
     *(pack++) = serov_Task->load_max & 0xFF;
-    *(pack++) = task->load_max >> 8;
-    *(pack++) = task->load_max & 0xFF;
+#if AC_MODEL
+    *(pack++) = ekf_Task->load_max >> 8;
+    *(pack++) = ekf_Task->load_max & 0xFF;
+#endif
+    *(pack++) = send_Task->load_max >> 8;
+    *(pack++) = send_Task->load_max & 0xFF;
 
     *(pack++) = ADC_TimeStamp[0] & 0xFF;
     *(pack++) = ADC_TimeStamp[1] >> 8;
@@ -187,7 +197,9 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
                 parameters->tx_req._payloadLength = updateBattPack(parameters->tx_req._payloadPtr);
                 XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req, 0u);
             } else if ((parameters->cnt & 0x1FF) == 400) {
-                parameters->tx_req._payloadLength = updateCommPack(task, parameters->sen_Task, parameters->serov_Task, parameters->tx_req._payloadPtr);
+                parameters->tx_req._payloadLength = updateCommPack(task, parameters->sen_Task, 
+                        parameters->serov_Task,  parameters->ekf_Task, parameters->send_Task,
+                        parameters->tx_req._payloadPtr);
                 XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req, 0u);
             }
         }

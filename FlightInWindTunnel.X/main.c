@@ -27,6 +27,7 @@
 #if AC_MODEL || AEROCOMP
 #include "servoTask.h"
 #include "senTask.h"
+#include "ekfTask.h"
 #include "msg_recv.h"
 #include "msg_send.h"
 #elif GNDBOARD
@@ -54,7 +55,12 @@ TaskHandle_p servoTask;
 senParam_t sen;
 TaskHandle_p senTask;
 msgRecvParam_t msg_recv;
+TaskHandle_p sendTask;
 msgSendParam_t msg_send;
+#if AC_MODEL
+ekfParam_t ekf;
+TaskHandle_p ekfTask;
+#endif
 
 #elif GNDBOARD
 #define TASK_PERIOD (2u) // 500Hz
@@ -93,8 +99,14 @@ int main(void) {
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
     msgSendInit(&msg_send, &Xbee1);
-    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 0);
-    msgRecvInit(&msg_recv, &Xbee2, servoTask, senTask);
+    sendTask = TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 5);
+#if AC_MODEL
+    ekfInit(&ekf,TASK_PERIOD/1000.0f);
+    ekfTask = TaskCreate(servoLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
+#else
+    ekfTask = NULL;
+#endif
+    msgRecvInit(&msg_recv, &Xbee2, senTask, servoTask, ekfTask, sendTask);
     TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
