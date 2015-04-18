@@ -1,5 +1,5 @@
 /*
- * File:   echoTask.c
+ * File:   senTask.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
