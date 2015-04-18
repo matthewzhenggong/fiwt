@@ -12,7 +12,7 @@
  * the order of Kalman Filter
  */
 #define DIMNUM (15u)
-#define DIMNUM2 (225u)
+#define DIMNUM2 (DIMNUM*DIMNUM)
 
 #ifdef	__cplusplus
 extern "C" {
@@ -98,16 +98,13 @@ extern "C" {
     } EKFF_t, *EKFF_p;
 
     enum OP_TYPE {
-        INITIALIZE,
+        INITIALIZE=0,
         UPDATEPOS,
         UPDATEVEL,
-        UPDATECMP,
+        UPDATECMP
     };
 
     void EKF_Filter(EKFF_p ekf, enum OP_TYPE op, float y[], float pqr[3], float accbi[3]);
-
-
-
 
 #ifdef	__cplusplus
 }

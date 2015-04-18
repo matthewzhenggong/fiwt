@@ -312,7 +312,7 @@ void UpdateSigmaRVel(EKFF_p ekf) {
     ekf->R[2] = ekf->Rvel[2];
 }
 
-void Initialize(EKFF_p ekf, float y[15]) {
+void Initialize(EKFF_p ekf, float y[16]) {
     int i;
     /* set initial states */
     for (i = 0; i < 6; ++i) ekf->xEKF[i] = y[i];
@@ -369,10 +369,9 @@ void Initialize(EKFF_p ekf, float y[15]) {
     ekf->Rvel[0] = 2.0;
     ekf->Rvel[1] = 2.0;
     ekf->Rvel[2] = 1.0;
-    ekf->Rcmp = 0.5;
+    ekf->Rcmp = 1.5;
 
-    /* 更新的步长设置 */
-    ekf->dt = 0.005;
+    ekf->dt = y[15];
 }
 
 void Extrapolate(EKFF_p ekf) {
