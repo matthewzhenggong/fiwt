@@ -93,7 +93,7 @@ int main(void) {
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
     msgSendInit(&msg_send, &Xbee1);
-    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*4, 0, 0);
+    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 0);
     msgRecvInit(&msg_recv, &Xbee2, servoTask, senTask);
     TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
 #elif GNDBOARD
