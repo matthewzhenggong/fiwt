@@ -1015,7 +1015,8 @@ Unused bits must be set to 0.  '''))
 
         self.pack06 = struct.Struct("<H2H6H3H6h4H6H4H")
         self.pack22 = struct.Struct(">B6H3H6HBH6h")
-        self.pack77 = struct.Struct(">B3HBH")
+        self.pack77 = struct.Struct(">B5HBH")
+        self.pack78 = struct.Struct(">B4HBH")
         self.pack88 = struct.Struct(">B3BBH")
         self.pack33 = struct.Struct(">B4H4HBH4h")
         self.ch = 0
@@ -1125,12 +1126,22 @@ Unused bits must be set to 0.  '''))
                                     rslt[11],rslt[12],rslt[13],rslt[14])
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
-                elif rf_data[0] == '\x77' or rf_data[0] == '\x78' :
+                elif rf_data[0] == '\x77':
                     rslt = self.pack77.unpack(rf_data)
                     T = rslt[4]*0x10000+rslt[5]
                     T = (rslt[4]*0x10000+rslt[5])*0.001
-                    txt = ('T{0:08.2f} CommPack ATask{2:d}us '
-                           'STask{3:d}us CTask{4:d}us').format(T,*rslt)
+                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
+                           'senTask{3:d}us svoTask{4:d}us '
+                           'ekfTask{5:d}us sndTask{6:d}us').format(T,*rslt)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif rf_data[0] == '\x78' :
+                    rslt = self.pack78.unpack(rf_data)
+                    T = rslt[4]*0x10000+rslt[5]
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
+                           'senTask{3:d}us svoTask{4:d}us '
+                           'sndTask{5:d}us').format(T,*rslt)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\x88' or rf_data[0] == '\x99':
