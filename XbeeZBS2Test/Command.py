@@ -1014,7 +1014,7 @@ Unused bits must be set to 0.  '''))
         self.frame_id = 1
 
         self.pack06 = struct.Struct("<H2H6H3H6h4H6H4H")
-        self.pack22 = struct.Struct(">B6H3H6HBH6h")
+        self.pack22 = struct.Struct(">B6H3H6HBH6h2f")
         self.pack77 = struct.Struct(">B5HBH")
         self.pack78 = struct.Struct(">B4HBH")
         self.pack88 = struct.Struct(">B3BBH")
@@ -1067,6 +1067,8 @@ Unused bits must be set to 0.  '''))
                     AX = Get14bit(rslt[13])*-0.003333
                     AY = Get14bit(rslt[14])*0.003333
                     AZ = Get14bit(rslt[15])*0.003333
+                    phi = rslt[24]*57.3
+                    tht = rslt[25]*57.3
                     if self.OutputCnt > 0 :
                         self.OutputCnt -= 1
                         txt = '{:.2f},'.format(T)
@@ -1091,13 +1093,14 @@ Unused bits must be set to 0.  '''))
                             '5S{5:04d}/{20:+04d} 6S{6:04d}/{21:+04d}\n'
                             '1E{7:04d} 2E{8:04d} 3E{9:04d} '
                             'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
-                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} ').format(T,
+                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} '
+                            'phi{22:6.2f} tht{23:6.2f}').format(T,
                                     rslt[1],rslt[2],rslt[3],
                                     rslt[4],rslt[5],rslt[6],
                                     rslt[7],rslt[8],rslt[9],
                                     GX,GY,GZ, AX,AY,AZ,
                                     rslt[18],rslt[19],rslt[20],rslt[21],
-                                    rslt[22],rslt[23] )
+                                    rslt[22],rslt[23], phi,tht )
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
                 elif rf_data[0] == '\x33':
