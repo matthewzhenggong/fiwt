@@ -57,10 +57,8 @@ TaskHandle_p senTask;
 msgRecvParam_t msg_recv;
 TaskHandle_p sendTask;
 msgSendParam_t msg_send;
-#if AC_MODEL
 ekfParam_t ekf;
 TaskHandle_p ekfTask;
-#endif
 
 #elif GNDBOARD
 #define TASK_PERIOD (2u) // 500Hz
@@ -102,7 +100,7 @@ int main(void) {
     sendTask = TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 5);
 #if AC_MODEL
     ekfInit(&ekf,TASK_PERIOD/1000.0f);
-    ekfTask = TaskCreate(servoLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
+    ekfTask = TaskCreate(ekfLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
 #else
     ekfTask = NULL;
 #endif

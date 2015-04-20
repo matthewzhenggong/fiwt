@@ -61,7 +61,9 @@ void msgSendInit(msgSendParam_p parameters, XBee_p xbee) {
 size_t updateSensorPack(uint8_t head[]) {
     uint8_t *pack;
     int i;
+#if USE_EKF
     uint8_t *ptr;
+#endif
     pack = head;
 #if AEROCOMP
     *(pack++) = CODE_AEROCOMP_SERVO_POS;
@@ -99,10 +101,14 @@ size_t updateSensorPack(uint8_t head[]) {
     }
 #if USE_EKF
     ptr = (uint8_t *)(ekf.ekff.rpy);
-    *(pack++) = *(ptr+1);
-    *(pack++) = *(ptr);
     *(pack++) = *(ptr+3);
     *(pack++) = *(ptr+2);
+    *(pack++) = *(ptr+1);
+    *(pack++) = *(ptr);
+    *(pack++) = *(ptr+7);
+    *(pack++) = *(ptr+6);
+    *(pack++) = *(ptr+5);
+    *(pack++) = *(ptr+4);
 #endif
     return pack-head;
 }

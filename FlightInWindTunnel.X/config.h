@@ -28,9 +28,9 @@
 
 #define GNDBOARD 0
 
-#define AC_MODEL 1
+#define AC_MODEL 0
 
-#define AEROCOMP 0
+#define AEROCOMP 1
 
 #define STARTKITBOARD 0
 
