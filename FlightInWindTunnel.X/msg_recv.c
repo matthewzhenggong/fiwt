@@ -125,18 +125,21 @@ void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
         case 2:
         case 3:
         case 4:
-        case 5:
         case 7:
+            goto yyyy;
+        case 5:
+                parameters->TimeDelta = (uint32_t)((cmd[5] << 8) | cmd[6])*8 / 5;
+                goto xxxx;
         case 8:
         case 9:
+            parameters->TimeDelta = (uint32_t)((cmd[5] << 8) | cmd[6])*4 / 5;
+            goto xxxx;
+        yyyy :
+            parameters->TimeDelta = ((cmd[5] << 8) | cmd[6]) / 5;
+        xxxx:
             parameters->InputType = cmd[1] - 1u;
             parameters->Srv2Move = cmd[2];
             parameters->StartTime = ((cmd[3] << 8) | cmd[4]) / 5;
-            if (parameters->InputType == 4) {
-                parameters->TimeDelta = (uint32_t)((cmd[5] << 8) | cmd[6])*8 / 5;
-            } else {
-                parameters->TimeDelta = ((cmd[5] << 8) | cmd[6]) / 5;
-            }
             parameters->NofCycles = cmd[7];
             for (i = 0; i < 6; ++i) {
                 parameters->MaxValue[i] = (cmd[8 + i] << 1);
