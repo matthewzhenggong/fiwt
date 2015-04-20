@@ -72,6 +72,10 @@ PT_THREAD(ekfLoop)(TaskHandle_p task) {
         acc[0] = Get14bit(IMU_XAccl)*-0.003333f;
         acc[1] = Get14bit(IMU_YAccl)*0.003333f;
         acc[2] = Get14bit(IMU_ZAccl)*0.003333f;
+        //TODO
+        pqr[0] = pqr[1] = pqr[2] = 0.0;
+        acc[0] = acc[1] = 0.0;
+        acc[2] = -9.81;
         switch (parameters->op) {
             case INITIALIZE:
                 EKF_Filter(&parameters->ekff, INITIALIZE, parameters->y0, pqr, acc);
