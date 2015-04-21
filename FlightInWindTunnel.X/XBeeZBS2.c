@@ -265,6 +265,31 @@ void XBeeZBTxRequest(XBee_p _xbee, ZBTxRequest_p from, uint8_t frameId) {
     XBeeRequestSend(_xbee);
 }
 
+void XBeeTxA64Request(XBee_p _xbee, TxA64Request_p from, uint8_t frameId) {
+    XBeeRequest_p to;
+    to = &(_xbee->_request);
+    to->_apiId = TX_A64_REQUEST;
+    to->_frameId = frameId;
+    to->_frameLen = TX_A64_API_LENGTH + from->_payloadLength;
+    memcpy(to->_frameData, from->_addr64, 8);
+    to->_frameData[8] = from->_option;
+    memcpy(to->_frameData + 9, from->_payloadPtr, from->_payloadLength);
+    XBeeRequestSend(_xbee);
+}
+
+void XBeeTxA16Request(XBee_p _xbee, TxA16Request_p from, uint8_t frameId) {
+    XBeeRequest_p to;
+    to = &(_xbee->_request);
+    to->_apiId = TX_A16_REQUEST;
+    to->_frameId = frameId;
+    to->_frameLen = TX_A16_API_LENGTH + from->_payloadLength;
+    to->_frameData[0] = (from->_addr16 >> 8) & 0xff;
+    to->_frameData[1] = from->_addr16 & 0xff;
+    to->_frameData[2] = from->_option;
+    memcpy(to->_frameData + 3, from->_payloadPtr, from->_payloadLength);
+    XBeeRequestSend(_xbee);
+}
+
 bool XBeeAtCommandResponse(XBee_p _xbee, AtCommandResponse_p to) {
     XBeeResponse_p from;
     from = &_xbee->_response;
@@ -275,6 +300,17 @@ bool XBeeAtCommandResponse(XBee_p _xbee, AtCommandResponse_p to) {
         to->_commandStatus = from->_frameData[3];
         to->_commandValueLength = from->_frameLength - 4;
         memcpy(to->_commandValue, from->_frameData + 4, to->_commandValueLength);
+        return true;
+    }
+    return false;
+}
+
+bool XBeeTxStatusResponse(XBee_p _xbee, TxStatusResponse_p to) {
+    XBeeResponse_p from;
+    from = &_xbee->_response;
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == ZB_TX_STATUS_RESPONSE) {
+        to->_frameId = from->_frameData[0];
+        to->_deliveryStatus = from->_frameData[1];
         return true;
     }
     return false;
@@ -303,6 +339,34 @@ bool XBeeZBRxResponse(XBee_p _xbee, ZBRxResponse_p to) {
         to->_option = from->_frameData[10];
         to->_payloadLength = from->_frameLength - 11;
         memcpy(to->_payloadPtr, from->_frameData + 11, to->_payloadLength);
+        return true;
+    }
+    return false;
+}
+
+bool XBeeRxA64Response(XBee_p _xbee, RxA64Response_p to) {
+    XBeeResponse_p from;
+    from = &_xbee->_response;
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == ZB_RX_RESPONSE) {
+        memcpy(to->_addr64, from->_frameData, 8);
+        to->_rssi = from->_frameData[8];
+        to->_option = from->_frameData[9];
+        to->_payloadLength = from->_frameLength - 10;
+        memcpy(to->_payloadPtr, from->_frameData + 10, to->_payloadLength);
+        return true;
+    }
+    return false;
+}
+
+bool XBeeRxA16Response(XBee_p _xbee, RxA16Response_p to) {
+    XBeeResponse_p from;
+    from = &_xbee->_response;
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == ZB_RX_RESPONSE) {
+        to->_addr16 = (from->_frameData[0] << 8) + from->_frameData[1];
+        to->_rssi = from->_frameData[2];
+        to->_option = from->_frameData[3];
+        to->_payloadLength = from->_frameLength - 4;
+        memcpy(to->_payloadPtr, from->_frameData + 4, to->_payloadLength);
         return true;
     }
     return false;

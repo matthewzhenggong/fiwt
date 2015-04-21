@@ -43,12 +43,15 @@
 
 /*  This value is determined by the largest packet size */
 #define MAX_PAYLOAD_DATA_SIZE 84
-#define MAX_FRAME_DATA_SIZE 104
+#define MAX_S1_PAYLOAD_DATA_SIZE 100
+#define MAX_FRAME_DATA_SIZE 124
 
 #define BROADCAST_ADDRESS 0xffff
 #define ZB_BROADCAST_ADDRESS 0xfffe
 
 /*  the non-variable length of the frame data (not including frame id or api id or variable data size (e.g. payload, at command set value) */
+#define TX_A64_API_LENGTH 9
+#define TX_A16_API_LENGTH 3
 #define ZB_TX_API_LENGTH 12
 #define AT_COMMAND_API_LENGTH 2
 #define AT_COMMAND_API_VAL_MAXLEN 16
@@ -64,12 +67,19 @@
 /**
  * Api Id constants
  */
+#define TX_A64_REQUEST 0x00
+#define TX_A16_REQUEST 0x00
 #define AT_COMMAND_REQUEST 0x08
 #define AT_COMMAND_QUEUE_REQUEST 0x09
 #define ZB_TX_REQUEST 0x10
 #define ZB_EXPLICIT_TX_REQUEST 0x11
 #define REMOTE_AT_REQUEST 0x17
+#define RX_A64_RESPONSE 0x80
+#define RX_A16_RESPONSE 0x81
+#define IO_A64_RESPONSE 0x82
+#define IO_A16_RESPONSE 0x83
 #define AT_COMMAND_RESPONSE 0x88
+#define TX_STATUS_RESPONSE 0x89
 #define MODEM_STATUS_RESPONSE 0x8a
 #define ZB_TX_STATUS_RESPONSE 0x8b
 #define ZB_RX_RESPONSE 0x90
@@ -121,6 +131,10 @@
 extern "C" {
 #endif
 
+    typedef enum XBeeSeries{
+        XBeeS1, XBeeS2, XBeeS6,
+    } XBeeSeries_t;
+
     struct XBeeResponse {
         uint8_t _apiId;
         uint8_t _msbLength;
@@ -144,6 +158,13 @@ extern "C" {
     typedef struct AtCommandResponse AtCommandResponse_t;
     typedef struct AtCommandResponse * AtCommandResponse_p;
 
+    struct TxStatusResponse {
+        uint8_t _frameId;
+        uint8_t _deliveryStatus;
+    };
+    typedef struct TxStatusResponse TxStatusResponse_t;
+    typedef struct TxStatusResponse * TxStatusResponse_p;
+
     struct ZBTxStatusResponse {
         uint8_t _frameId;
         uint16_t _addr16;
@@ -153,6 +174,26 @@ extern "C" {
     };
     typedef struct ZBTxStatusResponse ZBTxStatusResponse_t;
     typedef struct ZBTxStatusResponse * ZBTxStatusResponse_p;
+
+    struct RxA64Response {
+        uint8_t _addr64[8];
+        uint8_t _rssi;
+        uint8_t _option;
+        uint8_t _payloadPtr[MAX_S1_PAYLOAD_DATA_SIZE];
+        size_t _payloadLength;
+    };
+    typedef struct RxA64Response RxA64Response_t;
+    typedef struct RxA64Response * RxA64Response_p;
+
+    struct RxA16Response {
+        uint16_t _addr16;
+        uint8_t _rssi;
+        uint8_t _option;
+        uint8_t _payloadPtr[MAX_S1_PAYLOAD_DATA_SIZE];
+        size_t _payloadLength;
+    };
+    typedef struct RxA16Response RxA16Response_t;
+    typedef struct RxA16Response * RxA16Response_p;
 
     struct ZBRxResponse {
         uint8_t _addr64[8];
@@ -180,6 +221,24 @@ extern "C" {
     };
     typedef struct AtCommandRequest AtCommandRequest_t;
     typedef struct AtCommandRequest * AtCommandRequest_p;
+
+    struct TxA64Request {
+        uint8_t _addr64[8];
+        uint8_t _option;
+        uint8_t _payloadPtr[MAX_S1_PAYLOAD_DATA_SIZE];
+        size_t _payloadLength;
+    };
+    typedef struct TxA64Request TxA64Request_t;
+    typedef struct TxA64Request * TxA64Request_p;
+
+    struct TxA16Request {
+        uint16_t _addr16;
+        uint8_t _option;
+        uint8_t _payloadPtr[MAX_S1_PAYLOAD_DATA_SIZE];
+        size_t _payloadLength;
+    };
+    typedef struct TxA16Request TxA16Request_t;
+    typedef struct TxA16Request * TxA16Request_p;
 
     struct ZBTxRequest {
         uint8_t _addr64[8];
@@ -238,6 +297,10 @@ extern "C" {
 
     void XBeeAtCommandRequest(XBee_p _xbee, AtCommandRequest_p from, uint8_t frameId, bool queue);
 
+    void XBeeTxA64Request(XBee_p _xbee, TxA64Request_p from, uint8_t frameId);
+
+    void XBeeTxA16Request(XBee_p _xbee, TxA16Request_p from, uint8_t frameId);
+
     void XBeeZBTxRequest(XBee_p _xbee, ZBTxRequest_p from, uint8_t frameId);
 
     bool XBeeAtCommandResponse(XBee_p _xbee, AtCommandResponse_p to);
@@ -246,7 +309,13 @@ extern "C" {
         return from->_frameData[0];
     }
 
+    bool XBeeTxStatusResponse(XBee_p _xbee, TxStatusResponse_p to);
+
     bool XBeeZBTxStatusResponse(XBee_p _xbee, ZBTxStatusResponse_p to);
+
+    bool XBeeRxA64Response(XBee_p _xbee, RxA64Response_p to);
+
+    bool XBeeRxA16Response(XBee_p _xbee, RxA16Response_p to);
 
     bool XBeeZBRxResponse(XBee_p _xbee, ZBRxResponse_p to);
 
