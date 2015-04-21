@@ -39,11 +39,19 @@ extern "C" {
         unsigned int rx_cnt;
         unsigned int tx_cnt;
         unsigned int cnt;
-        ZBRxResponse_t rx_rsp;
-        ZBTxRequest_t tx_req;
+        XBeeSeries_t xbee_type;
+        union {
+           ZBRxResponse_t zbrx;
+           RxA64Response_t rxa64;
+           RxA16Response_t rxa16;
+        } rx_rsp;
+        union {
+           ZBTxRequest_t zbtx;
+           TxA16Request_t txa16;
+        } tx_req;
     } msgRecvParam_t, *msgRecvParam_p;
 
-    void msgRecvInit(msgRecvParam_p parameters, XBee_p, TaskHandle_p, TaskHandle_p, TaskHandle_p, TaskHandle_p);
+    void msgRecvInit(msgRecvParam_p parameters, XBee_p, XBeeSeries_t, TaskHandle_p, TaskHandle_p, TaskHandle_p, TaskHandle_p);
 
     PT_THREAD(msgRecvLoop)(TaskHandle_p task);
 

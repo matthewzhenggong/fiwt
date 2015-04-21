@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void msgRecvInit(msgRecvParam_p parameters, XBee_p xbee,
+void msgRecvInit(msgRecvParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type,
         TaskHandle_p senTask, TaskHandle_p servoTask,
         TaskHandle_p ekfTask, TaskHandle_p sendTask) {
     struct pt *pt;
@@ -52,12 +52,22 @@ void msgRecvInit(msgRecvParam_p parameters, XBee_p xbee,
     parameters->tx_cnt = 0u;
     parameters->cnt = 0u;
 
-    memcpy(parameters->tx_req._addr64, "\00\00\00\00\00\00\00\00", 8);
-    parameters->tx_req._addr16 = 0xFFFE;
-    parameters->tx_req._broadcastRadius = 1u;
-    parameters->tx_req._option = 1u;
-    parameters->tx_req._payloadLength = 1u;
-    parameters->tx_req._payloadPtr[0] = 'P';
+    parameters->xbee_type = xbee_type;
+    switch (xbee_type) {
+        case XBeeS1 :
+            parameters->tx_req.txa16._addr16 = 0xFFFF;
+            parameters->tx_req.txa16._option = 1u;
+            parameters->tx_req.txa16._payloadLength = 1u;
+            parameters->tx_req.txa16._payloadPtr[0] = 'P';
+            break;
+        default :
+            memcpy(parameters->tx_req.zbtx._addr64, "\00\00\00\00\00\00\00\00", 8);
+            parameters->tx_req.zbtx._addr16 = 0xFFFE;
+            parameters->tx_req.zbtx._broadcastRadius = 1u;
+            parameters->tx_req.zbtx._option = 1u;
+            parameters->tx_req.zbtx._payloadLength = 1u;
+            parameters->tx_req.zbtx._payloadPtr[0] = 'P';
+    }
 }
 
 size_t updateBattPack(uint8_t head[]) {
@@ -179,19 +189,51 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
         if (packin > 0) {
             switch (packin) {
                 case ZB_RX_RESPONSE:
-                    if (XBeeZBRxResponse(parameters->_xbee, &parameters->rx_rsp)) {
+                    if (XBeeZBRxResponse(parameters->_xbee, &parameters->rx_rsp.zbrx)) {
                         ++parameters->rx_cnt;
-                        switch (parameters->rx_rsp._payloadPtr[0]) {
+                        switch (parameters->rx_rsp.zbrx._payloadPtr[0]) {
                             case CODE_AC_MODEL_NEW_SERV_CMD:
                             case CODE_AEROCOMP_NEW_SERV_CMD:
-                                servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), parameters->rx_rsp._payloadPtr);
+                                servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), parameters->rx_rsp.zbrx._payloadPtr);
                                 break;
                             case 'P':
-                                parameters->tx_req._payloadLength = parameters->rx_rsp._payloadLength;
-                                memcpy(parameters->tx_req._addr64, parameters->rx_rsp._addr64, 8);
-                                parameters->tx_req._addr16 = parameters->rx_rsp._addr16;
-                                memcpy(parameters->tx_req._payloadPtr, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
-                                XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req, 0u);
+                                parameters->tx_req.zbtx._payloadLength = parameters->rx_rsp.zbrx._payloadLength;
+                                memcpy(parameters->tx_req.zbtx._addr64, parameters->rx_rsp.zbrx._addr64, 8);
+                                parameters->tx_req.zbtx._addr16 = parameters->rx_rsp.zbrx._addr16;
+                                parameters->tx_req.zbtx._broadcastRadius = 1u;
+                                parameters->tx_req.zbtx._option = 1u;
+                                memcpy(parameters->tx_req.zbtx._payloadPtr, parameters->rx_rsp.zbrx._payloadPtr, parameters->rx_rsp.zbrx._payloadLength);
+                                XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                                sent = true;
+                                break;
+                        }
+                    }
+                    break;
+                case RX_A64_RESPONSE:
+                    if (XBeeRxA64Response(parameters->_xbee, &parameters->rx_rsp.rxa64)) {
+                        ++parameters->rx_cnt;
+                        switch (parameters->rx_rsp.rxa64._payloadPtr[0]) {
+                            case CODE_AC_MODEL_NEW_SERV_CMD:
+                            case CODE_AEROCOMP_NEW_SERV_CMD:
+                                servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), parameters->rx_rsp.rxa64._payloadPtr);
+                                break;
+                        }
+                    }
+                    break;
+                case RX_A16_RESPONSE:
+                    if (XBeeRxA16Response(parameters->_xbee, &parameters->rx_rsp.rxa16)) {
+                        ++parameters->rx_cnt;
+                        switch (parameters->rx_rsp.rxa16._payloadPtr[0]) {
+                            case CODE_AC_MODEL_NEW_SERV_CMD:
+                            case CODE_AEROCOMP_NEW_SERV_CMD:
+                                servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), parameters->rx_rsp.rxa16._payloadPtr);
+                                break;
+                            case 'P':
+                                parameters->tx_req.txa16._payloadLength = parameters->rx_rsp.rxa16._payloadLength;
+                                parameters->tx_req.txa16._addr16 = parameters->rx_rsp.rxa16._addr16;
+                                parameters->tx_req.txa16._option = 1u;
+                                memcpy(parameters->tx_req.txa16._payloadPtr, parameters->rx_rsp.rxa16._payloadPtr, parameters->rx_rsp.rxa16._payloadLength);
+                                XBeeTxA16Request(parameters->_xbee, &parameters->tx_req.txa16, 0u);
                                 sent = true;
                                 break;
                         }
@@ -200,14 +242,28 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
             }
         }
         if (!sent) {
-            if ((parameters->cnt & 0x1FF) == 200) {
-                parameters->tx_req._payloadLength = updateBattPack(parameters->tx_req._payloadPtr);
-                XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req, 0u);
-            } else if ((parameters->cnt & 0x1FF) == 400) {
-                parameters->tx_req._payloadLength = updateCommPack(task, parameters->sen_Task, 
-                        parameters->serov_Task,  parameters->ekf_Task, parameters->send_Task,
-                        parameters->tx_req._payloadPtr);
-                XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req, 0u);
+            switch (parameters->xbee_type) {
+                case XBeeS1 :
+                    if ((parameters->cnt & 0x1FF) == 200) {
+                        parameters->tx_req.txa16._payloadLength = updateBattPack(parameters->tx_req.txa16._payloadPtr);
+                        XBeeTxA16Request(parameters->_xbee, &parameters->tx_req.txa16, 0u);
+                    } else if ((parameters->cnt & 0x1FF) == 400) {
+                        parameters->tx_req.txa16._payloadLength = updateCommPack(task, parameters->sen_Task,
+                                parameters->serov_Task,  parameters->ekf_Task, parameters->send_Task,
+                                parameters->tx_req.txa16._payloadPtr);
+                        XBeeTxA16Request(parameters->_xbee, &parameters->tx_req.txa16, 0u);
+                    }
+                    break;
+                default :
+                    if ((parameters->cnt & 0x1FF) == 200) {
+                        parameters->tx_req.zbtx._payloadLength = updateBattPack(parameters->tx_req.zbtx._payloadPtr);
+                        XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                    } else if ((parameters->cnt & 0x1FF) == 400) {
+                        parameters->tx_req.zbtx._payloadLength = updateCommPack(task, parameters->sen_Task,
+                                parameters->serov_Task,  parameters->ekf_Task, parameters->send_Task,
+                                parameters->tx_req.zbtx._payloadPtr);
+                        XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                    }
             }
         }
         PT_YIELD(pt);

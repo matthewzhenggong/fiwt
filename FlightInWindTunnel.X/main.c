@@ -27,7 +27,9 @@
 #if AC_MODEL || AEROCOMP
 #include "servoTask.h"
 #include "senTask.h"
+#if USE_EKF
 #include "ekfTask.h"
+#endif
 #include "msg_recv.h"
 #include "msg_send.h"
 #elif GNDBOARD
@@ -36,7 +38,6 @@
 #elif STARTKITBOARD
 #include "IMU.h"
 #endif
-
 
 #include "idle.h"
 #include "task.h"
@@ -57,7 +58,9 @@ TaskHandle_p senTask;
 msgRecvParam_t msg_recv;
 TaskHandle_p sendTask;
 msgSendParam_t msg_send;
+#if USE_EKF
 ekfParam_t ekf;
+#endif
 TaskHandle_p ekfTask;
 
 #elif GNDBOARD
@@ -98,13 +101,13 @@ int main(void) {
     servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
     msgSendInit(&msg_send, &Xbee1);
     sendTask = TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 5);
-#if AC_MODEL
+#if USE_EKF
     ekfInit(&ekf,TASK_PERIOD/1000.0f);
     ekfTask = TaskCreate(ekfLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
 #else
     ekfTask = NULL;
 #endif
-    msgRecvInit(&msg_recv, &Xbee2, senTask, servoTask, ekfTask, sendTask);
+    msgRecvInit(&msg_recv, &Xbee2, XBeeS2, senTask, servoTask, ekfTask, sendTask);
     TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
