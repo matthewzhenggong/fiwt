@@ -8,6 +8,10 @@
 #ifndef EKFF_H
 #define	EKFF_H
 
+#include "config.h"
+
+#if USE_EKF
+
 /*
  * the order of Kalman Filter
  */
@@ -108,6 +112,8 @@ extern "C" {
 
 #ifdef	__cplusplus
 }
+#endif
+
 #endif
 
 #endif	/* EKFF_H */

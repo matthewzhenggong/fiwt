@@ -50,7 +50,7 @@
 #define USE_ENC   1
 #define USE_IMU   1
 #define USE_SPIS  0
-#define USE_EKF   1
+#define USE_EKF   0
 #define USE_TESTBOARD 0
 #elif AEROCOMP
 #define USE_UART1 1

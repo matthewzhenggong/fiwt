@@ -598,6 +598,7 @@ void EKF_Filter(EKFF_p ekf, enum OP_TYPE op, float y[], float pqr[3], float accb
         Initialize(ekf, y);
     } else {
         Extrapolate(ekf);
+        /*
         if (op == UPDATEPOS) {
             UpdateSigmaRPos(ekf);
             UpdatePos(ekf, y);
@@ -607,6 +608,7 @@ void EKF_Filter(EKFF_p ekf, enum OP_TYPE op, float y[], float pqr[3], float accb
         } else if (op == UPDATECMP) {
             UpdateCmp(ekf, y);
         }
+         */
     }
     ABCD2RPY(ekf);
 }

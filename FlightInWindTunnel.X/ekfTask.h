@@ -21,6 +21,10 @@
 #ifndef EKFTASK_H
 #define	EKFTASK_H
 
+#include "config.h"
+
+#if USE_EKF
+
 #include "EKFF.h"
 #include "task.h"
 #include "pt.h"
@@ -44,6 +48,8 @@ extern "C" {
 
 #ifdef	__cplusplus
 }
+#endif
+
 #endif
 
 #endif	/* EKFTASK_H */
