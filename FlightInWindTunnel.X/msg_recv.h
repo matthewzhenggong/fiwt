@@ -21,6 +21,7 @@
 #ifndef MSG_RECV_H
 #define	MSG_RECV_H
 
+#include "msg_send.h"
 #include "XBeeZBS2.h"
 #include "task.h"
 #include "pt.h"
@@ -32,26 +33,18 @@ extern "C" {
     typedef struct {
         struct pt PT;
         XBee_p _xbee;
-        TaskHandle_p serov_Task;
-        TaskHandle_p sen_Task;
-        TaskHandle_p ekf_Task;
-        TaskHandle_p send_Task;
-        unsigned int rx_cnt;
-        unsigned int tx_cnt;
         unsigned int cnt;
         XBeeSeries_t xbee_type;
+        TaskHandle_p serov_Task;
+        msgSendParam_p sendParameters;
         union {
-           ZBRxResponse_t zbrx;
-           RxA64Response_t rxa64;
-           RxA16Response_t rxa16;
+            ZBRxResponse_t zbrx;
+            RxA64Response_t rxa64;
+            RxA16Response_t rxa16;
         } rx_rsp;
-        union {
-           ZBTxRequest_t zbtx;
-           TxA16Request_t txa16;
-        } tx_req;
     } msgRecvParam_t, *msgRecvParam_p;
 
-    void msgRecvInit(msgRecvParam_p parameters, XBee_p, XBeeSeries_t, TaskHandle_p, TaskHandle_p, TaskHandle_p, TaskHandle_p);
+    void msgRecvInit(msgRecvParam_p parameters, XBee_p, XBeeSeries_t, TaskHandle_p, msgSendParam_p);
 
     PT_THREAD(msgRecvLoop)(TaskHandle_p task);
 

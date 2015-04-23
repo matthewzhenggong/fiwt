@@ -56,7 +56,7 @@ TaskHandle_p servoTask;
 senParam_t sen;
 TaskHandle_p senTask;
 msgRecvParam_t msg_recv;
-TaskHandle_p sendTask;
+TaskHandle_p msgRecvTask;
 msgSendParam_t msg_send;
 #if USE_EKF
 ekfParam_t ekf;
@@ -95,20 +95,23 @@ int main(void) {
 
     /* Add Task */
 #if AC_MODEL || AEROCOMP
-    senInit(&sen);
-    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
-    msgSendInit(&msg_send, &Xbee1,XBEE1_SERIES);
-    sendTask = TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 5);
+    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 1, 10);
+
+    msgRecvInit(&msg_recv, &Xbee1, XBEE1_SERIES, servoTask, &msg_send);
+    msgRecvTask = TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 10);
+
+    senInit(&sen);
+    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 1, 20);
+
+    msgSendInit(&msg_send, &Xbee1,XBEE1_SERIES, msgRecvTask, senTask, servoTask, ekfTask);
+    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD, 1, 5);
 #if USE_EKF
     ekfInit(&ekf,TASK_PERIOD/1000.0f);
     ekfTask = TaskCreate(ekfLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
 #else
     ekfTask = NULL;
 #endif
-    msgRecvInit(&msg_recv, &Xbee2, XBEE2_SERIES, senTask, servoTask, ekfTask, sendTask);
-    TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
     TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 10);

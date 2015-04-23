@@ -35,9 +35,8 @@
 #define STARTKITBOARD 0
 
 #define XBEE1_ATAP 2
-#define XBEE2_ATAP 2
-#define XBEE1_SERIES XBeeS2
-#define XBEE2_SERIES XBeeS2
+#define XBEE1_SERIES XBeeS6
+#define MSG_TARGET_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\x02"
 
 /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        (128000000L)
@@ -46,7 +45,7 @@
 
 #if AC_MODEL
 #define USE_UART1 1
-#define USE_UART2 1
+#define USE_UART2 0
 #define USE_UART3 0
 #define USE_UART4 0
 #define USE_ADC1  1
@@ -58,7 +57,7 @@
 #define USE_TESTBOARD 0
 #elif AEROCOMP
 #define USE_UART1 1
-#define USE_UART2 1
+#define USE_UART2 0
 #define USE_UART3 0
 #define USE_UART4 0
 #define USE_ADC1  1

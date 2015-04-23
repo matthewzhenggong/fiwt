@@ -32,15 +32,21 @@ extern "C" {
     typedef struct {
         struct pt PT;
         XBee_p _xbee;
+        TaskHandle_p serov_Task;
+        TaskHandle_p sen_Task;
+        TaskHandle_p ekf_Task;
+        TaskHandle_p recv_Task;
         unsigned int cnt;
         XBeeSeries_t xbee_type;
+        uint8_t msg_buff[256];
+        uint8_t msg_len;
         union {
            ZBTxRequest_t zbtx;
            TxA64Request_t txa64;
         } tx_req;
     } msgSendParam_t, *msgSendParam_p;
 
-    void msgSendInit(msgSendParam_p parameters, XBee_p, XBeeSeries_t);
+    void msgSendInit(msgSendParam_p parameters, XBee_p, XBeeSeries_t, TaskHandle_p, TaskHandle_p, TaskHandle_p, TaskHandle_p);
 
     PT_THREAD(msgSendLoop)(TaskHandle_p task);
 

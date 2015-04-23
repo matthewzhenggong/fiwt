@@ -24,7 +24,6 @@
 
 #include "msg_send.h"
 #include "msg_code.h"
-#include "servoTask.h"
 #include "AnalogInput.h"
 #include "Enc.h"
 #include "IMU.h"
@@ -41,7 +40,9 @@
 extern ekfParam_t ekf;
 #endif
 
-void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type) {
+void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type,
+        TaskHandle_p recvTask, TaskHandle_p senTask, TaskHandle_p servoTask,
+        TaskHandle_p ekfTask) {
     struct pt *pt;
 
     pt = &(parameters->PT);
@@ -49,22 +50,74 @@ void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type)
     parameters->_xbee = xbee;
     parameters->cnt = 0u;
 
+    parameters->serov_Task = servoTask;
+    parameters->sen_Task = senTask;
+    parameters->ekf_Task = ekfTask;
+    parameters->recv_Task = recvTask;
+
     parameters->xbee_type = xbee_type;
     switch (xbee_type) {
         case XBeeS1:
-            memcpy(parameters->tx_req.txa64._addr64, "\x00\x13\xA2\x00\x40\xc1\xc4\x4a", 8);
+            memcpy(parameters->tx_req.txa64._addr64, MSG_TARGET_ADDR, 8);
             parameters->tx_req.txa64._option = 1u;
             parameters->tx_req.txa64._payloadLength = 1u;
             parameters->tx_req.txa64._payloadPtr[0] = 'P';
             break;
         default:
-            memcpy(parameters->tx_req.zbtx._addr64, "\x00\x00\x00\x00\xc0\xa8\xbf\x02", 8);
+            memcpy(parameters->tx_req.zbtx._addr64, MSG_TARGET_ADDR, 8);
             parameters->tx_req.zbtx._addr16 = 0xFFFE;
             parameters->tx_req.zbtx._broadcastRadius = 1u;
             parameters->tx_req.zbtx._option = 1u;
             parameters->tx_req.zbtx._payloadLength = 1u;
             parameters->tx_req.zbtx._payloadPtr[0] = 'P';
     }
+
+}
+
+size_t updateBattPack(uint8_t head[]) {
+    uint8_t *pack;
+    int i;
+    pack = head;
+#if AEROCOMP
+    *(pack++) = CODE_AEROCOMP_BAT_LEV;
+#else
+    *(pack++) = CODE_AC_MODEL_BAT_LEV;
+#endif
+    for (i = 0; i < BATTCELLADCNUM; ++i) {
+        *(pack++) = BattCell[i];
+    }
+    *(pack++) = ADC_TimeStamp[0] & 0xFF;
+    *(pack++) = ADC_TimeStamp[1] >> 8;
+    *(pack++) = ADC_TimeStamp[1] & 0xFF;
+    return pack - head;
+}
+
+size_t updateCommPack(TaskHandle_p msg_recv_Task, TaskHandle_p sen_Task,
+        TaskHandle_p serov_Task, TaskHandle_p task, TaskHandle_p ekf_Task, uint8_t head[]) {
+    uint8_t *pack;
+    pack = head;
+#if AEROCOMP
+    *(pack++) = CODE_AEROCOMP_COM_STATS;
+#else
+    *(pack++) = CODE_AC_MODEL_COM_STATS;
+#endif
+    *(pack++) = msg_recv_Task->load_max >> 8;
+    *(pack++) = msg_recv_Task->load_max & 0xFF;
+    *(pack++) = sen_Task->load_max >> 8;
+    *(pack++) = sen_Task->load_max & 0xFF;
+    *(pack++) = serov_Task->load_max >> 8;
+    *(pack++) = serov_Task->load_max & 0xFF;
+    *(pack++) = task->load_max >> 8;
+    *(pack++) = task->load_max & 0xFF;
+#if AC_MODEL
+    *(pack++) = ekf_Task->load_max >> 8;
+    *(pack++) = ekf_Task->load_max & 0xFF;
+#endif
+
+    *(pack++) = ADC_TimeStamp[0] & 0xFF;
+    *(pack++) = ADC_TimeStamp[1] >> 8;
+    *(pack++) = ADC_TimeStamp[1] & 0xFF;
+    return pack - head;
 }
 
 size_t updateSensorPack(uint8_t head[]) {
@@ -144,18 +197,38 @@ PT_THREAD(msgSendLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
+        ++parameters->cnt;
         switch (parameters->xbee_type) {
             case XBeeS1:
-                parameters->tx_req.txa64._payloadLength = updateSensorPack(parameters->tx_req.txa64._payloadPtr);
-                XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
-                ++parameters->cnt;
+                if ((parameters->cnt & 0x1FF) == 200) {
+                    parameters->tx_req.txa64._payloadLength = updateBattPack(parameters->tx_req.txa64._payloadPtr);
+                    XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
+                } else if ((parameters->cnt & 0x1FF) == 400) {
+                    parameters->tx_req.txa64._payloadLength = updateCommPack(
+                            parameters->recv_Task, parameters->sen_Task,
+                            parameters->serov_Task, task, parameters->ekf_Task,
+                            parameters->tx_req.txa64._payloadPtr);
+                    XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
+                } else {
+                    parameters->tx_req.txa64._payloadLength = updateSensorPack(parameters->tx_req.txa64._payloadPtr);
+                    XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
+                }
                 break;
             default:
-                parameters->tx_req.zbtx._payloadLength = updateSensorPack(parameters->tx_req.zbtx._payloadPtr);
-                XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
-                ++parameters->cnt;
+                if ((parameters->cnt & 0x1FF) == 200) {
+                    parameters->tx_req.zbtx._payloadLength = updateBattPack(parameters->tx_req.zbtx._payloadPtr);
+                    XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                } else if ((parameters->cnt & 0x1FF) == 400) {
+                    parameters->tx_req.zbtx._payloadLength = updateCommPack(
+                            parameters->recv_Task, parameters->sen_Task,
+                            parameters->serov_Task, task, parameters->ekf_Task,
+                            parameters->tx_req.zbtx._payloadPtr);
+                    XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                } else {
+                    parameters->tx_req.zbtx._payloadLength = updateSensorPack(parameters->tx_req.zbtx._payloadPtr);
+                    XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                }
         }
-
         PT_YIELD(pt);
     }
 
