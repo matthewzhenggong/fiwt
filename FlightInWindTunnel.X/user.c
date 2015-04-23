@@ -117,25 +117,25 @@ void InitApp(void) {
     serial_assign(&Serial1, 1u);
     Serial1.init();
     Serial1.open();
-    XBeeInit(&Xbee1, &Serial1);
+    XBeeInit(&Xbee1, XBEE1_ATAP, &Serial1);
 #endif /*USE_UART1*/
 #if USE_UART2
     serial_assign(&Serial2, 2u);
     Serial2.init();
     Serial2.open();
-    XBeeInit(&Xbee2, &Serial2);
+    XBeeInit(&Xbee2, XBEE2_ATAP, &Serial2);
 #endif /*USE_UART2*/
 #if USE_UART3
     serial_assign(&Serial3, 3u);
     Serial3.init();
     Serial3.open();
-    XBeeInit(&Xbee3, &Serial3);
+    XBeeInit(&Xbee3, XBEE3_ATAP, &Serial3);
 #endif /*USE_UART3*/
 #if USE_UART4
     serial_assign(&Serial4, 4u);
     Serial4.init();
     Serial4.open();
-    XBeeInit(&Xbee4, &Serial4);
+    XBeeInit(&Xbee4, XBEE4_ATAP, &Serial4);
 #endif /*USE_UART4*/
 
 #if USE_ADC1

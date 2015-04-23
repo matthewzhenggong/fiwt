@@ -99,7 +99,7 @@ int main(void) {
     senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 20);
     servoInit(&servo);
     servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 10);
-    msgSendInit(&msg_send, &Xbee1);
+    msgSendInit(&msg_send, &Xbee1,XBEE1_SERIES);
     sendTask = TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD*3, 0, 5);
 #if USE_EKF
     ekfInit(&ekf,TASK_PERIOD/1000.0f);
@@ -107,7 +107,7 @@ int main(void) {
 #else
     ekfTask = NULL;
 #endif
-    msgRecvInit(&msg_recv, &Xbee2, XBeeS2, senTask, servoTask, ekfTask, sendTask);
+    msgRecvInit(&msg_recv, &Xbee2, XBEE2_SERIES, senTask, servoTask, ekfTask, sendTask);
     TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 30);
 #elif GNDBOARD
     msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);

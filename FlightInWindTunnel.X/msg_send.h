@@ -33,10 +33,14 @@ extern "C" {
         struct pt PT;
         XBee_p _xbee;
         unsigned int cnt;
-        ZBTxRequest_t tx_req;
+        XBeeSeries_t xbee_type;
+        union {
+           ZBTxRequest_t zbtx;
+           TxA64Request_t txa64;
+        } tx_req;
     } msgSendParam_t, *msgSendParam_p;
 
-    void msgSendInit(msgSendParam_p parameters, XBee_p);
+    void msgSendInit(msgSendParam_p parameters, XBee_p, XBeeSeries_t);
 
     PT_THREAD(msgSendLoop)(TaskHandle_p task);
 

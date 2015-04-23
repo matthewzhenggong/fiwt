@@ -28,8 +28,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/*  set to ATAP value of XBee. AP=2 is recommended */
-#define ATAP 2
 
 #define START_BYTE 0x7e
 #define ESCAPE 0x7d
@@ -68,7 +66,7 @@
  * Api Id constants
  */
 #define TX_A64_REQUEST 0x00
-#define TX_A16_REQUEST 0x00
+#define TX_A16_REQUEST 0x01
 #define AT_COMMAND_REQUEST 0x08
 #define AT_COMMAND_QUEUE_REQUEST 0x09
 #define ZB_TX_REQUEST 0x10
@@ -253,6 +251,7 @@ extern "C" {
 
     struct XBee {
         bool _escape;
+        int _AP;
         /*  current packet position for response.  just a state variable for packet parsing and has no relevance for the response otherwise */
         uint8_t _pos;
         uint8_t _checksumTotal;
@@ -266,7 +265,7 @@ extern "C" {
     typedef struct XBee XBee_t;
     typedef struct XBee * XBee_p;
 
-    void XBeeInit(XBee_p _xbee, SerialStream_p serial);
+    void XBeeInit(XBee_p _xbee, int AP, SerialStream_p serial);
 
     /**
      * Reads all available serial bytes until a packet is parsed, an error occurs, or the buffer is empty.

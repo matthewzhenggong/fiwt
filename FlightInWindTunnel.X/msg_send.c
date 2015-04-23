@@ -41,7 +41,7 @@
 extern ekfParam_t ekf;
 #endif
 
-void msgSendInit(msgSendParam_p parameters, XBee_p xbee) {
+void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type) {
     struct pt *pt;
 
     pt = &(parameters->PT);
@@ -49,14 +49,23 @@ void msgSendInit(msgSendParam_p parameters, XBee_p xbee) {
     parameters->_xbee = xbee;
     parameters->cnt = 0u;
 
-    memcpy(parameters->tx_req._addr64, "\00\00\00\00\00\00\00\00", 8);
-    parameters->tx_req._addr16 = 0xFFFE;
-    parameters->tx_req._broadcastRadius = 1u;
-    parameters->tx_req._option = 1u;
-    parameters->tx_req._payloadLength = 1u;
-    parameters->tx_req._payloadPtr[0] = 'P';
+    parameters->xbee_type = xbee_type;
+    switch (xbee_type) {
+        case XBeeS1:
+            memcpy(parameters->tx_req.txa64._addr64, "\x00\x13\xA2\x00\x40\xc1\xc4\x4a", 8);
+            parameters->tx_req.txa64._option = 1u;
+            parameters->tx_req.txa64._payloadLength = 1u;
+            parameters->tx_req.txa64._payloadPtr[0] = 'P';
+            break;
+        default:
+            memcpy(parameters->tx_req.zbtx._addr64, "\x00\x00\x00\x00\xc0\xa8\xbf\x02", 8);
+            parameters->tx_req.zbtx._addr16 = 0xFFFE;
+            parameters->tx_req.zbtx._broadcastRadius = 1u;
+            parameters->tx_req.zbtx._option = 1u;
+            parameters->tx_req.zbtx._payloadLength = 1u;
+            parameters->tx_req.zbtx._payloadPtr[0] = 'P';
+    }
 }
-
 
 size_t updateSensorPack(uint8_t head[]) {
     uint8_t *pack;
@@ -70,13 +79,13 @@ size_t updateSensorPack(uint8_t head[]) {
 #else 
     *(pack++) = CODE_AC_MODEL_SERVO_POS;
 #endif
-    for (i=0;i<SERVOPOSADCNUM;++i) {
-      *(pack++) = ServoPos[i] >> 8;
-      *(pack++) = ServoPos[i] & 0xFF;
+    for (i = 0; i < SERVOPOSADCNUM; ++i) {
+        *(pack++) = ServoPos[i] >> 8;
+        *(pack++) = ServoPos[i] & 0xFF;
     }
-    for (i=0;i<ENCNUM;++i) {
-      *(pack++) = EncPos[i] >> 8;
-      *(pack++) = EncPos[i] & 0xFF;
+    for (i = 0; i < ENCNUM; ++i) {
+        *(pack++) = EncPos[i] >> 8;
+        *(pack++) = EncPos[i] & 0xFF;
     }
 #if USE_IMU
     *(pack++) = IMU_XGyro >> 8;
@@ -95,22 +104,31 @@ size_t updateSensorPack(uint8_t head[]) {
     *(pack++) = ADC_TimeStamp[0] & 0xFF;
     *(pack++) = ADC_TimeStamp[1] >> 8;
     *(pack++) = ADC_TimeStamp[1] & 0xFF;
-    for (i=0;i<SEVERONUM;++i) {
-      *(pack++) = Servos[i].Ctrl >> 8;
-      *(pack++) = Servos[i].Ctrl & 0xFF;
+    for (i = 0; i < SEVERONUM; ++i) {
+        *(pack++) = Servos[i].Ctrl >> 8;
+        *(pack++) = Servos[i].Ctrl & 0xFF;
     }
 #if USE_EKF
-    ptr = (uint8_t *)(ekf.ekff.rpy);
-    *(pack++) = *(ptr+3);
-    *(pack++) = *(ptr+2);
-    *(pack++) = *(ptr+1);
+    ptr = (uint8_t *) (ekf.ekff.rpy);
+    *(pack++) = *(ptr + 3);
+    *(pack++) = *(ptr + 2);
+    *(pack++) = *(ptr + 1);
     *(pack++) = *(ptr);
-    *(pack++) = *(ptr+7);
-    *(pack++) = *(ptr+6);
-    *(pack++) = *(ptr+5);
-    *(pack++) = *(ptr+4);
+    *(pack++) = *(ptr + 7);
+    *(pack++) = *(ptr + 6);
+    *(pack++) = *(ptr + 5);
+    *(pack++) = *(ptr + 4);
+#else
+    *(pack++) = 0;
+    *(pack++) = 0;
+    *(pack++) = 0;
+    *(pack++) = 0;
+    *(pack++) = 0;
+    *(pack++) = 0;
+    *(pack++) = 0;
+    *(pack++) = 0;
 #endif
-    return pack-head;
+    return pack - head;
 }
 
 PT_THREAD(msgSendLoop)(TaskHandle_p task) {
@@ -126,9 +144,17 @@ PT_THREAD(msgSendLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
-        parameters->tx_req._payloadLength = updateSensorPack(parameters->tx_req._payloadPtr);
-        XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req, 0u);
-        ++parameters->cnt;
+        switch (parameters->xbee_type) {
+            case XBeeS1:
+                parameters->tx_req.txa64._payloadLength = updateSensorPack(parameters->tx_req.txa64._payloadPtr);
+                XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
+                ++parameters->cnt;
+                break;
+            default:
+                parameters->tx_req.zbtx._payloadLength = updateSensorPack(parameters->tx_req.zbtx._payloadPtr);
+                XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
+                ++parameters->cnt;
+        }
 
         PT_YIELD(pt);
     }

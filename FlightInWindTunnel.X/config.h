@@ -28,12 +28,16 @@
 
 #define GNDBOARD 0
 
-#define AC_MODEL 0
+#define AC_MODEL 1
 
-#define AEROCOMP 1
+#define AEROCOMP 0
 
 #define STARTKITBOARD 0
 
+#define XBEE1_ATAP 2
+#define XBEE2_ATAP 2
+#define XBEE1_SERIES XBeeS2
+#define XBEE2_SERIES XBeeS2
 
 /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        (128000000L)
@@ -63,6 +67,9 @@
 #define USE_IMU   0
 #define USE_SPIS  0
 #define USE_EKF   0
+#define XBEE1_ATAP 2
+#define XBEE2_ATAP 2
+
 #elif GNDBOARD
 #define USE_UART1 1
 #define USE_UART2 1
@@ -76,6 +83,11 @@
 #define USE_EKF   0
 #define USE_LEDEXTBOARD 1
 #define NOT_USE_EXTOSC 0
+#define XBEE1_ATAP 2
+#define XBEE2_ATAP 2
+#define XBEE3_ATAP 2
+#define XBEE4_ATAP 2
+
 #elif STARTKITBOARD
 #define USE_UART1 0
 #define USE_UART2 0

@@ -56,6 +56,8 @@ moderm_status = {
     6: 'Coordinator started',
     7: 'Network security key was updated',
     0x0D: 'Voltage supply limit exceeded (PRO S2B only)',
+    0x0E: 'Device Cloud connected',
+    0x0F: 'Device Cloud disconnected',
     0x11: 'Modem configuration changed while join in progress',
     0x80: 'stack error',
 }
@@ -72,6 +74,7 @@ delivery_status = {
     0x00: 'Success',
     0x01: 'MAC ACK Failure',
     0x02: 'CCA Failure',
+    0x03: 'Transmission was purged because it was attempted before stack was completely up',
     0x15: 'Invalid destination endpoint',
     0x21: 'Network ACK Failure',
     0x22: 'Not Joined to Network',
@@ -85,6 +88,16 @@ delivery_status = {
     0x2E: 'Attempted unicast with APS transmission, but EE=0',
     0x32: 'Resource error lack of free buffers, timers, etc.',
     0x74: 'Data payload too large',
+    0x76: 'Attempt to create a client socket fail',
+    0x77: 'TCP connection to given IP address and port doesn\'t exist',
+    0x78: 'Source port on a UDP transmission does not match a listening port on the transmitting module',
+}
+
+tx_status = {
+    0x00: 'Success',
+    0x01: 'No ACK received',
+    0x02: 'CCA failure',
+    0x03: 'Purged',
 }
 
 recv_opts = {
@@ -222,6 +235,10 @@ class MyFrame(wx.Frame):
                                  size=(100, -1),
                                  validator=MyValidator(DIGIT_ONLY))
         box.Add(self.txtBR, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        self.cbZB = wx.CheckBox(panel, -1, "ZB")
+        self.cbZB.SetValue(True)
+        self.cbZB.SetToolTip(wx.ToolTip('Use Zigbee APIs'))
+        box.Add(self.cbZB, 0, wx.ALIGN_CENTER, 5)
         self.cbEsc = wx.CheckBox(panel, -1, "Esc")
         self.cbEsc.SetValue(True)
         self.cbEsc.SetToolTip(wx.ToolTip('Use escape characters(ATAP=2)'))
@@ -233,6 +250,8 @@ class MyFrame(wx.Frame):
         AT_CMD = ['MY', 'BD']
         ADDR64_LIST = ["0013a200408a72d2", "0013A200408A72AA",
                        "0000000000000000", "000000000000FFFF",
+                       "0013a20040c1c44a", "0013a20040c15313",
+                       "00000000C0A80191", "00000000C0A80192",
                        "0013a200408A72A8", "0013A200408A72BC",
                        "0013A200408A72BF", "0013A200408A72DD"]
         ADDR16_LIST = ["0000", "FFFE"]
@@ -580,9 +599,6 @@ Unused bits must be set to 0.  '''))
         box.Add(self.txtTXfreq, 0, wx.ALIGN_CENTER, 5)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Hz"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.cbUseFrameId = wx.CheckBox(panel, -1, "Demand TX Response")
-        self.cbUseFrameId.SetToolTip(wx.ToolTip("Use FrameID != 0"))
-        box.Add(self.cbUseFrameId, 0, wx.ALIGN_CENTER | wx.RIGHT, 5)
         self.txtTXBR = wx.StaticText(panel, wx.ID_ANY, "")
         box.Add(self.txtTXBR, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
 
@@ -734,15 +750,15 @@ Unused bits must be set to 0.  '''))
             self.log.debug(
                 'set AT ' + command + '=' + ':'.join('{:02x}'.format(ord(c))
                                                      for c in parameter))
-        self.at_frame_id = self.getFrameId()
+        self.frame_id = self.getFrameId()
         if self.cbATqu.GetValue():
             self.xbee.queued_at(command=command,
                                 parameter=parameter,
-                                frame_id=chr(self.at_frame_id))
+                                frame_id=chr(self.frame_id))
         else:
             self.xbee.at(command=command,
                          parameter=parameter,
-                         frame_id=chr(self.at_frame_id))
+                         frame_id=chr(self.frame_id))
 
     def OnRmtAT(self, event):
         try:
@@ -769,13 +785,13 @@ Unused bits must be set to 0.  '''))
                         for c in addr16) + '(' + ':'.join('{:02x}'.format(ord(c))
                                                           for c in addr64) +
                                ') with option {:02x}'.format(ord(options)))
-            self.remote_at_frame_id = self.getFrameId()
+            self.frame_id = self.getFrameId()
             self.xbee.remote_at(dest_addr_long=addr64,
                                 dest_addr=addr16,
                                 options=options,
                                 command=command,
                                 parameter=parameter,
-                                frame_id=chr(self.remote_at_frame_id))
+                                frame_id=chr(self.frame_id))
         except:
             traceback.print_exc()
 
@@ -849,66 +865,42 @@ Unused bits must be set to 0.  '''))
         self.ping_tick = time.clock()
 
     def OnTXc(self, event):
-        if self.cbUseFrameId.GetValue():
-            if event.IsChecked():
-                self.periodic_sending = 2
-                self.periodic_dt = 1.0 / float(
-                    self.txtTXfreq.GetValue().encode())
-                self.periodic_data = self.txtTX.GetValue().encode()
-                self.txtTXfreq.Disable()
-                self.txtTX.Disable()
-                self.periodic_count += 1
-                self.send(
-                    'P{:05d}'.format(self.periodic_count) + self.periodic_data,
-                    False)
-            else:
-                self.periodic_sending = 0
-                self.txtTXfreq.Enable()
-                self.txtTX.Enable()
+        if event.IsChecked():
+            self.periodic_sending = 1
+            self.periodic_sending_time_all = 0.0
+            self.periodic_sending_time_max = 0.0
+            self.periodic_sending_time_min = 99e99
+            self.periodic_sending_cnt = 0.0
+            self.periodic_dt = 1.0 / float(
+                self.txtTXfreq.GetValue().encode())
+            self.periodic_data = self.txtTX.GetValue().encode()
+            self.txtTXfreq.Disable()
+            self.txtTX.Disable()
+            self.periodic_send()
         else:
-            if event.IsChecked():
-                self.periodic_sending = 1
-                self.periodic_dt = 1.0 / float(
-                    self.txtTXfreq.GetValue().encode())
-                self.periodic_data = self.txtTX.GetValue().encode()
-                self.txtTXfreq.Disable()
-                self.txtTX.Disable()
-                self.periodic_send()
-            else:
-                self.periodic_sending = 0
-                self.txtTXfreq.Enable()
-                self.txtTX.Enable()
+            self.periodic_sending = 0
+            self.txtTXfreq.Enable()
+            self.txtTX.Enable()
 
     def periodic_send(self):
         tick = time.clock()
         self.periodic_count += 1
         self.send('P{:05d}'.format(self.periodic_count) + self.periodic_data,
                   True)
+        self.ping_tick = time.clock()
         if self.periodic_sending:
             threading.Timer(self.periodic_dt -
                             (time.clock() - tick), self.periodic_send).start()
-
-    def periodic_send2(self):
-        tick = time.clock()
-        dt = self.periodic_dt - (tick - self.tick)
-        self.periodic_count += 1
-        data = 'P{:05d}'.format(self.periodic_count) + self.periodic_data
-        if dt < 0.000:
-            self.send(data, False)
-            self.log.warning(
-                'Can not catch up given freq.(dt={:.4f})'.format(-dt))
-        else:
-            threading.Timer(dt, self.send, [data, False]).start()
 
     def send(self, data, no_response=False):
         try:
             if data:
                 if no_response:
-                    self.tx_frame_id = 0
+                    self.frame_id = 0
                 elif self.sending:
                     return False
                 else:
-                    self.tx_frame_id = self.getFrameId()
+                    self.frame_id = self.getFrameId()
                     self.sending = True
 
                 addr64 = self.txtRmtATaddr64.GetValue().encode()[:16].decode(
@@ -918,19 +910,40 @@ Unused bits must be set to 0.  '''))
                 broadcast_radius = self.txtTXrad.GetValue().encode()[:2].decode(
                     'hex')
                 options = self.txtTXopt.GetValue().encode()[:2].decode('hex')
-                if not self.periodic_sending and not no_response:
-                    self.log.debug(
-                        'send TX ' + data.__repr__() + ' to ' + ':'.join(
-                            '{:02x}'.format(ord(c)) for c in addr16) + '(' +
-                        ':'.join('{:02x}'.format(ord(c)) for c in addr64) +
-                        ') with option {:02x}'.format(ord(options)) +
-                        ' & radius {:02x}'.format(ord(broadcast_radius)))
-                self.xbee.tx(dest_addr_long=addr64,
-                             dest_addr=addr16,
-                             broadcast_radius=broadcast_radius,
-                             options=options,
-                             data=data,
-                             frame_id=chr(self.tx_frame_id))
+                if self.use_ZB:
+                    if not self.periodic_sending and not no_response:
+                        self.log.debug(
+                            'send TX ' + data.__repr__() + ' to ' + ':'.join(
+                                '{:02x}'.format(ord(c)) for c in addr16) + '(' +
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr64) +
+                            ') with option {:02x}'.format(ord(options)) +
+                            ' & radius {:02x}'.format(ord(broadcast_radius)))
+                    self.xbee.tx(dest_addr_long=addr64,
+                                 dest_addr=addr16,
+                                 broadcast_radius=broadcast_radius,
+                                 options=options,
+                                 data=data,
+                                 frame_id=chr(self.frame_id))
+                elif addr16 == '\xff\xfe':
+                    if not self.periodic_sending and not no_response:
+                        self.log.debug(
+                            'send TX ' + data.__repr__() + ' to ' +
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr64) +
+                            ' with option {:02x}'.format(ord(options)))
+                    self.xbee.tx_long_addr(dest_addr=addr64,
+                                 options=options,
+                                 data=data,
+                                 frame_id=chr(self.frame_id))
+                else:
+                    if not self.periodic_sending and not no_response:
+                        self.log.debug(
+                            'send TX ' + data.__repr__() + ' to ' +
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr16) +
+                            ' with option {:02x}'.format(ord(options)))
+                    self.xbee.tx(dest_addr=addr16,
+                                 options=options,
+                                 data=data,
+                                 frame_id=chr(self.frame_id))
                 self.tick = time.clock()
         except:
             traceback.print_exc()
@@ -951,6 +964,8 @@ Unused bits must be set to 0.  '''))
         self.txtPort2.Enable(False)
         self.txtBR.Enable(False)
         self.cbEsc.Enable(False)
+        self.cbZB.Enable(False)
+        self.use_ZB = self.cbZB.GetValue()
 
         self.rec = open(time.strftime('rec%Y%m%d%H%M%S.dat'), 'wb')
 
@@ -975,27 +990,35 @@ Unused bits must be set to 0.  '''))
 
         self.halting = False
         if port2flag:
-            self.xbee2 = xbee.zigbee.ZigBee(self.serial_port2,
-                                            callback=self.get_frame_data,
-                                            escaped=self.cbEsc.GetValue())
+            if self.cbZB.GetValue() :
+                self.xbee2 = xbee.zigbee.ZigBee(self.serial_port2,
+                                         callback=self.get_frame_data,
+                                         escaped=self.cbEsc.GetValue())
+            else :
+                self.xbee2 = xbee.XBee(self.serial_port2,
+                                         callback=self.get_frame_data,
+                                         escaped=self.cbEsc.GetValue())
             self.xbee = self.xbee2
             self.rb2.Enable(True)
             self.rb2.SetValue(True)
         else :
             self.xbee2 = None
         if port1flag:
-            self.xbee1 = xbee.zigbee.ZigBee(self.serial_port,
-                                            callback=self.get_frame_data,
-                                            escaped=self.cbEsc.GetValue())
+            if self.cbZB.GetValue() :
+                self.xbee1 = xbee.zigbee.ZigBee(self.serial_port,
+                                         callback=self.get_frame_data,
+                                         escaped=self.cbEsc.GetValue())
+            else :
+                self.xbee1 = xbee.XBee(self.serial_port,
+                                         callback=self.get_frame_data,
+                                         escaped=self.cbEsc.GetValue())
             self.xbee = self.xbee1
             self.rb1.Enable(True)
             self.rb1.SetValue(True)
         else :
             self.xbee1 = None
 
-        self.at_frame_id = 0
-        self.tx_frame_id = 0
-        self.remote_at_frame_id = 0
+        self.frame_id = 0
         self.sending = False
         self.first_cnt = True
         self.arrv_cnt = 0
@@ -1049,15 +1072,30 @@ Unused bits must be set to 0.  '''))
             return
         if data['id'] == 'rx':
             try:
-                addr64 = data['source_addr_long']
+                if self.use_ZB :
+                    addr64 = data['source_addr_long']
+                else :
+                    rssi = data['rssi']
                 addr16 = data['source_addr']
                 options = ord(data['options'])
                 rf_data = data['rf_data']
                 self.updateStatistics(len(rf_data))
                 if rf_data[0] == 'P':
-                    deltaT = int((time.clock() - self.ping_tick)*1000)
-                    self.log.info('Ping back in {}ms:{}'.format(
-                        deltaT, rf_data[1:]))
+                    deltaT = (time.clock() - self.ping_tick)*1000
+                    if self.periodic_sending == 0:
+                        self.log.info('Ping back in {:.1f}ms'.format(deltaT))
+                    else :
+                        self.periodic_sending_time_all += deltaT
+                        self.periodic_sending_cnt += 1.0
+                        if deltaT > self.periodic_sending_time_max:
+                            self.periodic_sending_time_max = deltaT
+                        if deltaT < self.periodic_sending_time_min:
+                            self.periodic_sending_time_min = deltaT
+                        txt = 'Ping back in {:.1f}/{:.1f}/{:.1f}ms'.format(
+                                self.periodic_sending_time_all/self.periodic_sending_cnt,
+                                self.periodic_sending_time_max,
+                                self.periodic_sending_time_min)
+                        wx.PostEvent(self, RxEvent(txt=txt))
                 elif rf_data[0] == '\x22':
                     rslt = self.pack22.unpack(rf_data)
                     T = (rslt[16]*0x10000+rslt[17])*0.001
@@ -1177,10 +1215,16 @@ Unused bits must be set to 0.  '''))
                             sec, msec, pos, ctrl))
                         self.test_motor_ticks -= 1
                 else:
-                    self.log.info('RX:{}. Get {} from {}({})'.format(
-                        recv_opts[options], rf_data.__repr__(),
-                        ':'.join('{:02x}'.format(ord(c)) for c in addr16),
-                        ':'.join('{:02x}'.format(ord(c)) for c in addr64)))
+                    if self.use_ZB :
+                        self.log.info('RX:{}. Get {} from {}({})'.format(
+                            recv_opts[options], rf_data.__repr__(),
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr16),
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr64)))
+                    else :
+                        self.log.info('RX:{}. Get {} from {}({})'.format(
+                            recv_opts[options], rf_data.__repr__(),
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr16),
+                            rssi))
                 self.rec.write(rf_data)
             except:
                 traceback.print_exc()
@@ -1188,14 +1232,14 @@ Unused bits must be set to 0.  '''))
         elif data['id'] == 'tx_status':
             self.sending = False
             try:
-                del_sta = ord(data['deliver_status'])
-                dis_sta = ord(data['discover_status'])
-                retries = ord(data['retries'])
-                if self.tx_frame_id != ord(data['frame_id']):
-                    self.log.error("TXResponse frame_id mismatch")
-                if self.periodic_sending == 2:
-                    self.periodic_send2()
-                else:
+                if self.use_ZB :
+                    del_sta = ord(data['deliver_status'])
+                    dis_sta = ord(data['discover_status'])
+                    retries = ord(data['retries'])
+                    if self.frame_id != ord(data['frame_id']):
+                        self.log.error("TXResponse frame_id mismatch"
+                            "{}!={}".format(self.frame_id,
+                                ord(data['frame_id'])))
                     addr = data['dest_addr']
                     del_sta = delivery_status[del_sta]
                     dis_sta = discovery_status[dis_sta]
@@ -1204,7 +1248,14 @@ Unused bits must be set to 0.  '''))
                             del_sta, ':'.join('{:02x}'.format(ord(c))
                                               for c in addr), retries,
                             dis_sta))
-
+                else :
+                    tx_sta = ord(data['status'])
+                    if self.frame_id != ord(data['frame_id']):
+                        self.log.error("TXResponse frame_id mismatch"
+                            "{}!={}".format(self.frame_id,
+                                ord(data['frame_id'])))
+                    tx_sta = tx_status[tx_sta]
+                    self.log.info( 'TXResponse:{}'.format(tx_sta))
             except:
                 traceback.print_exc()
                 self.log.error(repr(data))
@@ -1217,7 +1268,7 @@ Unused bits must be set to 0.  '''))
                         parameter = ''
                 except KeyError:
                     parameter = ''
-                if self.at_frame_id != ord(data['frame_id']):
+                if self.frame_id != ord(data['frame_id']):
                     self.log.error("ATResponse frame_id mismatch")
                 self.log.info('ATResponse:{} {}={}'.format(
                     at_status[s], data['command'],
@@ -1236,7 +1287,7 @@ Unused bits must be set to 0.  '''))
                         parameter = ''
                 except KeyError:
                     parameter = ''
-                if self.remote_at_frame_id != ord(data['frame_id']):
+                if self.frame_id != ord(data['frame_id']):
                     self.log.error("Remote ATResponse frame_id mismatch")
                 self.log.info('ATResponse:{} {}={} from {}({})'.format(
                     at_status[s], data['command'],

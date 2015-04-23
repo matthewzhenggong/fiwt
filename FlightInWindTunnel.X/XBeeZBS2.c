@@ -45,11 +45,11 @@ void XBeeResetResponse(XBee_p _xbee) {
     XBeeResponseReset(&_xbee->_response);
 }
 
-
-void XBeeInit(XBee_p _xbee, SerialStream_p serial) {
+void XBeeInit(XBee_p _xbee, int AP, SerialStream_p serial) {
     XBeeResetResponse(_xbee);
     _xbee->_nextFrameId = 0;
     _xbee->_serial = serial;
+    _xbee->_AP = AP;
 }
 
 signed int XBeeReadPacket(XBee_p _xbee) {
@@ -65,26 +65,25 @@ signed int XBeeReadPacket(XBee_p _xbee) {
 
         b = _xbee->_serial->read();
 
-        if (_xbee->_pos > 0 && b == START_BYTE && ATAP == 2) {
-            /*  new packet start before previous packeted completed -- discard previous packet and start over */
-            _xbee->_response._errorCode = UNEXPECTED_START_BYTE;
-            return -UNEXPECTED_START_BYTE;
-        }
-
-        if (_xbee->_pos > 0 && b == ESCAPE) {
-            if (_xbee->_serial->available()) {
-                b = _xbee->_serial->read();
-                b ^= 0x20;
-            } else {
-                /*  escape byte.  next byte will be */
-                _xbee->_escape = true;
-                continue;
+        if (_xbee->_AP == 2 && _xbee->_pos > 0) {
+            if (b == START_BYTE) {
+                /*  new packet start before previous packeted completed -- discard previous packet and start over */
+                _xbee->_response._errorCode = UNEXPECTED_START_BYTE;
+                return -UNEXPECTED_START_BYTE;
+            } else if (b == ESCAPE) {
+                if (_xbee->_serial->available()) {
+                    b = _xbee->_serial->read();
+                    b ^= 0x20;
+                } else {
+                    /*  escape byte.  next byte will be */
+                    _xbee->_escape = true;
+                    continue;
+                }
             }
-        }
-
-        if (_xbee->_escape == true) {
-            b ^= 0x20;
-            _xbee->_escape = false;
+            if (_xbee->_escape == true) {
+                b ^= 0x20;
+                _xbee->_escape = false;
+            }
         }
 
         /*  checksum includes all bytes starting with api id */
@@ -160,9 +159,9 @@ signed int XBeeReadPacket(XBee_p _xbee) {
     return NO_ERROR;
 }
 
-void XBeeSendByte(XBee_p _xbee, uint8_t b, bool escape) {
+void XBeeSendByte(XBee_p _xbee, uint8_t b) {
 
-    if (escape && (b == START_BYTE || b == ESCAPE || b == XON || b == XOFF)) {
+    if (_xbee->_AP == 2 && (b == START_BYTE || b == ESCAPE || b == XON || b == XOFF)) {
         /* std::cout << "escaping byte [" << toHexString(b) << "] " << std::endl; */
         _xbee->_serial->write(ESCAPE);
         _xbee->_serial->write(b ^ 0x20);
@@ -179,18 +178,18 @@ void XBeeRequestSend(XBee_p _xbee) {
 
     /*  the new new deal */
 
-    XBeeSendByte(_xbee, START_BYTE, false);
+    _xbee->_serial->write(START_BYTE);
 
     /*  send length */
     uint8_t msbLen = ((request->_frameLen + 2u) >> 8) & 0xff;
     uint8_t lsbLen = (request->_frameLen + 2u) & 0xff;
 
-    XBeeSendByte(_xbee, msbLen, true);
-    XBeeSendByte(_xbee, lsbLen, true);
+    XBeeSendByte(_xbee, msbLen);
+    XBeeSendByte(_xbee, lsbLen);
 
     /*  api id */
-    XBeeSendByte(_xbee, request->_apiId, true);
-    XBeeSendByte(_xbee, request->_frameId, true);
+    XBeeSendByte(_xbee, request->_apiId);
+    XBeeSendByte(_xbee, request->_frameId);
 
     uint8_t checksum = 0;
 
@@ -202,7 +201,7 @@ void XBeeRequestSend(XBee_p _xbee) {
 
     for (i = request->_frameData, frame_end = request->_frameData + request->_frameLen; i != frame_end; ++i) {
         /* std::cout << "sending byte [" << static_cast<unsigned int>(i) << "] " << std::endl; */
-        XBeeSendByte(_xbee, *i, true);
+        XBeeSendByte(_xbee, *i);
         checksum += *i;
     }
 
@@ -212,7 +211,7 @@ void XBeeRequestSend(XBee_p _xbee) {
     /* std::cout << "checksum is " << static_cast<unsigned int>(checksum) << std::endl; */
 
     /*  send checksum */
-    XBeeSendByte(_xbee, checksum, true);
+    XBeeSendByte(_xbee, checksum);
 
     /* send one dummy byte*/
     _xbee->_serial->write(0xFE);
@@ -232,14 +231,12 @@ uint8_t XBeeGetNextFrameId(XBee_p _xbee) {
 }
 
 void XBeeAtCommandRequest(XBee_p _xbee, AtCommandRequest_p from,
-    uint8_t frameId, bool queue) {
+        uint8_t frameId, bool queue) {
     XBeeRequest_p to;
     to = &(_xbee->_request);
-    if (queue)
-    {
-        to->_apiId = AT_COMMAND_QUEUE_REQUEST;       
-    }
-    else {
+    if (queue) {
+        to->_apiId = AT_COMMAND_QUEUE_REQUEST;
+    } else {
         to->_apiId = AT_COMMAND_REQUEST;
     }
     to->_frameId = frameId;
@@ -308,7 +305,7 @@ bool XBeeAtCommandResponse(XBee_p _xbee, AtCommandResponse_p to) {
 bool XBeeTxStatusResponse(XBee_p _xbee, TxStatusResponse_p to) {
     XBeeResponse_p from;
     from = &_xbee->_response;
-    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == ZB_TX_STATUS_RESPONSE) {
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == TX_STATUS_RESPONSE) {
         to->_frameId = from->_frameData[0];
         to->_deliveryStatus = from->_frameData[1];
         return true;
@@ -347,7 +344,7 @@ bool XBeeZBRxResponse(XBee_p _xbee, ZBRxResponse_p to) {
 bool XBeeRxA64Response(XBee_p _xbee, RxA64Response_p to) {
     XBeeResponse_p from;
     from = &_xbee->_response;
-    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == ZB_RX_RESPONSE) {
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == RX_A64_RESPONSE) {
         memcpy(to->_addr64, from->_frameData, 8);
         to->_rssi = from->_frameData[8];
         to->_option = from->_frameData[9];
@@ -361,7 +358,7 @@ bool XBeeRxA64Response(XBee_p _xbee, RxA64Response_p to) {
 bool XBeeRxA16Response(XBee_p _xbee, RxA16Response_p to) {
     XBeeResponse_p from;
     from = &_xbee->_response;
-    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == ZB_RX_RESPONSE) {
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == RX_A16_RESPONSE) {
         to->_addr16 = (from->_frameData[0] << 8) + from->_frameData[1];
         to->_rssi = from->_frameData[2];
         to->_option = from->_frameData[3];

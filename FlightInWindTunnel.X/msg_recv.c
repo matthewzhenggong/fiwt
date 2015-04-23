@@ -55,7 +55,7 @@ void msgRecvInit(msgRecvParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type,
     parameters->xbee_type = xbee_type;
     switch (xbee_type) {
         case XBeeS1 :
-            parameters->tx_req.txa16._addr16 = 0xFFFF;
+            parameters->tx_req.txa16._addr16 = 0x0002;
             parameters->tx_req.txa16._option = 1u;
             parameters->tx_req.txa16._payloadLength = 1u;
             parameters->tx_req.txa16._payloadPtr[0] = 'P';
@@ -216,6 +216,12 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
                             case CODE_AC_MODEL_NEW_SERV_CMD:
                             case CODE_AEROCOMP_NEW_SERV_CMD:
                                 servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), parameters->rx_rsp.rxa64._payloadPtr);
+                                break;
+                            case 'P':
+                                parameters->tx_req.txa16._payloadLength = parameters->rx_rsp.rxa64._payloadLength;
+                                memcpy(parameters->tx_req.txa16._payloadPtr, parameters->rx_rsp.rxa16._payloadPtr, parameters->rx_rsp.rxa16._payloadLength);
+                                XBeeTxA16Request(parameters->_xbee, &parameters->tx_req.txa16, 0u);
+                                sent = true;
                                 break;
                         }
                     }
