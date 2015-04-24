@@ -368,3 +368,20 @@ bool XBeeRxA16Response(XBee_p _xbee, RxA16Response_p to) {
     }
     return false;
 }
+
+bool XBeeRxIPv4Response(XBee_p _xbee, RxIPv4Response_p to) {
+    XBeeResponse_p from;
+    from = &_xbee->_response;
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == RX_A64_RESPONSE) {
+        to->_src_addr_hsw = (from->_frameData[0] << 8) + from->_frameData[1];
+        to->_src_addr_lsw = (from->_frameData[2] << 8) + from->_frameData[3];
+        to->_port = (from->_frameData[4] << 8) + from->_frameData[5];
+        to->_src_port = (from->_frameData[6] << 8) + from->_frameData[7];
+        to->_protocol = from->_frameData[8];
+        to->_status = from->_frameData[9];
+        to->_payloadLength = from->_frameLength - 10;
+        memcpy(to->_payloadPtr, from->_frameData + 10, to->_payloadLength);
+        return true;
+    }
+    return false;
+}

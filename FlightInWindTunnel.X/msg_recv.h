@@ -41,6 +41,7 @@ extern "C" {
             ZBRxResponse_t zbrx;
             RxA64Response_t rxa64;
             RxA16Response_t rxa16;
+            RxIPv4Response_t rxipv4;
         } rx_rsp;
     } msgRecvParam_t, *msgRecvParam_p;
 

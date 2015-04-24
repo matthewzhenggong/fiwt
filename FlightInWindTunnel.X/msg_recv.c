@@ -131,6 +131,12 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
         packin = XBeeReadPacket(parameters->_xbee);
         if (packin > 0) {
             switch (packin) {
+                case RX_IPV4_RESPONSE:
+                    if (XBeeRxIPv4Response(parameters->_xbee, &parameters->rx_rsp.rxipv4)) {
+                        ++parameters->cnt;
+                        process_msg(parameters, parameters->rx_rsp.rxipv4._payloadPtr, parameters->rx_rsp.rxipv4._payloadLength);
+                    }
+                    break;
                 case ZB_RX_RESPONSE:
                     if (XBeeZBRxResponse(parameters->_xbee, &parameters->rx_rsp.zbrx)) {
                         ++parameters->cnt;

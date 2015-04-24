@@ -24,7 +24,6 @@ import threading
 import struct
 
 from wx.lib.newevent import NewEvent
-import XBeeIPServices
 
 RxEvent, EVT_RSLT1 = NewEvent()
 Rx2Event, EVT_RSLT2 = NewEvent()
@@ -248,22 +247,11 @@ class MyFrame(wx.Frame):
         box.Add(self.btnStart, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
-        box = wx.BoxSizer(wx.HORIZONTAL)
-        box.Add(wx.StaticText(panel, wx.ID_ANY, "Host:"), 0,
-                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtHost = wx.TextCtrl(panel, -1, "192.168.191.1", size=(100, -1))
-        box.Add(self.txtHost, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.rb3 = wx.RadioButton(panel, wx.ID_ANY, "Remote:")
-        box.Add(self.rb3, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtRemote = wx.TextCtrl(panel, -1, "192.168.191.2", size=(100, -1))
-        box.Add(self.txtRemote, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
-
         AT_CMD = ['MY', 'BD']
         ADDR64_LIST = ["0013a200408a72d2", "0013A200408A72AA",
                        "0000000000000000", "000000000000FFFF",
                        "0013a20040c1c44a", "0013a20040c15313",
-                       "00000000C0A8BF02", "00000000C0A8BFFF",
+                       "00000000C0A80191", "00000000C0A80192",
                        "0013a200408A72A8", "0013A200408A72BC",
                        "0013A200408A72BF", "0013A200408A72DD"]
         ADDR16_LIST = ["0000", "FFFE"]
@@ -974,8 +962,6 @@ Unused bits must be set to 0.  '''))
         self.btnStart.Enable(False)
         self.txtPort.Enable(False)
         self.txtPort2.Enable(False)
-        self.txtHost.Enable(False)
-        self.txtRemote.Enable(False)
         self.txtBR.Enable(False)
         self.cbEsc.Enable(False)
         self.cbZB.Enable(False)
@@ -1063,34 +1049,7 @@ Unused bits must be set to 0.  '''))
         self.OutputSrv2Move = 0
         self.OutputCnt = 0
 
-        self.remote = self.txtRemote.GetValue().encode()
-        self.service = XBeeIPServices.XBeeApplicationService(
-                self.txtHost.GetValue().encode())
-        self.thread = threading.Thread(target=self.run)
-        self.thread.daemon = True
-        self.thread.start()
         print 'start'
-
-    def run(self):
-        while not self.halting:
-            data = self.service.getPacket()
-            if data :
-                if data[0] == 'P':
-                    deltaT = (time.clock() - self.ping_tick)*1000
-                    if self.periodic_sending == 0:
-                        self.log.info('Ping back in {:.1f}ms'.format(deltaT))
-                    else :
-                        self.periodic_sending_time_all += deltaT
-                        self.periodic_sending_cnt += 1.0
-                        if deltaT > self.periodic_sending_time_max:
-                            self.periodic_sending_time_max = deltaT
-                        if deltaT < self.periodic_sending_time_min:
-                            self.periodic_sending_time_min = deltaT
-                        txt = 'Ping back in {:.1f}/{:.1f}/{:.1f}ms'.format(
-                                self.periodic_sending_time_all/self.periodic_sending_cnt,
-                                self.periodic_sending_time_max,
-                                self.periodic_sending_time_min)
-                        wx.PostEvent(self, RxEvent(txt=txt))
 
     def updateStatistics(self, bcnt):
         if self.first_cnt:

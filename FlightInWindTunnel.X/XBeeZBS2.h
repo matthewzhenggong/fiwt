@@ -40,9 +40,10 @@
 /*  if a RX packet exceeds this size, it cannot be parsed! */
 
 /*  This value is determined by the largest packet size */
-#define MAX_PAYLOAD_DATA_SIZE 84
+#define MAX_S2_PAYLOAD_DATA_SIZE 84
 #define MAX_S1_PAYLOAD_DATA_SIZE 100
-#define MAX_FRAME_DATA_SIZE 124
+#define MAX_S6_PAYLOAD_DATA_SIZE 200 //1400
+#define MAX_FRAME_DATA_SIZE 255
 
 #define BROADCAST_ADDRESS 0xffff
 #define ZB_BROADCAST_ADDRESS 0xfffe
@@ -72,6 +73,7 @@
 #define ZB_TX_REQUEST 0x10
 #define ZB_EXPLICIT_TX_REQUEST 0x11
 #define REMOTE_AT_REQUEST 0x17
+#define TX_IPV4_REQUEST 0x20
 #define RX_A64_RESPONSE 0x80
 #define RX_A16_RESPONSE 0x81
 #define IO_A64_RESPONSE 0x82
@@ -85,6 +87,7 @@
 #define ZB_IO_SAMPLE_RESPONSE 0x92
 #define ZB_IO_NODE_IDENTIFIER_RESPONSE 0x95
 #define REMOTE_AT_COMMAND_RESPONSE 0x97
+#define RX_IPV4_RESPONSE 0xB0
 
 
 /**
@@ -183,6 +186,19 @@ extern "C" {
     typedef struct RxA64Response RxA64Response_t;
     typedef struct RxA64Response * RxA64Response_p;
 
+    struct RxIPv4Response {
+        uint16_t _src_addr_hsw;
+        uint16_t _src_addr_lsw;
+        uint16_t _port;
+        uint16_t _src_port;
+        uint8_t _protocol;
+        uint8_t _status;
+        uint8_t _payloadPtr[MAX_S6_PAYLOAD_DATA_SIZE];
+        size_t _payloadLength;
+    };
+    typedef struct RxIPv4Response RxIPv4Response_t;
+    typedef struct RxIPv4Response * RxIPv4Response_p;
+
     struct RxA16Response {
         uint16_t _addr16;
         uint8_t _rssi;
@@ -197,7 +213,7 @@ extern "C" {
         uint8_t _addr64[8];
         uint16_t _addr16;
         uint8_t _option;
-        uint8_t _payloadPtr[MAX_PAYLOAD_DATA_SIZE];
+        uint8_t _payloadPtr[MAX_S2_PAYLOAD_DATA_SIZE];
         size_t _payloadLength;
     };
     typedef struct ZBRxResponse ZBRxResponse_t;
@@ -243,11 +259,24 @@ extern "C" {
         uint16_t _addr16;
         uint8_t _broadcastRadius;
         uint8_t _option;
-        uint8_t _payloadPtr[MAX_PAYLOAD_DATA_SIZE];
+        uint8_t _payloadPtr[MAX_S2_PAYLOAD_DATA_SIZE];
         size_t _payloadLength;
     };
     typedef struct ZBTxRequest ZBTxRequest_t;
     typedef struct ZBTxRequest * ZBTxRequest_p;
+
+    struct TxIPv4Request {
+        uint16_t _des_addr_hsw;
+        uint16_t _des_addr_lsw;
+        uint16_t _des_port;
+        uint16_t _src_port;
+        uint8_t _protocol;
+        uint8_t _option;
+        uint8_t _payloadPtr[MAX_S6_PAYLOAD_DATA_SIZE];
+        size_t _payloadLength;
+    };
+    typedef struct TxIPv4Request TxIPv4Request_t;
+    typedef struct TxIPv4Request * TxIPv4Request_p;
 
     struct XBee {
         bool _escape;
@@ -317,6 +346,8 @@ extern "C" {
     bool XBeeRxA16Response(XBee_p _xbee, RxA16Response_p to);
 
     bool XBeeZBRxResponse(XBee_p _xbee, ZBRxResponse_p to);
+
+    bool XBeeRxIPv4Response(XBee_p _xbee, RxIPv4Response_p to);
 
 #ifdef __cplusplus
 }
