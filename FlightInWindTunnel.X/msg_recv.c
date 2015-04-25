@@ -129,7 +129,7 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
     while (1) {
         ++parameters->cnt;
         packin = XBeeReadPacket(parameters->_xbee);
-        if (packin > 0) {
+        while (packin > 0) {
             switch (packin) {
                 case RX_IPV4_RESPONSE:
                     if (XBeeRxIPv4Response(parameters->_xbee, &parameters->rx_rsp.rxipv4)) {
@@ -156,6 +156,7 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
                     }
                     break;
             }
+            packin = XBeeReadPacket(parameters->_xbee);
         }
         PT_YIELD(pt);
     }
