@@ -60,6 +60,7 @@
 #define Fcy             (SYS_FREQ/2L)
 
 #if AC_MODEL
+#define TASK_PERIOD (2u) // 500Hz
 #define USE_UART1 1
 #define USE_UART2 0
 #define USE_UART3 0
@@ -72,6 +73,7 @@
 #define USE_EKF   0
 #define USE_TESTBOARD 1
 #elif AEROCOMP
+#define TASK_PERIOD (2u) // 500Hz
 #define USE_UART1 1
 #define USE_UART2 0
 #define USE_UART3 0
@@ -86,6 +88,7 @@
 #define XBEE2_ATAP 2
 
 #elif GNDBOARD
+#define TASK_PERIOD (2u) // 500Hz
 #define USE_UART1 1
 #define USE_UART2 1
 #define USE_UART3 1

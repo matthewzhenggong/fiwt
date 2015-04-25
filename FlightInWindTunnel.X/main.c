@@ -50,7 +50,6 @@
 
 
 #if AC_MODEL || AEROCOMP
-#define TASK_PERIOD (5u) // 200Hz
 servoParam_t servo;
 TaskHandle_p servoTask;
 senParam_t sen;
@@ -96,16 +95,16 @@ int main(void) {
     /* Add Task */
 #if AC_MODEL || AEROCOMP
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 1, 10);
+    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 20);
 
     msgRecvInit(&msg_recv, &Xbee1, XBEE1_SERIES, servoTask, &msg_send);
-    msgRecvTask = TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, TASK_PERIOD, 0, 10);
+    msgRecvTask = TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, 1, 0, 10);
 
     senInit(&sen);
-    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 1, 20);
+    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 30);
 
     msgSendInit(&msg_send, &Xbee1,XBEE1_SERIES, msgRecvTask, senTask, servoTask, ekfTask);
-    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, TASK_PERIOD, 1, 5);
+    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, 1, 0, 0);
 #if USE_EKF
     ekfInit(&ekf,TASK_PERIOD/1000.0f);
     ekfTask = TaskCreate(ekfLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
