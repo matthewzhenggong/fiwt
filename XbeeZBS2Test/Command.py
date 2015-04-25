@@ -232,7 +232,7 @@ class MyFrame(wx.Frame):
         box.Add(self.txtPort2, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Baudrate:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtBR = wx.TextCtrl(panel, -1, "250000",
+        self.txtBR = wx.TextCtrl(panel, -1, "1000000",
                                  size=(100, -1),
                                  validator=MyValidator(DIGIT_ONLY))
         box.Add(self.txtBR, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -1075,10 +1075,11 @@ Unused bits must be set to 0.  '''))
         while not self.halting:
             data = self.service.getPacket()
             if data :
+                self.updateStatistics(len(data))
                 if data[0] == 'P':
                     deltaT = (time.clock() - self.ping_tick)*1000
                     if self.periodic_sending == 0:
-                        self.log.info('Ping back in {:.1f}ms'.format(deltaT))
+                        self.log.info('AP Ping back in {:.1f}ms'.format(deltaT))
                     else :
                         self.periodic_sending_time_all += deltaT
                         self.periodic_sending_cnt += 1.0
@@ -1091,6 +1092,136 @@ Unused bits must be set to 0.  '''))
                                 self.periodic_sending_time_max,
                                 self.periodic_sending_time_min)
                         wx.PostEvent(self, RxEvent(txt=txt))
+                elif data[0] == '\x22':
+                    rslt = self.pack22.unpack(data)
+                    T = (rslt[16]*0x10000+rslt[17])*0.001
+                    GX = Get14bit(rslt[10])*0.05
+                    GY = Get14bit(rslt[11])*-0.05
+                    GZ = Get14bit(rslt[12])*-0.05
+                    AX = Get14bit(rslt[13])*-0.003333
+                    AY = Get14bit(rslt[14])*0.003333
+                    AZ = Get14bit(rslt[15])*0.003333
+                    phi = rslt[24]*57.3
+                    tht = rslt[25]*57.3
+                    if self.OutputCnt > 0 :
+                        self.OutputCnt -= 1
+                        txt = '{:.2f},'.format(T)
+                        if self.OutputSrv2Move & 1 :
+                            txt += '{},{},'.format(rslt[1], rslt[18])
+                        if self.OutputSrv2Move & 2 :
+                            txt += '{},{},'.format(rslt[2], rslt[19])
+                        if self.OutputSrv2Move & 4 :
+                            txt += '{},{},'.format(rslt[3], rslt[20])
+                        if self.OutputSrv2Move & 8 :
+                            txt += '{},{},'.format(rslt[4], rslt[21])
+                        if self.OutputSrv2Move & 16 :
+                            txt += '{},{},'.format(rslt[5], rslt[22])
+                        if self.OutputSrv2Move & 32 :
+                            txt += '{},{},'.format(rslt[6], rslt[23])
+                        self.log.info(txt)
+                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.last_arrv_cnt = self.arrv_cnt
+                        txt = ('T{0:08.2f} SenPack '
+                            '1S{1:04d}/{16:+04d} 2S{2:04d}/{17:+04d} '
+                            '3S{3:04d}/{18:+04d} 4S{4:04d}/{19:+04d} '
+                            '5S{5:04d}/{20:+04d} 6S{6:04d}/{21:+04d}\n'
+                            '1E{7:04d} 2E{8:04d} 3E{9:04d} '
+                            'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
+                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} '
+                            'phi{22:6.2f} tht{23:6.2f}').format(T,
+                                    rslt[1],rslt[2],rslt[3],
+                                    rslt[4],rslt[5],rslt[6],
+                                    rslt[7],rslt[8],rslt[9],
+                                    GX,GY,GZ, AX,AY,AZ,
+                                    rslt[18],rslt[19],rslt[20],rslt[21],
+                                    rslt[22],rslt[23], phi,tht )
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                        self.log.debug(txt)
+                elif data[0] == '\x33':
+                    rslt = self.pack33.unpack(data)
+                    T = (rslt[9]*0x10000+rslt[10])*0.001
+                    if self.OutputCnt > 0 :
+                        self.OutputCnt -= 1
+                        txt = '{:.2f},'.format(T)
+                        if self.OutputSrv2Move & 1 :
+                            txt += '{},{},'.format(rslt[1], rslt[11])
+                        if self.OutputSrv2Move & 2 :
+                            txt += '{},{},'.format(rslt[2], rslt[12])
+                        if self.OutputSrv2Move & 4 :
+                            txt += '{},{},'.format(rslt[3], rslt[13])
+                        if self.OutputSrv2Move & 8 :
+                            txt += '{},{},'.format(rslt[4], rslt[14])
+                        self.log.info(txt)
+                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.last_arrv_cnt = self.arrv_cnt
+                        txt = ('T{0:08.2f} SenPack '
+                            '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
+                            '3S{3:04d}/{11:+04d} 4S{4:04d}/{12:+04d}\n'
+                            '1E{5:04d} 2E{6:04d} 3E{7:04d} 4E{8:04d} '
+                            ).format(T, rslt[1],rslt[2],rslt[3], rslt[4],
+                                    rslt[5],rslt[6], rslt[7],rslt[8],
+                                    rslt[11],rslt[12],rslt[13],rslt[14])
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                        self.log.debug(txt)
+                elif data[0] == '\x77':
+                    rslt = self.pack77.unpack(data)
+                    T = rslt[4]*0x10000+rslt[5]
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
+                           'senTask{3:d}us svoTask{4:d}us '
+                           'sndTask{5:d}us ekfTask{6:d}us').format(T,*rslt)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif data[0] == '\x78' :
+                    rslt = self.pack78.unpack(data)
+                    T = rslt[4]*0x10000+rslt[5]
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
+                           'senTask{3:d}us svoTask{4:d}us '
+                           'sndTask{5:d}us').format(T,*rslt)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif data[0] == '\x88' or data[0] == '\x99':
+                    rslt = self.pack88.unpack(data)
+                    B1 = rslt[1]*1.294e-2*1.515
+                    B2 = rslt[2]*1.294e-2*3.0606
+                    B3 = rslt[3]*1.294e-2*4.6363
+                    B2 -= B1
+                    if B2 < 0 :
+                        B2 = 0
+                    B3 -= B1+B2
+                    if B3 < 0 :
+                        B3 = 0
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{:08.2f} BattPack '
+                        'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif data[0] == '\x06':
+                    rslt = self.pack06.unpack(data)
+                    wx.PostEvent(self, RxEvent(txt=
+                        'Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{28:03d} 2L{29:03d} 3L{30:03d} 4L{31:03d}'.format(
+                            *rslt)))
+                    if self.test_motor_ticks > 0:
+                        sec = rslt[1]
+                        msec = rslt[2]
+                        pos = rslt[3 + self.ch]
+                        ctrl = rslt[12 + self.ch]
+                        self.log.info('Sensor\t{0}.{1:03d}\t{2}\t{3}'.format(
+                            sec, msec, pos, ctrl))
+                        self.test_motor_ticks -= 1
+                else:
+                    if self.use_ZB :
+                        self.log.info('RX:{}. Get {} from {}({})'.format(
+                            recv_opts[options], data.__repr__(),
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr16),
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr64)))
+                    else :
+                        self.log.info('RX:{}. Get {} from {}({})'.format(
+                            recv_opts[options], data.__repr__(),
+                            ':'.join('{:02x}'.format(ord(c)) for c in addr16),
+                            rssi))
+                self.rec.write(data)
 
     def updateStatistics(self, bcnt):
         if self.first_cnt:
