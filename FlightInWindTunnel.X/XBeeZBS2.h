@@ -42,8 +42,8 @@
 /*  This value is determined by the largest packet size */
 #define MAX_S2_PAYLOAD_DATA_SIZE 84
 #define MAX_S1_PAYLOAD_DATA_SIZE 100
-#define MAX_S6_PAYLOAD_DATA_SIZE 200 //1400
-#define MAX_FRAME_DATA_SIZE 255
+#define MAX_S6_PAYLOAD_DATA_SIZE 1000 //1400
+#define MAX_FRAME_DATA_SIZE 1024
 
 #define BROADCAST_ADDRESS 0xffff
 #define ZB_BROADCAST_ADDRESS 0xfffe
@@ -266,7 +266,7 @@ extern "C" {
     typedef struct ZBTxRequest * ZBTxRequest_p;
 
     struct TxIPv4Request {
-        uint16_t _des_addr_hsw;
+        uint16_t _des_addr_msw;
         uint16_t _des_addr_lsw;
         uint16_t _des_port;
         uint16_t _src_port;
