@@ -287,6 +287,27 @@ void XBeeTxA16Request(XBee_p _xbee, TxA16Request_p from, uint8_t frameId) {
     XBeeRequestSend(_xbee);
 }
 
+void XBeeTxIPv4Request(XBee_p _xbee, TxIPv4Request_p from, uint8_t frameId) {
+    XBeeRequest_p to;
+    to = &(_xbee->_request);
+    to->_apiId = TX_IPV4_REQUEST;
+    to->_frameId = frameId;
+    to->_frameLen = TX_IPV4_API_LENGTH + from->_payloadLength;
+    to->_frameData[0] = (from->_des_addr_msw >> 8) & 0xff;
+    to->_frameData[1] = (from->_des_addr_msw) & 0xff;
+    to->_frameData[2] = (from->_des_addr_lsw >> 8) & 0xff;
+    to->_frameData[3] = (from->_des_addr_lsw) & 0xff;
+    to->_frameData[4] = (from->_des_port >> 8) & 0xff;
+    to->_frameData[5] = (from->_des_port) & 0xff;
+    to->_frameData[6] = (from->_src_port >> 8) & 0xff;
+    to->_frameData[7] = (from->_src_port) & 0xff;
+    to->_frameData[8] = from->_protocol;
+    to->_frameData[9] = from->_option;
+    memcpy(to->_frameData + 10, from->_payloadPtr, from->_payloadLength);
+    XBeeRequestSend(_xbee);
+}
+
+
 bool XBeeAtCommandResponse(XBee_p _xbee, AtCommandResponse_p to) {
     XBeeResponse_p from;
     from = &_xbee->_response;

@@ -51,6 +51,7 @@
 /*  the non-variable length of the frame data (not including frame id or api id or variable data size (e.g. payload, at command set value) */
 #define TX_A64_API_LENGTH 9
 #define TX_A16_API_LENGTH 3
+#define TX_IPV4_API_LENGTH 10
 #define ZB_TX_API_LENGTH 12
 #define AT_COMMAND_API_LENGTH 2
 #define AT_COMMAND_API_VAL_MAXLEN 16
@@ -330,6 +331,8 @@ extern "C" {
     void XBeeTxA16Request(XBee_p _xbee, TxA16Request_p from, uint8_t frameId);
 
     void XBeeZBTxRequest(XBee_p _xbee, ZBTxRequest_p from, uint8_t frameId);
+
+    void XBeeTxIPv4Request(XBee_p _xbee, TxIPv4Request_p from, uint8_t frameId);
 
     bool XBeeAtCommandResponse(XBee_p _xbee, AtCommandResponse_p to);
 

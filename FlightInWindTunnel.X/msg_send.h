@@ -43,6 +43,7 @@ extern "C" {
         union {
            ZBTxRequest_t zbtx;
            TxA64Request_t txa64;
+           TxIPv4Request_t txipv4;
         } tx_req;
     } msgSendParam_t, *msgSendParam_p;
 

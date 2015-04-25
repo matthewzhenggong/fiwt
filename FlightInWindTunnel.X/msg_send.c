@@ -55,21 +55,33 @@ void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type,
     parameters->ekf_Task = ekfTask;
     parameters->recv_Task = recvTask;
 
+    parameters->msg_len = 0u;
     parameters->xbee_type = xbee_type;
     switch (xbee_type) {
+        case XBeeS6:
+            parameters->tx_req.txipv4._des_addr_msw = MSG_DEST_ADDR_MSW;
+            parameters->tx_req.txipv4._des_addr_lsw = MSG_DEST_ADDR_LSW;
+            parameters->tx_req.txipv4._des_port = MSG_DEST_PORT;
+            parameters->tx_req.txipv4._src_port = MSG_SRC_PORT;
+            parameters->tx_req.txipv4._protocol = 0u;
+            parameters->tx_req.txipv4._option = 0u;
+            parameters->tx_req.txipv4._payloadLength = 1u;
+            parameters->tx_req.txipv4._payloadPtr[0] = 'P';
+            break;
         case XBeeS1:
-            memcpy(parameters->tx_req.txa64._addr64, MSG_TARGET_ADDR, 8);
+            memcpy(parameters->tx_req.txa64._addr64, MSG_DEST_ADDR, 8);
             parameters->tx_req.txa64._option = 1u;
             parameters->tx_req.txa64._payloadLength = 1u;
             parameters->tx_req.txa64._payloadPtr[0] = 'P';
             break;
-        default:
-            memcpy(parameters->tx_req.zbtx._addr64, MSG_TARGET_ADDR, 8);
+        case XBeeS2:
+            memcpy(parameters->tx_req.zbtx._addr64, MSG_DEST_ADDR, 8);
             parameters->tx_req.zbtx._addr16 = 0xFFFE;
             parameters->tx_req.zbtx._broadcastRadius = 1u;
             parameters->tx_req.zbtx._option = 1u;
             parameters->tx_req.zbtx._payloadLength = 1u;
             parameters->tx_req.zbtx._payloadPtr[0] = 'P';
+            break;
     }
 
 }
@@ -184,6 +196,28 @@ size_t updateSensorPack(uint8_t head[]) {
     return pack - head;
 }
 
+static bool prepare_tx_data(TaskHandle_p task, msgSendParam_p parameters, size_t *_payloadLength, uint8_t *_payloadPtr) {
+    if ((parameters->cnt & 3) == 1) {
+        if ((parameters->cnt & 0x7FF) == 1001) {
+            *_payloadLength = updateBattPack(_payloadPtr);
+        } else if ((parameters->cnt & 0x7FF) == 2001) {
+            *_payloadLength = updateCommPack(
+                    parameters->recv_Task, parameters->sen_Task,
+                    parameters->serov_Task, task, parameters->ekf_Task,
+                    _payloadPtr);
+        } else {
+            *_payloadLength = updateSensorPack(_payloadPtr);
+        }
+        return true;
+    } else if (parameters->msg_len > 0u) {
+        *_payloadLength = parameters->msg_len;
+        parameters->msg_len = 0;
+        memcpy(_payloadPtr, parameters->msg_buff, *_payloadLength);
+        return true;
+    }
+    return false;
+}
+
 PT_THREAD(msgSendLoop)(TaskHandle_p task) {
     msgSendParam_p parameters;
     struct pt *pt;
@@ -199,33 +233,18 @@ PT_THREAD(msgSendLoop)(TaskHandle_p task) {
     while (1) {
         ++parameters->cnt;
         switch (parameters->xbee_type) {
+            case XBeeS6:
+                if (prepare_tx_data(task, parameters, &parameters->tx_req.txipv4._payloadLength, parameters->tx_req.txipv4._payloadPtr)) {
+                    XBeeTxIPv4Request(parameters->_xbee, &parameters->tx_req.txipv4, 0u);
+                }
+                break;
             case XBeeS1:
-                if ((parameters->cnt & 0x1FF) == 200) {
-                    parameters->tx_req.txa64._payloadLength = updateBattPack(parameters->tx_req.txa64._payloadPtr);
-                    XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
-                } else if ((parameters->cnt & 0x1FF) == 400) {
-                    parameters->tx_req.txa64._payloadLength = updateCommPack(
-                            parameters->recv_Task, parameters->sen_Task,
-                            parameters->serov_Task, task, parameters->ekf_Task,
-                            parameters->tx_req.txa64._payloadPtr);
-                    XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
-                } else {
-                    parameters->tx_req.txa64._payloadLength = updateSensorPack(parameters->tx_req.txa64._payloadPtr);
+                if (prepare_tx_data(task, parameters, &parameters->tx_req.txa64._payloadLength, parameters->tx_req.txa64._payloadPtr)) {
                     XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
                 }
                 break;
-            default:
-                if ((parameters->cnt & 0x1FF) == 200) {
-                    parameters->tx_req.zbtx._payloadLength = updateBattPack(parameters->tx_req.zbtx._payloadPtr);
-                    XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
-                } else if ((parameters->cnt & 0x1FF) == 400) {
-                    parameters->tx_req.zbtx._payloadLength = updateCommPack(
-                            parameters->recv_Task, parameters->sen_Task,
-                            parameters->serov_Task, task, parameters->ekf_Task,
-                            parameters->tx_req.zbtx._payloadPtr);
-                    XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
-                } else {
-                    parameters->tx_req.zbtx._payloadLength = updateSensorPack(parameters->tx_req.zbtx._payloadPtr);
+            case XBeeS2:
+                if (prepare_tx_data(task, parameters, &parameters->tx_req.zbtx._payloadLength, parameters->tx_req.zbtx._payloadPtr)) {
                     XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
                 }
         }
