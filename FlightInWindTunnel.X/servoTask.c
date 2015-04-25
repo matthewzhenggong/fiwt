@@ -226,7 +226,7 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                         max_omega = parameters->MinValue[1]*0.125663706f;  // Hz -> rad/s  0-255:0-10.2Hz
                     } else {
                         if (parameters->InputType == 8u) {
-                            k = 0.0187*(exp(4*(parameters->cnt - parameters->StartTime)/(float)parameters->TimeDelta)-1);
+                            k = 0.0187f*(exp(4.0f*(parameters->cnt - parameters->StartTime)/(float)parameters->TimeDelta)-1);
                         } else {
                             k = (parameters->cnt - parameters->StartTime)/(float)parameters->TimeDelta;
                         }

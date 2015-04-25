@@ -68,11 +68,11 @@ void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
         case 7:
             goto yyyy;
         case 5:
-            parameters->TimeDelta = (uint32_t) ((cmd[5] << 8) | cmd[6])*8 / 5;
+            parameters->TimeDelta = ((uint32_t) ((cmd[5] << 8) | cmd[6]))*8UL / 5;
             goto xxxx;
         case 8:
         case 9:
-            parameters->TimeDelta = (uint32_t) ((cmd[5] << 8) | cmd[6])*4 / 5;
+            parameters->TimeDelta = ((uint32_t) ((cmd[5] << 8) | cmd[6]))*4UL / 5;
             goto xxxx;
 yyyy:
             parameters->TimeDelta = ((cmd[5] << 8) | cmd[6]) / 5;
