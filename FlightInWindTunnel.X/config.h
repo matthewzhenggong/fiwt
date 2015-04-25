@@ -36,7 +36,23 @@
 
 #define XBEE1_ATAP 2
 #define XBEE1_SERIES XBeeS6
-#define MSG_TARGET_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\x02"
+
+// IP=192.169.191.255
+#define MSG_DEST_ADDR_MSW (0xc0a8)
+#define MSG_DEST_ADDR_LSW (0xbfff)
+#define MSG_DEST_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\xff"
+#if AC_MODEL || AEROCOMP
+#define MSG_DEST_PORT 0x2616
+#elif GNDBOARD
+#define MSG_DEST_ACM_PORT 0x2267
+#define MSG_DEST_CMP_PORT 0x2677
+#endif
+#if AC_MODEL
+#define MSG_SRC_PORT 0x2267
+#elif AEROCOMP
+#define MSG_SRC_PORT 0x2677
+#endif
+
 
 /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        (128000000L)
@@ -54,7 +70,7 @@
 #define USE_IMU   1
 #define USE_SPIS  0
 #define USE_EKF   0
-#define USE_TESTBOARD 0
+#define USE_TESTBOARD 1
 #elif AEROCOMP
 #define USE_UART1 1
 #define USE_UART2 0
