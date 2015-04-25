@@ -102,6 +102,7 @@ tx_status = {
 }
 
 recv_opts = {
+    0x00: 'Packet Acknowledged',
     0x01: 'Packet Acknowledged',
     0x02: 'Packet was a broadcast packet',
     0x20: 'Packet encrypted with APS encryption',
