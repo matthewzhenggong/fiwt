@@ -22,6 +22,7 @@
 #ifndef XBeeZBS2_H
 #define XBeeZBS2_H
 
+#include "config.h"
 #include "SerialStream.h"
 
 #include <stddef.h>
@@ -42,8 +43,7 @@
 /*  This value is determined by the largest packet size */
 #define MAX_S2_PAYLOAD_DATA_SIZE 84
 #define MAX_S1_PAYLOAD_DATA_SIZE 100
-#define MAX_S6_PAYLOAD_DATA_SIZE 1000 //1400
-#define MAX_FRAME_DATA_SIZE 1024
+#define MAX_S6_PAYLOAD_DATA_SIZE (511-4-10) // max=1400 uart_buff_size-xbee_head-xbee_tail-TX_IPV4_API_LENGTH
 
 #define BROADCAST_ADDRESS 0xffff
 #define ZB_BROADCAST_ADDRESS 0xfffe
@@ -128,6 +128,8 @@
 #define CHECKSUM_FAILURE 1
 #define PACKET_EXCEEDS_BYTE_ARRAY_LENGTH 2
 #define UNEXPECTED_START_BYTE 3
+
+#define MAX_FRAME_DATA_SIZE (MAX_S6_PAYLOAD_DATA_SIZE+TX_IPV4_API_LENGTH)
 
 #ifdef __cplusplus
 extern "C" {
