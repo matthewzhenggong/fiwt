@@ -168,5 +168,9 @@
 #endif
 #endif
 
+#define MSG_DILIMITER (0x9E) //0x80+0x1E(RS)
+#define MSG_ESC (0x9B) //0x80+0x1B(ESC)
+#define MSG_ESC (0x9B) //0x80+0x1B(ESC)
+
 
 #endif 	/* CONFIG_H */

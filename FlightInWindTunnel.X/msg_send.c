@@ -86,49 +86,68 @@ void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type,
 
 }
 
+static uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
+    if (b == MSG_DILIMITER || b == MSG_ESC) {
+        *(pack++) = MSG_ESC;
+        *(pack++) = b^0x20;
+    } else {
+        *(pack++) = b;
+    }
+    return pack;
+}
+
+
+#define BATTPACKLEN (1+BATTCELLADCNUM+3)
+
 size_t updateBattPack(uint8_t head[]) {
     uint8_t *pack;
     int i;
     pack = head;
 #if AEROCOMP
-    *(pack++) = CODE_AEROCOMP_BAT_LEV;
+    pack = EscapeByte(pack, CODE_AEROCOMP_BAT_LEV);
 #else
-    *(pack++) = CODE_AC_MODEL_BAT_LEV;
+    pack = EscapeByte(pack, CODE_AC_MODEL_BAT_LEV);
 #endif
     for (i = 0; i < BATTCELLADCNUM; ++i) {
-        *(pack++) = BattCell[i];
+        pack = EscapeByte(pack, BattCell[i]);
     }
-    *(pack++) = ADC_TimeStamp[0] & 0xFF;
-    *(pack++) = ADC_TimeStamp[1] >> 8;
-    *(pack++) = ADC_TimeStamp[1] & 0xFF;
+    pack = EscapeByte(pack, ADC_TimeStamp[0] & 0xFF);
+    pack = EscapeByte(pack, ADC_TimeStamp[1] >> 8);
+    pack = EscapeByte(pack, ADC_TimeStamp[1] & 0xFF);
     return pack - head;
 }
+
+#if AC_MODEL
+#define COMMPACKLEN (1+5*2+3)
+#else
+#define COMMPACKLEN (1+4*2+3)
+#endif
 
 size_t updateCommPack(TaskHandle_p msg_recv_Task, TaskHandle_p sen_Task,
         TaskHandle_p serov_Task, TaskHandle_p task, TaskHandle_p ekf_Task, uint8_t head[]) {
     uint8_t *pack;
     pack = head;
 #if AEROCOMP
-    *(pack++) = CODE_AEROCOMP_COM_STATS;
+    pack = EscapeByte(pack, CODE_AEROCOMP_COM_STATS);
 #else
-    *(pack++) = CODE_AC_MODEL_COM_STATS;
+    pack = EscapeByte(pack, CODE_AC_MODEL_COM_STATS);
 #endif
-    *(pack++) = msg_recv_Task->load_max >> 8;
-    *(pack++) = msg_recv_Task->load_max & 0xFF;
-    *(pack++) = sen_Task->load_max >> 8;
-    *(pack++) = sen_Task->load_max & 0xFF;
-    *(pack++) = serov_Task->load_max >> 8;
-    *(pack++) = serov_Task->load_max & 0xFF;
-    *(pack++) = task->load_max >> 8;
-    *(pack++) = task->load_max & 0xFF;
+    pack = EscapeByte(pack, msg_recv_Task->load_max >> 8);
+    pack = EscapeByte(pack, msg_recv_Task->load_max & 0xFF);
+    pack = EscapeByte(pack, sen_Task->load_max >> 8);
+    pack = EscapeByte(pack, sen_Task->load_max & 0xFF);
+    pack = EscapeByte(pack, serov_Task->load_max >> 8);
+    pack = EscapeByte(pack, serov_Task->load_max & 0xFF);
+    pack = EscapeByte(pack, task->load_max >> 8);
+    pack = EscapeByte(pack, task->load_max & 0xFF);
 #if AC_MODEL
-    *(pack++) = ekf_Task->load_max >> 8;
-    *(pack++) = ekf_Task->load_max & 0xFF;
+    pack = EscapeByte(pack, ekf_Task->load_max >> 8);
+    pack = EscapeByte(pack, ekf_Task->load_max & 0xFF);
 #endif
 
-    *(pack++) = ADC_TimeStamp[0] & 0xFF;
-    *(pack++) = ADC_TimeStamp[1] >> 8;
-    *(pack++) = ADC_TimeStamp[1] & 0xFF;
+    pack = EscapeByte(pack, ADC_TimeStamp[0] & 0xFF);
+    pack = EscapeByte(pack, ADC_TimeStamp[1] >> 8);
+    pack = EscapeByte(pack, ADC_TimeStamp[1] & 0xFF);
     return pack - head;
 }
 
@@ -140,82 +159,98 @@ size_t updateSensorPack(uint8_t head[]) {
 #endif
     pack = head;
 #if AEROCOMP
-    *(pack++) = CODE_AEROCOMP_SERVO_POS;
+    pack = EscapeByte(pack, CODE_AEROCOMP_SERVO_POS);
 #else 
-    *(pack++) = CODE_AC_MODEL_SERVO_POS;
+    pack = EscapeByte(pack, CODE_AC_MODEL_SERVO_POS);
 #endif
     for (i = 0; i < SERVOPOSADCNUM; ++i) {
-        *(pack++) = ServoPos[i] >> 8;
-        *(pack++) = ServoPos[i] & 0xFF;
+        pack = EscapeByte(pack, ServoPos[i] >> 8);
+        pack = EscapeByte(pack, ServoPos[i] & 0xFF);
     }
     for (i = 0; i < ENCNUM; ++i) {
-        *(pack++) = EncPos[i] >> 8;
-        *(pack++) = EncPos[i] & 0xFF;
+        pack = EscapeByte(pack, EncPos[i] >> 8);
+        pack = EscapeByte(pack, EncPos[i] & 0xFF);
     }
 #if USE_IMU
-    *(pack++) = IMU_XGyro >> 8;
-    *(pack++) = IMU_XGyro & 0xFF;
-    *(pack++) = IMU_YGyro >> 8;
-    *(pack++) = IMU_YGyro & 0xFF;
-    *(pack++) = IMU_ZGyro >> 8;
-    *(pack++) = IMU_ZGyro & 0xFF;
-    *(pack++) = IMU_XAccl >> 8;
-    *(pack++) = IMU_XAccl & 0xFF;
-    *(pack++) = IMU_YAccl >> 8;
-    *(pack++) = IMU_YAccl & 0xFF;
-    *(pack++) = IMU_ZAccl >> 8;
-    *(pack++) = IMU_ZAccl & 0xFF;
+    pack = EscapeByte(pack, IMU_XGyro >> 8);
+    pack = EscapeByte(pack, IMU_XGyro & 0xFF);
+    pack = EscapeByte(pack, IMU_YGyro >> 8);
+    pack = EscapeByte(pack, IMU_YGyro & 0xFF);
+    pack = EscapeByte(pack, IMU_ZGyro >> 8);
+    pack = EscapeByte(pack, IMU_ZGyro & 0xFF);
+    pack = EscapeByte(pack, IMU_XAccl >> 8);
+    pack = EscapeByte(pack, IMU_XAccl & 0xFF);
+    pack = EscapeByte(pack, IMU_YAccl >> 8);
+    pack = EscapeByte(pack, IMU_YAccl & 0xFF);
+    pack = EscapeByte(pack, IMU_ZAccl >> 8);
+    pack = EscapeByte(pack, IMU_ZAccl & 0xFF);
 #endif
-    *(pack++) = ADC_TimeStamp[0] & 0xFF;
-    *(pack++) = ADC_TimeStamp[1] >> 8;
-    *(pack++) = ADC_TimeStamp[1] & 0xFF;
+    pack = EscapeByte(pack, ADC_TimeStamp[0] & 0xFF);
+    pack = EscapeByte(pack, ADC_TimeStamp[1] >> 8);
+    pack = EscapeByte(pack, ADC_TimeStamp[1] & 0xFF);
     for (i = 0; i < SEVERONUM; ++i) {
-        *(pack++) = Servos[i].Ctrl >> 8;
-        *(pack++) = Servos[i].Ctrl & 0xFF;
+        pack = EscapeByte(pack, Servos[i].Ctrl >> 8);
+        pack = EscapeByte(pack, Servos[i].Ctrl & 0xFF);
     }
 #if USE_EKF
     ptr = (uint8_t *) (ekf.ekff.rpy);
-    *(pack++) = *(ptr + 3);
-    *(pack++) = *(ptr + 2);
-    *(pack++) = *(ptr + 1);
-    *(pack++) = *(ptr);
-    *(pack++) = *(ptr + 7);
-    *(pack++) = *(ptr + 6);
-    *(pack++) = *(ptr + 5);
-    *(pack++) = *(ptr + 4);
+    pack = EscapeByte(pack, *(ptr + 3));
+    pack = EscapeByte(pack, *(ptr + 2));
+    pack = EscapeByte(pack, *(ptr + 1));
+    pack = EscapeByte(pack, *(ptr));
+    pack = EscapeByte(pack, *(ptr + 7));
+    pack = EscapeByte(pack, *(ptr + 6));
+    pack = EscapeByte(pack, *(ptr + 5));
+    pack = EscapeByte(pack, *(ptr + 4));
 #else
-    *(pack++) = 0;
-    *(pack++) = 0;
-    *(pack++) = 0;
-    *(pack++) = 0;
-    *(pack++) = 0;
-    *(pack++) = 0;
-    *(pack++) = 0;
-    *(pack++) = 0;
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
+    pack = EscapeByte(pack, 0);
 #endif
     return pack - head;
 }
 
-static bool prepare_tx_data(TaskHandle_p task, msgSendParam_p parameters, size_t *_payloadLength, uint8_t *_payloadPtr) {
+static bool prepare_tx_data(TaskHandle_p task, msgSendParam_p parameters, size_t *_payloadLength, uint8_t *_payloadPtr, size_t max_payloadLength) {
+    size_t pack_length;
+
+    *_payloadLength = 0;
+
     if ((parameters->cnt & 3) == 1) {
-        if ((parameters->cnt & 0x7FF) == 1001) {
-            *_payloadLength = updateBattPack(_payloadPtr);
-        } else if ((parameters->cnt & 0x7FF) == 2001) {
-            *_payloadLength = updateCommPack(
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateSensorPack(_payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+    }
+    if ((parameters->cnt & 0x7FF) == 1001 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateBattPack(_payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+    } else if ((parameters->cnt & 0x7FF) == 2001 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateCommPack(
                     parameters->recv_Task, parameters->sen_Task,
                     parameters->serov_Task, task, parameters->ekf_Task,
                     _payloadPtr);
-        } else {
-            *_payloadLength = updateSensorPack(_payloadPtr);
-        }
-        return true;
-    } else if (parameters->msg_len > 0u) {
-        *_payloadLength = parameters->msg_len;
-        parameters->msg_len = 0;
-        memcpy(_payloadPtr, parameters->msg_buff, *_payloadLength);
-        return true;
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
     }
-    return false;
+
+    if (parameters->msg_len > 0u && (*_payloadLength+1u+parameters->msg_len) < max_payloadLength) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = parameters->msg_len;
+        parameters->msg_len = 0;
+        memcpy(_payloadPtr, parameters->msg_buff, pack_length);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+    }
+
+    return (*_payloadLength > 2u);
 }
 
 PT_THREAD(msgSendLoop)(TaskHandle_p task) {
@@ -234,17 +269,17 @@ PT_THREAD(msgSendLoop)(TaskHandle_p task) {
         ++parameters->cnt;
         switch (parameters->xbee_type) {
             case XBeeS6:
-                if (prepare_tx_data(task, parameters, &parameters->tx_req.txipv4._payloadLength, parameters->tx_req.txipv4._payloadPtr)) {
+                if (prepare_tx_data(task, parameters, &parameters->tx_req.txipv4._payloadLength, parameters->tx_req.txipv4._payloadPtr, MAX_S6_PAYLOAD_DATA_SIZE)) {
                     XBeeTxIPv4Request(parameters->_xbee, &parameters->tx_req.txipv4, 0u);
                 }
                 break;
             case XBeeS1:
-                if (prepare_tx_data(task, parameters, &parameters->tx_req.txa64._payloadLength, parameters->tx_req.txa64._payloadPtr)) {
+                if (prepare_tx_data(task, parameters, &parameters->tx_req.txa64._payloadLength, parameters->tx_req.txa64._payloadPtr, MAX_S1_PAYLOAD_DATA_SIZE)) {
                     XBeeTxA64Request(parameters->_xbee, &parameters->tx_req.txa64, 0u);
                 }
                 break;
             case XBeeS2:
-                if (prepare_tx_data(task, parameters, &parameters->tx_req.zbtx._payloadLength, parameters->tx_req.zbtx._payloadPtr)) {
+                if (prepare_tx_data(task, parameters, &parameters->tx_req.zbtx._payloadLength, parameters->tx_req.zbtx._payloadPtr, MAX_S2_PAYLOAD_DATA_SIZE)) {
                     XBeeZBTxRequest(parameters->_xbee, &parameters->tx_req.zbtx, 0u);
                 }
         }
