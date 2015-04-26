@@ -393,7 +393,7 @@ bool XBeeRxA16Response(XBee_p _xbee, RxA16Response_p to) {
 bool XBeeRxIPv4Response(XBee_p _xbee, RxIPv4Response_p to) {
     XBeeResponse_p from;
     from = &_xbee->_response;
-    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == RX_A64_RESPONSE) {
+    if (from->_complete && from->_errorCode == NO_ERROR && from->_apiId == RX_IPV4_RESPONSE) {
         to->_src_addr_hsw = (from->_frameData[0] << 8) + from->_frameData[1];
         to->_src_addr_lsw = (from->_frameData[2] << 8) + from->_frameData[3];
         to->_port = (from->_frameData[4] << 8) + from->_frameData[5];
