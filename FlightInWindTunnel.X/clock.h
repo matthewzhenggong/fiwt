@@ -37,8 +37,8 @@ extern "C" {
 
     /** Clock providing seconds and milliseconds */
     struct clockType {
-        uint16_t TimeStampLSW; /**< Store 32-Bit Timer LSW */
-        uint16_t TimeStampMSW; /**< Store 32-Bit Timer MSW */
+        uint16_t TimeStampLSW; /**< Store 16-Bit Timer LSW */
+        uint16_t TimeStampMSW; /**< Store 16-Bit Timer MSW */
         unsigned int milliseconds; /**< absolute time, seconds */
         unsigned int seconds; /**< absolute time, milliseconds */
     };
@@ -64,7 +64,9 @@ extern "C" {
     /**
      * Reset this global clock.
      */
-    void resetClock(void);
+    void initClock(void);
+
+    void resetClock(uint32_t milliseconds, uint16_t microseconds);
 
 #ifdef	__cplusplus
 }

@@ -37,7 +37,7 @@ clockType_t volatile RTclock;
 
 unsigned int volatile elapsed_ticks = 0;
 
-void resetClock(void) {
+void initClock(void) {
     elapsed_ticks = 0; /* clear software registers */
     RTclock.TimeStampLSW = 0;
     RTclock.TimeStampMSW = 0;
@@ -58,6 +58,14 @@ void resetClock(void) {
     IEC0bits.T1IE = 1; /* enable interrupts */
 
     T1CONbits.TON = 1; /* start the timer*/
+}
+
+void resetClock(uint32_t milliseconds, uint16_t microseconds) {
+    RTclock.TimeStampMSW = (milliseconds >> 16);
+    RTclock.TimeStampLSW = (milliseconds & 0xffff);
+    RTclock.milliseconds = milliseconds % 1000;
+    RTclock.seconds = milliseconds/1000;
+    TMR1 = microseconds;
 }
 
 __interrupt(no_auto_psv) void _T1Interrupt(void) {
