@@ -20,6 +20,7 @@ import sys
 import traceback
 import threading
 import struct
+import socket
 
 from wx.lib.newevent import NewEvent
 import XBeeIPServices
@@ -729,11 +730,11 @@ Unused bits must be set to 0.  '''))
             if self.OutputSrv2Move & 32 :
                 txt += 'Servo6,Ctrl6,'
             self.log.info(txt)
-        self.send(data, no_response=True)
+        self.send(data)
 
     def OnTX(self, event):
         data = self.txtTX.GetValue().encode()
-        self.send('P'+data, no_response=True)
+        self.send('P'+data)
         self.ping_tick = time.clock()
 
     def OnTXc(self, event):
@@ -764,37 +765,13 @@ Unused bits must be set to 0.  '''))
             threading.Timer(self.periodic_dt -
                             (time.clock() - tick), self.periodic_send).start()
 
-    def send(self, data, no_response=False):
+    def send(self, data):
         try:
             if data:
-                if no_response:
-                    self.frame_id = 0
-                elif self.sending:
-                    return False
-                else:
-                    self.frame_id = self.getFrameId()
-                    self.sending = True
-
                 remote_host = self.txtRmtNode.GetValue().encode()
-                remote_port = self.txtRmtPort.GetValue().encode().decode(
-                    'hex')
-                broadcast_radius = self.txtTXrad.GetValue().encode()[:2].decode(
-                    'hex')
-                options = self.txtTXopt.GetValue().encode()[:2].decode('hex')
-                if self.use_ZB:
-                    if not self.periodic_sending and not no_response:
-                        self.log.debug(
-                            'send TX ' + data.__repr__() + ' to ' + ':'.join(
-                                '{:02x}'.format(ord(c)) for c in addr16) + '(' +
-                            ':'.join('{:02x}'.format(ord(c)) for c in addr64) +
-                            ') with option {:02x}'.format(ord(options)) +
-                            ' & radius {:02x}'.format(ord(broadcast_radius)))
-                    self.xbee.tx(dest_addr_long=addr64,
-                                 dest_addr=addr16,
-                                 broadcast_radius=broadcast_radius,
-                                 options=options,
-                                 data=data,
-                                 frame_id=chr(self.frame_id))
+                remote_port = self.port_struct.unpack(
+                        self.txtRmtPort.GetValue().decode('hex'))[0]
+                self.tx_socket.sendto(data, (remote_host, remote_port))
                 self.tick = time.clock()
         except:
             traceback.print_exc()
@@ -818,7 +795,6 @@ Unused bits must be set to 0.  '''))
         self.starting = True
 
         self.frame_id = 0
-        self.sending = False
         self.first_cnt = True
         self.arrv_cnt = 0
         self.last_arrv_cnt = 0
@@ -847,212 +823,44 @@ Unused bits must be set to 0.  '''))
         self.btnTXc.Enable(True)
 
         self.halting = False
+        host = self.txtHost.GetValue().encode()
         self.service = XBeeIPServices.XBeeApplicationService(
-                self.txtHost.GetValue().encode(), self.PORT_LIST)
+                host, self.PORT_LIST)
         self.thread = threading.Thread(target=self.run)
         self.thread.daemon = True
         self.thread.start()
-        print 'start'
+        print '{} started on {}'.format(self.thread.name, host)
+
+        self.port_struct = struct.Struct("!H")
+        all_ports = [(self.port_struct.unpack(i.decode('hex'))[0],i)
+                    for i in self.PORT_LIST]
+        for i,port_name in all_ports :
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.bind((host,i))
+            sock.settimeout(0.1)
+            thread = threading.Thread(target=self.monitor, args=(sock, port_name))
+            thread.daemon = True
+            thread.start()
+            print '{} started, listening on {}'.format(thread.name,
+                    sock.getsockname())
+
+        self.tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.tx_socket.bind((host,0))
+
+    def monitor(self, sock, port_name):
+        while not self.halting:
+            try:
+                (rf_data,address)=sock.recvfrom(1500)
+                data = {'id':'rx', 'source_addr':address, 'rf_data':rf_data}
+                self.process(data)
+            except socket.timeout :
+                pass
 
     def run(self):
-        for data in self.service.getPacket() :
-            if self.halting:
-                break
+        while not self.halting:
+            data = self.service.getPacket()
             if data :
-                if data['id'] == 'rx':
-                    try:
-                        addr = data['source_addr']
-                        rf_data = data['rf_data']
-                        self.updateStatistics(len(rf_data))
-                        if rf_data[0] == 'P':
-                            deltaT = (time.clock() - self.ping_tick)*1000
-                            if self.periodic_sending == 0:
-                                self.log.info('Ping back in {:.1f}ms'.format(deltaT))
-                            else :
-                                self.periodic_sending_time_all += deltaT
-                                self.periodic_sending_cnt += 1.0
-                                if deltaT > self.periodic_sending_time_max:
-                                    self.periodic_sending_time_max = deltaT
-                                if deltaT < self.periodic_sending_time_min:
-                                    self.periodic_sending_time_min = deltaT
-                                txt = 'Ping back in {:.1f}/{:.1f}/{:.1f}ms'.format(
-                                        self.periodic_sending_time_all/self.periodic_sending_cnt,
-                                        self.periodic_sending_time_max,
-                                        self.periodic_sending_time_min)
-                                wx.PostEvent(self, RxEvent(txt=txt))
-                        elif rf_data[0] == '\x22':
-                            rslt = self.pack22.unpack(rf_data)
-                            T = (rslt[16]*0x10000+rslt[17])*0.001
-                            self.log.info('T{0:08.3f}'.format(T))
-                            GX = Get14bit(rslt[10])*0.05
-                            GY = Get14bit(rslt[11])*-0.05
-                            GZ = Get14bit(rslt[12])*-0.05
-                            AX = Get14bit(rslt[13])*-0.003333
-                            AY = Get14bit(rslt[14])*0.003333
-                            AZ = Get14bit(rslt[15])*0.003333
-                            phi = rslt[24]*57.3
-                            tht = rslt[25]*57.3
-                            if self.OutputCnt > 0 :
-                                self.OutputCnt -= 1
-                                txt = '{:.2f},'.format(T)
-                                if self.OutputSrv2Move & 1 :
-                                    txt += '{},{},'.format(rslt[1], rslt[18])
-                                if self.OutputSrv2Move & 2 :
-                                    txt += '{},{},'.format(rslt[2], rslt[19])
-                                if self.OutputSrv2Move & 4 :
-                                    txt += '{},{},'.format(rslt[3], rslt[20])
-                                if self.OutputSrv2Move & 8 :
-                                    txt += '{},{},'.format(rslt[4], rslt[21])
-                                if self.OutputSrv2Move & 16 :
-                                    txt += '{},{},'.format(rslt[5], rslt[22])
-                                if self.OutputSrv2Move & 32 :
-                                    txt += '{},{},'.format(rslt[6], rslt[23])
-                                self.log.info(txt)
-                            if self.arrv_cnt > self.last_arrv_cnt+4 :
-                                self.last_arrv_cnt = self.arrv_cnt
-                                txt = ('T{0:08.3f} SenPack '
-                                    '1S{1:04d}/{16:+04d} 2S{2:04d}/{17:+04d} '
-                                    '3S{3:04d}/{18:+04d} 4S{4:04d}/{19:+04d} '
-                                    '5S{5:04d}/{20:+04d} 6S{6:04d}/{21:+04d}\n'
-                                    '1E{7:04d} 2E{8:04d} 3E{9:04d} '
-                                    'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
-                                    'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} '
-                                    'phi{22:6.2f} tht{23:6.2f}').format(T,
-                                            rslt[1],rslt[2],rslt[3],
-                                            rslt[4],rslt[5],rslt[6],
-                                            rslt[7],rslt[8],rslt[9],
-                                            GX,GY,GZ, AX,AY,AZ,
-                                            rslt[18],rslt[19],rslt[20],rslt[21],
-                                            rslt[22],rslt[23], phi,tht )
-                                wx.PostEvent(self, RxEvent(txt=txt))
-                                self.log.debug(txt)
-                        elif rf_data[0] == '\x33':
-                            rslt = self.pack33.unpack(rf_data)
-                            T = (rslt[9]*0x10000+rslt[10])*0.001
-                            if self.OutputCnt > 0 :
-                                self.OutputCnt -= 1
-                                txt = '{:.2f},'.format(T)
-                                if self.OutputSrv2Move & 1 :
-                                    txt += '{},{},'.format(rslt[1], rslt[11])
-                                if self.OutputSrv2Move & 2 :
-                                    txt += '{},{},'.format(rslt[2], rslt[12])
-                                if self.OutputSrv2Move & 4 :
-                                    txt += '{},{},'.format(rslt[3], rslt[13])
-                                if self.OutputSrv2Move & 8 :
-                                    txt += '{},{},'.format(rslt[4], rslt[14])
-                                self.log.info(txt)
-                            if self.arrv_cnt > self.last_arrv_cnt+4 :
-                                self.last_arrv_cnt = self.arrv_cnt
-                                txt = ('T{0:08.2f} SenPack '
-                                    '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
-                                    '3S{3:04d}/{11:+04d} 4S{4:04d}/{12:+04d}\n'
-                                    '1E{5:04d} 2E{6:04d} 3E{7:04d} 4E{8:04d} '
-                                    ).format(T, rslt[1],rslt[2],rslt[3], rslt[4],
-                                            rslt[5],rslt[6], rslt[7],rslt[8],
-                                            rslt[11],rslt[12],rslt[13],rslt[14])
-                                wx.PostEvent(self, RxEvent(txt=txt))
-                                self.log.debug(txt)
-                        elif rf_data[0] == '\x77':
-                            rslt = self.pack77.unpack(rf_data)
-                            T = rslt[4]*0x10000+rslt[5]
-                            T = (rslt[4]*0x10000+rslt[5])*0.001
-                            txt = ('T{0:08.2f} CommPack revTask{2:d}us '
-                                   'senTask{3:d}us svoTask{4:d}us '
-                                   'ekfTask{5:d}us sndTask{6:d}us').format(T,*rslt)
-                            self.log.debug(txt)
-                            wx.PostEvent(self, Rx2Event(txt=txt))
-                        elif rf_data[0] == '\x78' :
-                            rslt = self.pack78.unpack(rf_data)
-                            T = rslt[4]*0x10000+rslt[5]
-                            T = (rslt[4]*0x10000+rslt[5])*0.001
-                            txt = ('T{0:08.2f} CommPack revTask{2:d}us '
-                                   'senTask{3:d}us svoTask{4:d}us '
-                                   'sndTask{5:d}us').format(T,*rslt)
-                            self.log.debug(txt)
-                            wx.PostEvent(self, Rx2Event(txt=txt))
-                        elif rf_data[0] == '\x88' or rf_data[0] == '\x99':
-                            rslt = self.pack88.unpack(rf_data)
-                            B1 = rslt[1]*1.294e-2*1.515
-                            B2 = rslt[2]*1.294e-2*3.0606
-                            B3 = rslt[3]*1.294e-2*4.6363
-                            B2 -= B1
-                            if B2 < 0 :
-                                B2 = 0
-                            B3 -= B1+B2
-                            if B3 < 0 :
-                                B3 = 0
-                            T = (rslt[4]*0x10000+rslt[5])*0.001
-                            txt = ('T{:08.2f} BattPack '
-                                'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
-                            self.log.debug(txt)
-                            wx.PostEvent(self, Rx2Event(txt=txt))
-                        elif rf_data[0] == '\x06':
-                            rslt = self.pack06.unpack(rf_data)
-                            wx.PostEvent(self, RxEvent(txt=
-                                'Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{28:03d} 2L{29:03d} 3L{30:03d} 4L{31:03d}'.format(
-                                    *rslt)))
-                            if self.test_motor_ticks > 0:
-                                sec = rslt[1]
-                                msec = rslt[2]
-                                pos = rslt[3 + self.ch]
-                                ctrl = rslt[12 + self.ch]
-                                self.log.info('Sensor\t{0}.{1:03d}\t{2}\t{3}'.format(
-                                    sec, msec, pos, ctrl))
-                                self.test_motor_ticks -= 1
-                        else:
-                            self.log.info('RX:{}. Get {} from {}'.format(
-                                recv_opts[options], rf_data.__repr__(),
-                                addr))
-                        self.rec.write(rf_data)
-                    except:
-                        traceback.print_exc()
-                        self.log.error(repr(data))
-                elif data['id'] == 'tx_status':
-                    self.sending = False
-                    try:
-                        if self.use_ZB :
-                            del_sta = ord(data['deliver_status'])
-                            dis_sta = ord(data['discover_status'])
-                            retries = ord(data['retries'])
-                            if self.frame_id != ord(data['frame_id']):
-                                self.log.error("TXResponse frame_id mismatch"
-                                    "{}!={}".format(self.frame_id,
-                                        ord(data['frame_id'])))
-                            addr = data['dest_addr']
-                            del_sta = delivery_status[del_sta]
-                            dis_sta = discovery_status[dis_sta]
-                            self.log.info(
-                                'TXResponse:{} to {} ({:d} retries,{})'.format(
-                                    del_sta, ':'.join('{:02x}'.format(ord(c))
-                                                      for c in addr), retries,
-                                    dis_sta))
-                        else :
-                            tx_sta = ord(data['status'])
-                            if self.frame_id != ord(data['frame_id']):
-                                self.log.error("TXResponse frame_id mismatch"
-                                    "{}!={}".format(self.frame_id,
-                                        ord(data['frame_id'])))
-                            tx_sta = tx_status[tx_sta]
-                            self.log.info( 'TXResponse:{}'.format(tx_sta))
-                    except:
-                        traceback.print_exc()
-                        self.log.error(repr(data))
-                elif data['id'] == 'remote_at_response':
-                    try:
-                        s = data['status']
-                        addr = data['source_addr']
-                        parameter = data['parameter']
-                        if self.frame_id != data['frame_id']:
-                            self.log.error("Remote ATResponse frame_id mismatch")
-                        self.log.info('ATResponse:{} {}={} from {}'.format(
-                            at_status[s], data['command'],
-                            ':'.join('{:02x}'.format(ord(c)) for c in parameter),
-                             addr))
-                    except:
-                        traceback.print_exc()
-                        self.log.error(repr(data))
-                else:
-                    self.log.info(repr(data))
+                self.process(data)
 
     def updateStatistics(self, bcnt):
         if self.first_cnt:
@@ -1067,6 +875,200 @@ Unused bits must be set to 0.  '''))
                 'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
                     self.arrv_cnt, elapsed, self.arrv_cnt / elapsed,
                     self.arrv_bcnt * 10 / elapsed)))
+
+    def process(self, data) :
+        if data['id'] == 'rx':
+            try:
+                addr = data['source_addr']
+                rf_data = data['rf_data']
+                self.updateStatistics(len(rf_data))
+                if rf_data[0] == 'P':
+                    deltaT = (time.clock() - self.ping_tick)*1000
+                    if self.periodic_sending == 0:
+                        self.log.info('Ping back in {:.1f}ms'.format(deltaT))
+                    else :
+                        self.periodic_sending_time_all += deltaT
+                        self.periodic_sending_cnt += 1.0
+                        if deltaT > self.periodic_sending_time_max:
+                            self.periodic_sending_time_max = deltaT
+                        if deltaT < self.periodic_sending_time_min:
+                            self.periodic_sending_time_min = deltaT
+                        txt = 'Ping back in {:.1f}/{:.1f}/{:.1f}ms'.format(
+                                self.periodic_sending_time_all/self.periodic_sending_cnt,
+                                self.periodic_sending_time_max,
+                                self.periodic_sending_time_min)
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                elif rf_data[0] == '\x22':
+                    rslt = self.pack22.unpack(rf_data)
+                    T = (rslt[16]*0x10000+rslt[17])*0.001
+                    GX = Get14bit(rslt[10])*0.05
+                    GY = Get14bit(rslt[11])*-0.05
+                    GZ = Get14bit(rslt[12])*-0.05
+                    AX = Get14bit(rslt[13])*-0.003333
+                    AY = Get14bit(rslt[14])*0.003333
+                    AZ = Get14bit(rslt[15])*0.003333
+                    phi = rslt[24]*57.3
+                    tht = rslt[25]*57.3
+                    if self.OutputCnt > 0 :
+                        self.OutputCnt -= 1
+                        txt = '{:.2f},'.format(T)
+                        if self.OutputSrv2Move & 1 :
+                            txt += '{},{},'.format(rslt[1], rslt[18])
+                        if self.OutputSrv2Move & 2 :
+                            txt += '{},{},'.format(rslt[2], rslt[19])
+                        if self.OutputSrv2Move & 4 :
+                            txt += '{},{},'.format(rslt[3], rslt[20])
+                        if self.OutputSrv2Move & 8 :
+                            txt += '{},{},'.format(rslt[4], rslt[21])
+                        if self.OutputSrv2Move & 16 :
+                            txt += '{},{},'.format(rslt[5], rslt[22])
+                        if self.OutputSrv2Move & 32 :
+                            txt += '{},{},'.format(rslt[6], rslt[23])
+                        self.log.info(txt)
+                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.last_arrv_cnt = self.arrv_cnt
+                        txt = ('T{0:08.3f} SenPack '
+                            '1S{1:04d}/{16:+04d} 2S{2:04d}/{17:+04d} '
+                            '3S{3:04d}/{18:+04d} 4S{4:04d}/{19:+04d} '
+                            '5S{5:04d}/{20:+04d} 6S{6:04d}/{21:+04d}\n'
+                            '1E{7:04d} 2E{8:04d} 3E{9:04d} '
+                            'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
+                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} '
+                            'phi{22:6.2f} tht{23:6.2f}').format(T,
+                                    rslt[1],rslt[2],rslt[3],
+                                    rslt[4],rslt[5],rslt[6],
+                                    rslt[7],rslt[8],rslt[9],
+                                    GX,GY,GZ, AX,AY,AZ,
+                                    rslt[18],rslt[19],rslt[20],rslt[21],
+                                    rslt[22],rslt[23], phi,tht )
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                        self.log.debug(txt)
+                elif rf_data[0] == '\x33':
+                    rslt = self.pack33.unpack(rf_data)
+                    T = (rslt[9]*0x10000+rslt[10])*0.001
+                    if self.OutputCnt > 0 :
+                        self.OutputCnt -= 1
+                        txt = '{:.2f},'.format(T)
+                        if self.OutputSrv2Move & 1 :
+                            txt += '{},{},'.format(rslt[1], rslt[11])
+                        if self.OutputSrv2Move & 2 :
+                            txt += '{},{},'.format(rslt[2], rslt[12])
+                        if self.OutputSrv2Move & 4 :
+                            txt += '{},{},'.format(rslt[3], rslt[13])
+                        if self.OutputSrv2Move & 8 :
+                            txt += '{},{},'.format(rslt[4], rslt[14])
+                        self.log.info(txt)
+                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.last_arrv_cnt = self.arrv_cnt
+                        txt = ('T{0:08.2f} SenPack '
+                            '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
+                            '3S{3:04d}/{11:+04d} 4S{4:04d}/{12:+04d}\n'
+                            '1E{5:04d} 2E{6:04d} 3E{7:04d} 4E{8:04d} '
+                            ).format(T, rslt[1],rslt[2],rslt[3], rslt[4],
+                                    rslt[5],rslt[6], rslt[7],rslt[8],
+                                    rslt[11],rslt[12],rslt[13],rslt[14])
+                        wx.PostEvent(self, RxEvent(txt=txt))
+                        self.log.debug(txt)
+                elif rf_data[0] == '\x77':
+                    rslt = self.pack77.unpack(rf_data)
+                    T = rslt[4]*0x10000+rslt[5]
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
+                           'senTask{3:d}us svoTask{4:d}us '
+                           'ekfTask{5:d}us sndTask{6:d}us').format(T,*rslt)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif rf_data[0] == '\x78' :
+                    rslt = self.pack78.unpack(rf_data)
+                    T = rslt[4]*0x10000+rslt[5]
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
+                           'senTask{3:d}us svoTask{4:d}us '
+                           'sndTask{5:d}us').format(T,*rslt)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif rf_data[0] == '\x88' or rf_data[0] == '\x99':
+                    rslt = self.pack88.unpack(rf_data)
+                    B1 = rslt[1]*1.294e-2*1.515
+                    B2 = rslt[2]*1.294e-2*3.0606
+                    B3 = rslt[3]*1.294e-2*4.6363
+                    B2 -= B1
+                    if B2 < 0 :
+                        B2 = 0
+                    B3 -= B1+B2
+                    if B3 < 0 :
+                        B3 = 0
+                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    txt = ('T{:08.2f} BattPack '
+                        'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif rf_data[0] == '\x06':
+                    rslt = self.pack06.unpack(rf_data)
+                    wx.PostEvent(self, RxEvent(txt=
+                        'Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{28:03d} 2L{29:03d} 3L{30:03d} 4L{31:03d}'.format(
+                            *rslt)))
+                    if self.test_motor_ticks > 0:
+                        sec = rslt[1]
+                        msec = rslt[2]
+                        pos = rslt[3 + self.ch]
+                        ctrl = rslt[12 + self.ch]
+                        self.log.info('Sensor\t{0}.{1:03d}\t{2}\t{3}'.format(
+                            sec, msec, pos, ctrl))
+                        self.test_motor_ticks -= 1
+                else:
+                    self.log.info('RX:{}. Get {} from {}'.format(
+                        recv_opts[options], rf_data.__repr__(),
+                        addr))
+                self.rec.write(rf_data)
+            except:
+                traceback.print_exc()
+                self.log.error(repr(data))
+        elif data['id'] == 'tx_status':
+            try:
+                if self.use_ZB :
+                    del_sta = ord(data['deliver_status'])
+                    dis_sta = ord(data['discover_status'])
+                    retries = ord(data['retries'])
+                    if self.frame_id != ord(data['frame_id']):
+                        self.log.error("TXResponse frame_id mismatch"
+                            "{}!={}".format(self.frame_id,
+                                ord(data['frame_id'])))
+                    addr = data['dest_addr']
+                    del_sta = delivery_status[del_sta]
+                    dis_sta = discovery_status[dis_sta]
+                    self.log.info(
+                        'TXResponse:{} to {} ({:d} retries,{})'.format(
+                            del_sta, ':'.join('{:02x}'.format(ord(c))
+                                              for c in addr), retries,
+                            dis_sta))
+                else :
+                    tx_sta = ord(data['status'])
+                    if self.frame_id != ord(data['frame_id']):
+                        self.log.error("TXResponse frame_id mismatch"
+                            "{}!={}".format(self.frame_id,
+                                ord(data['frame_id'])))
+                    tx_sta = tx_status[tx_sta]
+                    self.log.info( 'TXResponse:{}'.format(tx_sta))
+            except:
+                traceback.print_exc()
+                self.log.error(repr(data))
+        elif data['id'] == 'remote_at_response':
+            try:
+                s = data['status']
+                addr = data['source_addr']
+                parameter = data['parameter']
+                if self.frame_id != data['frame_id']:
+                    self.log.error("Remote ATResponse frame_id mismatch")
+                self.log.info('ATResponse:{} {}={} from {}'.format(
+                    at_status[s], data['command'],
+                    ':'.join('{:02x}'.format(ord(c)) for c in parameter),
+                     addr))
+            except:
+                traceback.print_exc()
+                self.log.error(repr(data))
+        else:
+            self.log.info(repr(data))
 
 if __name__ == '__main__':
     app = wx.App(False)
