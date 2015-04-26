@@ -111,7 +111,7 @@ void InitApp(void) {
     /* Configure Nested Interrupts */
     INTCON1bits.NSTDIS = 0b0; // Interrupt nesting enabled
 
-    resetClock();
+    initClock();
 
 #if USE_UART1
     serial_assign(&Serial1, 1u);
