@@ -84,6 +84,7 @@ void msgSendInit(msgSendParam_p parameters, XBee_p xbee, XBeeSeries_t xbee_type,
             break;
     }
 
+    parameters->ntp.stage = 0u;
 }
 
 static uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
@@ -215,10 +216,65 @@ size_t updateSensorPack(uint8_t head[]) {
     return pack - head;
 }
 
+size_t updateNTPPack(NTP_p ntp, uint8_t *head) {
+    uint8_t *pack;
+    ntp->stage = 2u;
+    pack = head;
+    pack = EscapeByte(pack, 'S');
+    pack = EscapeByte(pack, '\x01');
+    pack = EscapeByte(pack, ntp->TimeStampL0MSW & 0xff);
+    pack = EscapeByte(pack, ntp->TimeStampL0LSW >> 8);
+    pack = EscapeByte(pack, ntp->TimeStampL0LSW & 0xff);
+    ntp->TimeStampL1MSW = RTclock.TimeStampMSW;
+    ntp->TimeStampL1LSW = RTclock.TimeStampLSW;
+    pack = EscapeByte(pack, ntp->TimeStampL1MSW & 0xff);
+    pack = EscapeByte(pack, ntp->TimeStampL1LSW >> 8);
+    pack = EscapeByte(pack, ntp->TimeStampL1LSW & 0xff);
+    return pack - head;
+}
+
+size_t updateNTPPack3(NTP_p ntp, uint8_t *head) {
+    uint8_t *pack;
+    ntp->stage = 0u;
+    pack = head;
+    pack = EscapeByte(pack, 'S');
+    pack = EscapeByte(pack, '\x03');
+    pack = EscapeByte(pack, ntp->TimeStampL4MSW & 0xff);
+    pack = EscapeByte(pack, ntp->TimeStampL4LSW >> 8);
+    pack = EscapeByte(pack, ntp->TimeStampL4LSW & 0xff);
+    pack = EscapeByte(pack, ntp->delay >> 8);
+    pack = EscapeByte(pack, ntp->delay & 0xff);
+    pack = EscapeByte(pack, ntp->offset >> 24);
+    pack = EscapeByte(pack, ntp->offset >> 16);
+    pack = EscapeByte(pack, ntp->offset >> 8);
+    pack = EscapeByte(pack, ntp->offset & 0xff);
+    ntp->TimeStampL1MSW = RTclock.TimeStampMSW;
+    ntp->TimeStampL1LSW = RTclock.TimeStampLSW;
+    pack = EscapeByte(pack, ntp->TimeStampL1MSW & 0xff);
+    pack = EscapeByte(pack, ntp->TimeStampL1LSW >> 8);
+    pack = EscapeByte(pack, ntp->TimeStampL1LSW & 0xff);
+
+    return pack - head;
+}
+
 static bool prepare_tx_data(TaskHandle_p task, msgSendParam_p parameters, size_t *_payloadLength, uint8_t *_payloadPtr, size_t max_payloadLength) {
     size_t pack_length;
 
     *_payloadLength = 0;
+
+    switch (parameters->ntp.stage) {
+        case 1u:
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateNTPPack(&parameters->ntp, _payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+        return true;
+        case 3u:
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateNTPPack3(&parameters->ntp, _payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+    }
 
     if ((parameters->cnt & 3) == 1) {
         *(_payloadPtr++) = MSG_DILIMITER;

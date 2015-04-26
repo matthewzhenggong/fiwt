@@ -98,18 +98,82 @@ xxxx:
     }
 }
 
-void process_msg(msgRecvParam_p parameters, const uint8_t *msg_ptr, size_t msg_len) {
+void reset_clock(NTP_p ntp) {
+    int32_t T;
+    int32_t T1, T2, T3, T4;
+    T1 = ((int32_t)ntp->TimeStampL1MSW << 16) + ntp->TimeStampL1LSW;
+    T2 = ((int32_t)ntp->TimeStampR2MSW << 16) + ntp->TimeStampR2LSW;
+    T3 = ((int32_t)ntp->TimeStampR3MSW << 16) + ntp->TimeStampR3LSW;
+    T4 = ((int32_t)ntp->TimeStampL4MSW << 16) + ntp->TimeStampL4LSW;
+    ntp->delay = (T4-T1) - (T3-T2);
+    ntp->offset = ((T2-T1) + (T3-T4))/2;
+    T = ((int32_t)RTclock.TimeStampMSW << 16) + RTclock.TimeStampLSW;
+    T += ntp->offset;
+    resetClock(T,0);
+}
+
+void process_message(msgRecvParam_p parameters, const uint8_t *msg_ptr, size_t msg_len) {
+    NTP_p ntp;
     switch (msg_ptr[0]) {
+        case 'S':
+            switch (msg_ptr[1]) {
+                case 0u :
+                    ntp = &(parameters->sendParameters->ntp);
+                    ntp->TimeStampL0MSW = RTclock.TimeStampMSW;
+                    ntp->TimeStampL0LSW = RTclock.TimeStampLSW;
+                    ntp->TimeStampR0MSW = msg_ptr[2];
+                    ntp->TimeStampR0LSW = (msg_ptr[3]<<8)+msg_ptr[4];
+                    ntp->stage = 1u;
+                    break;
+                case 2u :
+                    ntp = &(parameters->sendParameters->ntp);
+                    ntp->TimeStampL4MSW = RTclock.TimeStampMSW;
+                    ntp->TimeStampL4LSW = RTclock.TimeStampLSW;
+                    ntp->TimeStampR2MSW = msg_ptr[2];
+                    ntp->TimeStampR2LSW = (msg_ptr[3]<<8)+msg_ptr[4];
+                    ntp->TimeStampR3MSW = msg_ptr[5];
+                    ntp->TimeStampR3LSW = (msg_ptr[6]<<8)+msg_ptr[7];
+                    reset_clock(ntp);
+                    ntp->stage = 3u;
+                    break;
+            }
+            break;
         case CODE_AC_MODEL_NEW_SERV_CMD:
         case CODE_AEROCOMP_NEW_SERV_CMD:
             servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), msg_ptr);
             break;
         case 'P':
             if (msg_len <= 256) {
-                parameters->sendParameters->msg_len = msg_len;
-                memcpy(parameters->sendParameters->msg_buff, msg_ptr, msg_len);
+                memcpy(parameters->sendParameters->msg_buff+parameters->sendParameters->msg_len, msg_ptr, msg_len);
+                parameters->sendParameters->msg_len += msg_len;
             }
             break;
+    }
+}
+
+void process_packages(msgRecvParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
+    uint8_t *head;
+    uint8_t *end;
+    uint8_t *msg_tail;
+
+    head = end = NULL;
+    msg_tail = msg_ptr+msg_len;
+    while (msg_ptr < msg_tail) {
+        if (*msg_ptr == MSG_DILIMITER) {
+            if (head) {
+                process_packages(parameters, head+1u, end-head);
+            }
+            head = end = msg_ptr;
+        } else if (*msg_ptr == MSG_ESC && head) {
+            *(++end) = *(++msg_ptr) ^ 0x20;
+        } else if (head && (++end) != msg_ptr) {
+            *end = *msg_ptr;
+        }
+        ++msg_ptr;
+    }
+    msg_len = end-head;
+    if (msg_len > 1u) {
+        process_message(parameters, head+1u, msg_len);
     }
 }
 
@@ -127,38 +191,37 @@ PT_THREAD(msgRecvLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
-        ++parameters->cnt;
         packin = XBeeReadPacket(parameters->_xbee);
-        while (packin > 0) {
+        if (packin > 0) {
             switch (packin) {
                 case RX_IPV4_RESPONSE:
                     if (XBeeRxIPv4Response(parameters->_xbee, &parameters->rx_rsp.rxipv4)) {
                         ++parameters->cnt;
-                        process_msg(parameters, parameters->rx_rsp.rxipv4._payloadPtr, parameters->rx_rsp.rxipv4._payloadLength);
+                        process_packages(parameters, parameters->rx_rsp.rxipv4._payloadPtr, parameters->rx_rsp.rxipv4._payloadLength);
                     }
                     break;
                 case ZB_RX_RESPONSE:
                     if (XBeeZBRxResponse(parameters->_xbee, &parameters->rx_rsp.zbrx)) {
                         ++parameters->cnt;
-                        process_msg(parameters, parameters->rx_rsp.zbrx._payloadPtr, parameters->rx_rsp.zbrx._payloadLength);
+                        process_packages(parameters, parameters->rx_rsp.zbrx._payloadPtr, parameters->rx_rsp.zbrx._payloadLength);
                     }
                     break;
                 case RX_A64_RESPONSE:
                     if (XBeeRxA64Response(parameters->_xbee, &parameters->rx_rsp.rxa64)) {
                         ++parameters->cnt;
-                        process_msg(parameters, parameters->rx_rsp.rxa64._payloadPtr, parameters->rx_rsp.rxa64._payloadLength);
+                        process_packages(parameters, parameters->rx_rsp.rxa64._payloadPtr, parameters->rx_rsp.rxa64._payloadLength);
                     }
                     break;
                 case RX_A16_RESPONSE:
                     if (XBeeRxA16Response(parameters->_xbee, &parameters->rx_rsp.rxa16)) {
                         ++parameters->cnt;
-                        process_msg(parameters, parameters->rx_rsp.rxa16._payloadPtr, parameters->rx_rsp.rxa16._payloadLength);
+                        process_packages(parameters, parameters->rx_rsp.rxa16._payloadPtr, parameters->rx_rsp.rxa16._payloadLength);
                     }
                     break;
             }
-            packin = XBeeReadPacket(parameters->_xbee);
+        } else {
+            PT_YIELD(pt);
         }
-        PT_YIELD(pt);
     }
 
     /* All protothread functions must end with PT_END() which takes a

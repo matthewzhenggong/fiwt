@@ -29,6 +29,24 @@
 extern "C" {
 #endif
 
+    typedef struct NTP {
+        int32_t offset;
+        int16_t delay;
+        int stage;
+        uint16_t TimeStampR0LSW;
+        uint16_t TimeStampR0MSW;
+        uint16_t TimeStampL0LSW;
+        uint16_t TimeStampL0MSW;
+        uint16_t TimeStampL1LSW;
+        uint16_t TimeStampL1MSW;
+        uint16_t TimeStampR2LSW;
+        uint16_t TimeStampR2MSW;
+        uint16_t TimeStampR3LSW;
+        uint16_t TimeStampR3MSW;
+        uint16_t TimeStampL4LSW;
+        uint16_t TimeStampL4MSW;
+    } NTP_t, *NTP_p;
+
     typedef struct {
         struct pt PT;
         XBee_p _xbee;
@@ -40,11 +58,14 @@ extern "C" {
         XBeeSeries_t xbee_type;
         uint8_t msg_buff[256];
         uint8_t msg_len;
+
         union {
-           ZBTxRequest_t zbtx;
-           TxA64Request_t txa64;
-           TxIPv4Request_t txipv4;
+            ZBTxRequest_t zbtx;
+            TxA64Request_t txa64;
+            TxIPv4Request_t txipv4;
         } tx_req;
+
+        NTP_t ntp;
     } msgSendParam_t, *msgSendParam_p;
 
     void msgSendInit(msgSendParam_p parameters, XBee_p, XBeeSeries_t, TaskHandle_p, TaskHandle_p, TaskHandle_p, TaskHandle_p);

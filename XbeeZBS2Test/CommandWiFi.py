@@ -24,6 +24,7 @@ import socket
 
 from wx.lib.newevent import NewEvent
 import XBeeIPServices
+import PayloadPackage as pp
 
 RxEvent, EVT_RSLT1 = NewEvent()
 Rx2Event, EVT_RSLT2 = NewEvent()
@@ -268,6 +269,20 @@ Supported values include the following:
 0x00 - Disable retries and route repair
 0x02 - Apply changes. '''))
         box.Add(self.txtRmtATopt, 0, wx.ALIGN_CENTER, 5)
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.btnNTP = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnNTP.Enable(False)
+        box.Add(self.btnNTP, 0, wx.ALIGN_CENTER, 5)
+        self.txtBaseTime = wx.TextCtrl(panel, -1, "0",
+                                   size=(150, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        self.txtBaseTime.SetToolTip(wx.ToolTip('milliseconds'))
+        box.Add(self.txtBaseTime, 0, wx.ALIGN_CENTER, 5)
+        self.btnNTPP = wx.Button(panel, -1, "Set Base Time", size=(100, -1))
+        self.btnNTPP.Enable(False)
+        box.Add(self.btnNTPP, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -575,6 +590,8 @@ Unused bits must be set to 0.  '''))
         sizer.Fit(panel)
         self.Bind(wx.EVT_BUTTON, self.OnStart, self.btnStart)
         self.Bind(wx.EVT_BUTTON, self.OnRmtAT, self.btnRmtAT)
+        self.Bind(wx.EVT_BUTTON, self.OnNTP, self.btnNTP)
+        self.Bind(wx.EVT_BUTTON, self.OnNTPP, self.btnNTPP)
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnTXc, self.btnTXc)
@@ -591,6 +608,21 @@ Unused bits must be set to 0.  '''))
 
     def OnLog(self, event) :
         self.log_txt.AppendText(event.log)
+
+    def OnNTPP(self, event) :
+        self.ntp_base = int(self.txtBaseTime.GetValue().encode())
+        self.ntp_tick0 = time.clock()
+        self.log.info('Set Local T0={}ms'.format(self.ntp_base))
+
+    def OnNTP(self, event) :
+        if not hasattr(self, 'ntp_base') :
+            self.OnNTPP(None)
+
+        self.ntp_T0 = self.ntp_base + int((time.clock() -
+            self.ntp_tick0)*1000)
+        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0>>16,
+            self.ntp_T0&0xffff))
+        self.log.info('Local T0={}ms'.format(self.ntp_T0))
 
     def OnRX(self, event) :
         self.txtRX.SetLabel(event.txt)
@@ -648,7 +680,7 @@ Unused bits must be set to 0.  '''))
     def OnRmtAT(self, event):
         try:
             host = self.txtRmtNode.GetValue().encode()
-            options = self.txtRmtATopt.GetValue().encode()[:2].decode('hex')
+            options = self.txtRmtATopt.GetValue().encode()[:2].decode('hex')[0]
             command = self.txtRmtATcmd.GetValue().encode()[:2]
             parameter = self.txtRmtATpar.GetValue().encode()
             if len(parameter) == 0:
@@ -663,8 +695,8 @@ Unused bits must be set to 0.  '''))
                     '{:02x}'.format(ord(c)) for c in parameter) + ' to '
                     + host + ' with option {:02x}'.format(ord(options)))
             self.frame_id = self.getFrameId()
-            self.service.sendConfigCommand(host, self.frame_id,
-                    options, command, parameter)
+            self.service.sendConfigCommand(host, command, parameter,
+                    frame_id=self.frame_id, options=options)
         except:
             traceback.print_exc()
 
@@ -771,7 +803,7 @@ Unused bits must be set to 0.  '''))
                 remote_host = self.txtRmtNode.GetValue().encode()
                 remote_port = self.port_struct.unpack(
                         self.txtRmtPort.GetValue().decode('hex'))[0]
-                self.tx_socket.sendto(data, (remote_host, remote_port))
+                self.tx_socket.sendto(pp.pack(data), (remote_host, remote_port))
                 self.tick = time.clock()
         except:
             traceback.print_exc()
@@ -810,6 +842,10 @@ Unused bits must be set to 0.  '''))
         self.pack78 = struct.Struct(">B4HBH")
         self.pack88 = struct.Struct(">B3BBH")
         self.pack33 = struct.Struct(">B4H4HBH4h")
+        self.packNTP = struct.Struct(">3BH")
+        self.packNTP1 = struct.Struct(">BHBH")
+        self.packNTP2 = struct.Struct(">3BHBH")
+        self.packNTP3 = struct.Struct(">BHhiBH")
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
@@ -818,6 +854,8 @@ Unused bits must be set to 0.  '''))
         self.OutputCnt = 0
 
         self.btnRmtAT.Enable(True)
+        self.btnNTP.Enable(True)
+        self.btnNTPP.Enable(True)
         self.btnTX.Enable(True)
         self.btnTM.Enable(True)
         self.btnTXc.Enable(True)
@@ -879,10 +917,43 @@ Unused bits must be set to 0.  '''))
     def process(self, data) :
         if data['id'] == 'rx':
             try:
-                addr = data['source_addr']
-                rf_data = data['rf_data']
-                self.updateStatistics(len(rf_data))
-                if rf_data[0] == 'P':
+              addr = data['source_addr']
+              data_group = data['rf_data']
+              self.rec.write(data_group)
+              self.updateStatistics(len(data_group))
+              rf_data_group = pp.unpack(data_group)
+              for rf_data in rf_data_group :
+                if rf_data[0] == 'S':
+                    if rf_data[1] == '\x01' :
+                        T2 = self.ntp_base + int((time.clock() -
+                            self.ntp_tick0)*1000)
+                        rslt = self.packNTP1.unpack(rf_data[2:])
+                        T0 = (rslt[0] << 16)+rslt[1]
+                        T1 = (rslt[2] << 16)+rslt[3]
+                        T3 = self.ntp_base + int((time.clock() -
+                            self.ntp_tick0)*1000)
+                        self.send(self.packNTP2.pack(ord('S'),2,T2>>16, T2&0xffff,
+                            T3>>16, T3&0xffff))
+                        time.sleep(0.01)
+                        delay = (T2-self.ntp_T0)-(T1-T0)
+                        offset = ((T0-self.ntp_T0)+(T1-T2))/2
+                        self.log.info(('Remote Time0={}ms\n'
+                            'Remote Time1={}ms\n'
+                            'Local Time2={}ms\nLocal Time3={}ms\n'
+                            'Delay={}ms, Offset={}ms'
+                            ).format(T0,T1,T2,T3,delay,offset))
+                    if rf_data[1] == '\x03' :
+                        T6 = self.ntp_base + int((time.clock() -
+                            self.ntp_tick0)*1000)
+                        rslt = self.packNTP3.unpack(rf_data[2:])
+                        T4 = (rslt[0] << 16)+rslt[1]
+                        self.log.info('Remote Time4={}ms'.format(T4))
+                        delay = rslt[2]
+                        offset = rslt[3]
+                        self.log.info('Delay={}ms, Offset={}ms'.format(delay,offset))
+                        T5 = (rslt[4] << 16)+rslt[5]
+                        self.log.info('Remote Time={}ms, Local Time={}ms'.format(T5,T6))
+                elif rf_data[0] == 'P':
                     deltaT = (time.clock() - self.ping_tick)*1000
                     if self.periodic_sending == 0:
                         self.log.info('Ping back in {:.1f}ms'.format(deltaT))
@@ -1020,7 +1091,6 @@ Unused bits must be set to 0.  '''))
                     self.log.info('RX:{}. Get {} from {}'.format(
                         recv_opts[options], rf_data.__repr__(),
                         addr))
-                self.rec.write(rf_data)
             except:
                 traceback.print_exc()
                 self.log.error(repr(data))

@@ -31,7 +31,8 @@ class XBeeApplicationService(object):
         except socket.timeout :
             return None
 
-    def sendConfigCommand(self, host, frame_id, options, command, parameter) :
+    def sendConfigCommand(self, host, command, parameter=None,
+            frame_id=0, options='\x02') :
         data = self.header_RmtATCmd+chr(frame_id)+options+command
         if parameter :
             data += parameter
