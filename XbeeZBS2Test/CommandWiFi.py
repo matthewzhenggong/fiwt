@@ -21,6 +21,7 @@ import traceback
 import threading
 import struct
 import socket
+from ConfigParser import SafeConfigParser
 
 from wx.lib.newevent import NewEvent
 import XBeeIPServices
@@ -214,6 +215,10 @@ class MyFrame(wx.Frame):
 
         wx.Frame.__init__(self, parent, ID, title, pos, size, style)
 
+        parser = SafeConfigParser()
+        parser.read('config.ini')
+        self.parser = parser
+
         panel = wx.Panel(self, -1)
         panel.SetDoubleBuffered(True)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -221,7 +226,7 @@ class MyFrame(wx.Frame):
         box = wx.BoxSizer(wx.HORIZONTAL)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Host:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtHost = wx.TextCtrl(panel, -1, "192.168.191.1", size=(100, -1))
+        self.txtHost = wx.TextCtrl(panel, -1, parser.get('host','AP'), size=(100, -1))
         box.Add(self.txtHost, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         self.btnStart = wx.Button(panel, -1, "Start", size=(100, -1))
         box.Add(self.btnStart, 0, wx.ALIGN_CENTER, 5)
@@ -230,7 +235,7 @@ class MyFrame(wx.Frame):
         box.Add(self.btnBaseTime, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
-        AT_CMD = ['MY', 'BD']
+        AT_CMD = ['MY', 'BD', 'C0', 'AI', 'WR', 'FR']
         HOST_LIST = ["192.168.191.2", "192.168.191.3", "192.168.191.4"]
         self.PORT_LIST = ["2616", "2267", "2677", "2000"]
 
@@ -239,15 +244,18 @@ class MyFrame(wx.Frame):
         self.rbGND = wx.RadioButton(panel, wx.ID_ANY, "GND:",
                                   style=wx.RB_GROUP)
         box.Add(self.rbGND, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtGNDhost = wx.ComboBox(panel, -1, "192.168.191.2",
+        self.txtGNDhost = wx.ComboBox(panel, -1, parser.get('host','GND'),
                                           choices=HOST_LIST)
         box.Add(self.txtGNDhost, 0, wx.ALIGN_CENTER, 5)
         self.txtGNDport = wx.ComboBox(panel, -1, "2616",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtGNDport, 0, wx.ALIGN_CENTER, 5)
-        self.btnGNDsynct = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnGNDsynct = wx.Button(panel, -1, "Sync Time")
         self.btnGNDsynct.Enable(False)
         box.Add(self.btnGNDsynct, 0, wx.ALIGN_CENTER, 5)
+        self.btnGNDrec = wx.ToggleButton(panel, -1, "REC")
+        self.btnGNDrec.Enable(False)
+        box.Add(self.btnGNDrec, 0, wx.ALIGN_CENTER, 5)
         self.txtGNDinfo = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtGNDinfo.SetForegroundColour((255, 55, 0))
         box.Add(self.txtGNDinfo, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -256,15 +264,18 @@ class MyFrame(wx.Frame):
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.rbACM = wx.RadioButton(panel, wx.ID_ANY, "ACM:")
         box.Add(self.rbACM, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtACMhost = wx.ComboBox(panel, -1, "192.168.191.3",
+        self.txtACMhost = wx.ComboBox(panel, -1, parser.get('host','ACM'),
                                           choices=HOST_LIST)
         box.Add(self.txtACMhost, 0, wx.ALIGN_CENTER, 5)
         self.txtACMport = wx.ComboBox(panel, -1, "2267",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtACMport, 0, wx.ALIGN_CENTER, 5)
-        self.btnACMsynct = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnACMsynct = wx.Button(panel, -1, "Sync Time")
         self.btnACMsynct.Enable(False)
         box.Add(self.btnACMsynct, 0, wx.ALIGN_CENTER, 5)
+        self.btnACMrec = wx.ToggleButton(panel, -1, "REC")
+        self.btnACMrec.Enable(False)
+        box.Add(self.btnACMrec, 0, wx.ALIGN_CENTER, 5)
         self.txtACMbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtACMbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtACMbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -273,15 +284,18 @@ class MyFrame(wx.Frame):
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.rbCMP = wx.RadioButton(panel, wx.ID_ANY, "CMP:")
         box.Add(self.rbCMP, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtCMPhost = wx.ComboBox(panel, -1, "192.168.191.4",
+        self.txtCMPhost = wx.ComboBox(panel, -1, parser.get('host','CMP'),
                                           choices=HOST_LIST)
         box.Add(self.txtCMPhost, 0, wx.ALIGN_CENTER, 5)
         self.txtCMPport = wx.ComboBox(panel, -1, "2677",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtCMPport, 0, wx.ALIGN_CENTER, 5)
-        self.btnCMPsynct = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnCMPsynct = wx.Button(panel, -1, "Sync Time")
         self.btnCMPsynct.Enable(False)
         box.Add(self.btnCMPsynct, 0, wx.ALIGN_CENTER, 5)
+        self.btnCMPrec = wx.ToggleButton(panel, -1, "REC")
+        self.btnCMPrec.Enable(False)
+        box.Add(self.btnCMPrec, 0, wx.ALIGN_CENTER, 5)
         self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtCMPbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtCMPbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -294,7 +308,23 @@ class MyFrame(wx.Frame):
         self.txtRmtATcmd = wx.ComboBox(panel, -1, "MY",
                                        choices=AT_CMD,
                                        size=(50, -1))
-        self.txtRmtATcmd.SetToolTip(wx.ToolTip('AT Command in TWO characters'))
+        self.txtRmtATcmd.SetToolTip(wx.ToolTip('''AT Command in TWO characters :
+MY - IP Network Address
+MK - IP Address Mask
+GW - Gateway IP address
+SH - Serial Number High
+SL - Serial Number Low
+DL - Destination Address Low
+C0 - source IP port
+ID - SSID
+AH - Network Type
+MA - IP Addressing Mode. 0=DHCP;1=Static
+PL - Power Level
+BD - baudrate
+AI - Association Indication
+WR - write to flash
+FR - Software Reset
+'''))
         box.Add(self.txtRmtATcmd, 0, wx.ALIGN_CENTER, 5)
         self.txtRmtATpar = wx.TextCtrl(panel, -1, "",
                                        size=(100, -1),
@@ -588,8 +618,8 @@ Unused bits must be set to 0.  '''))
             logging.Formatter('%(asctime)s:%(message)s'))
         self.log.addHandler(self.log_handle)
         # redirect stdout to log
-        #sys.stdout = RedirectInfo()
-        #sys.stderr = RedirectError()
+        sys.stdout = RedirectInfo()
+        sys.stderr = RedirectError()
         sizer.Add(self.log_txt, 1, wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -604,6 +634,9 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_BUTTON, self.OnSyncACM, self.btnACMsynct)
         self.Bind(wx.EVT_BUTTON, self.OnSyncCMP, self.btnCMPsynct)
         self.Bind(wx.EVT_BUTTON, self.OnSyncGND, self.btnGNDsynct)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecACM, self.btnACMrec)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecCMP, self.btnCMPrec)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecGND, self.btnGNDrec)
         self.Bind(wx.EVT_BUTTON, self.OnSetBaseTime, self.btnBaseTime)
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
@@ -617,6 +650,40 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseCMP, self.rbCMP)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseGND, self.rbGND)
 
+        self.fileACM = None
+        self.fileCMP = None
+        self.fileGND = None
+
+    def OnRecACM(self, event) :
+        if event.IsChecked():
+            filename = time.strftime('ACM%Y%m%d%H%M%S.dat')
+            self.fileACM = open(filename, 'wb')
+            self.log.info('ACM Recording to {}'.format(filename))
+        else:
+            self.fileACM.close()
+            self.log.info('ACM Stop Recording.')
+            self.fileACM = None
+
+    def OnRecCMP(self, event) :
+        if event.IsChecked():
+            filename = time.strftime('CMP%Y%m%d%H%M%S.dat')
+            self.fileCMP = open(filename, 'wb')
+            self.log.info('CMP Recording to {}'.format(filename))
+        else:
+            self.fileCMP.close()
+            self.log.info('CMP Stop Recording.')
+            self.fileCMP = None
+
+    def OnRecGND(self, event) :
+        if event.IsChecked():
+            filename = time.strftime('GND%Y%m%d%H%M%S.dat')
+            self.fileGND = open(filename, 'wb')
+            self.log.info('GND Recording to {}'.format(filename))
+        else:
+            self.fileGND.close()
+            self.log.info('GND Stop Recording.')
+            self.fileGND = None
+
     def OnLog(self, event) :
         self.log_txt.AppendText(event.log)
 
@@ -628,6 +695,8 @@ Unused bits must be set to 0.  '''))
         self.rbGND.SetValue(True)
         self.target = 'GND'
 
+        self.btnGNDrec.Enable(True)
+
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
         self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
@@ -638,6 +707,8 @@ Unused bits must be set to 0.  '''))
         self.rbACM.SetValue(True)
         self.target = 'ACM'
 
+        self.btnACMrec.Enable(True)
+
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
         self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
@@ -647,6 +718,8 @@ Unused bits must be set to 0.  '''))
     def OnSyncCMP(self, event) :
         self.rbCMP.SetValue(True)
         self.target = 'CMP'
+
+        self.btnCMPrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
@@ -684,11 +757,29 @@ Unused bits must be set to 0.  '''))
         self.periodic_count = 0
 
     def OnClose(self, event):
+        self.log.info("clean_up" + traceback.format_exc())
         try:
             self.halting = True
             time.sleep(0.2)
         except:
             pass
+
+        parser = self.parser
+        parser.set('host','AP', self.txtHost.GetValue())
+        parser.set('host','GND', self.txtGNDhost.GetValue())
+        parser.set('host','ACM', self.txtACMhost.GetValue())
+        parser.set('host','CMP', self.txtCMPhost.GetValue())
+        cfg = open('config.ini', 'w')
+        parser.write(cfg)
+        cfg.close()
+
+        if self.fileACM:
+            self.fileACM.close()
+        if self.fileCMP:
+            self.fileCMP.close()
+        if self.fileGND:
+            self.fileGND.close()
+
         self.log.removeHandler(self.log_handle)
         event.Skip()
 
@@ -783,7 +874,6 @@ Unused bits must be set to 0.  '''))
         data = self.txtTX.GetValue().encode()
         self.send('P'+data)
         self.ping_tick = time.clock()
-        print 'tx'
 
     def send(self, data):
         try:
@@ -819,8 +909,6 @@ Unused bits must be set to 0.  '''))
         self.btnStart.Enable(False)
         self.txtHost.Enable(False)
 
-        self.rec = open(time.strftime('rec%Y%m%d%H%M%S.dat'), 'wb')
-
         self.starting = True
 
         self.frame_id = 0
@@ -833,6 +921,7 @@ Unused bits must be set to 0.  '''))
 
         self.frame_id = 1
 
+        self.port_struct = struct.Struct("!H")
         self.pack22 = struct.Struct(">B6H3H6HI6h")
         self.pack77 = struct.Struct(">B3HI")
         self.pack78 = struct.Struct(">B3HI")
@@ -843,6 +932,7 @@ Unused bits must be set to 0.  '''))
         self.packNTP1 = struct.Struct(">2I")
         self.packNTP2 = struct.Struct(">2B2I")
         self.packNTP3 = struct.Struct(">IhiI")
+        self.packHdr = struct.Struct(">BH")
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
@@ -859,26 +949,31 @@ Unused bits must be set to 0.  '''))
         self.btnTM.Enable(True)
 
         self.halting = False
-        host = self.txtHost.GetValue().encode()
-        self.service = XBeeIPServices.XBeeApplicationService(host)
-        self.thread = threading.Thread(target=self.run)
-        self.thread.daemon = True
-        self.thread.start()
-        print '{} started on {}'.format(self.thread.name, host)
+        try:
+            host = self.txtHost.GetValue().encode()
+            self.service = XBeeIPServices.XBeeApplicationService(host)
+            self.thread = threading.Thread(target=self.run)
+            self.thread.daemon = True
+            self.thread.start()
+            print '{} started on {}'.format(self.thread.name, host)
+        except:
+            self.log.error(traceback.format_exc())
 
-        self.port_struct = struct.Struct("!H")
         all_ports = [(self.port_struct.unpack(i.decode('hex'))[0],i)
                     for i in self.PORT_LIST]
         for i,port_name in all_ports :
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.bind((host,i))
-            sock.settimeout(0.1)
-            thread = threading.Thread(target=self.monitor, args=(sock, port_name))
-            thread.daemon = True
-            thread.start()
-            print '{} started, listening on {}'.format(thread.name,
-                    sock.getsockname())
-        self.tx_socket = sock
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.tx_socket = sock
+                sock.bind((host,i))
+                sock.settimeout(0.1)
+                thread = threading.Thread(target=self.monitor, args=(sock, port_name))
+                thread.daemon = True
+                thread.start()
+                print '{} started, listening on {}'.format(thread.name,
+                        sock.getsockname())
+            except:
+                self.log.error(traceback.format_exc())
 
     def monitor(self, sock, port_name):
         while not self.halting:
@@ -914,7 +1009,6 @@ Unused bits must be set to 0.  '''))
             try:
               addr = data['source_addr']
               data_group = data['rf_data']
-              self.rec.write(data_group)
               self.updateStatistics(len(data_group))
               rf_data_group = pp.unpack(data_group)
               for rf_data in rf_data_group :
@@ -965,14 +1059,20 @@ Unused bits must be set to 0.  '''))
                                 self.periodic_sending_time_min)
                         wx.PostEvent(self, RxEvent(txt=txt))
                 elif rf_data[0] == '\x22':
-                    rslt = self.pack22.unpack(rf_data)
-                    T = rslt[16]*1e-6
-                    GX = Get14bit(rslt[10])*0.05
-                    GY = Get14bit(rslt[11])*-0.05
-                    GZ = Get14bit(rslt[12])*-0.05
-                    AX = Get14bit(rslt[13])*-0.003333
-                    AY = Get14bit(rslt[14])*0.003333
-                    AZ = Get14bit(rslt[15])*0.003333
+                    if self.fileACM:
+                        self.fileACM.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileACM.write(rf_data)
+                    if self.OutputCnt > 0 or \
+                        self.arrv_cnt > self.last_arrv_cnt+4 :
+                        rslt = self.pack22.unpack(rf_data)
+                        T = rslt[16]*1e-6
+                        GX = Get14bit(rslt[10])*0.05
+                        GY = Get14bit(rslt[11])*-0.05
+                        GZ = Get14bit(rslt[12])*-0.05
+                        AX = Get14bit(rslt[13])*-0.003333
+                        AY = Get14bit(rslt[14])*0.003333
+                        AZ = Get14bit(rslt[15])*0.003333
                     if self.OutputCnt > 0 :
                         self.OutputCnt -= 1
                         txt = '{:.2f},'.format(T)
@@ -1007,8 +1107,14 @@ Unused bits must be set to 0.  '''))
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
                 elif rf_data[0] == '\x33':
-                    rslt = self.pack33.unpack(rf_data)
-                    T = rslt[9]*1e-6
+                    if self.fileCMP:
+                        self.fileCMP.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileCMP.write(rf_data)
+                    if self.OutputCnt > 0 or \
+                        self.arrv_cnt > self.last_arrv_cnt+4 :
+                        rslt = self.pack33.unpack(rf_data)
+                        T = rslt[9]*1e-6
                     if self.OutputCnt > 0 :
                         self.OutputCnt -= 1
                         txt = '{:.2f},'.format(T)
