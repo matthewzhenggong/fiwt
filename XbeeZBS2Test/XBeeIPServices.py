@@ -5,7 +5,7 @@ import socket
 import struct
 
 class XBeeApplicationService(object):
-    def __init__(self, address, ports, timeout=0.1):
+    def __init__(self, address, timeout=0.1):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((address,0xBEE))
         self.sock.settimeout(timeout)
