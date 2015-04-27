@@ -225,24 +225,66 @@ class MyFrame(wx.Frame):
         box.Add(self.txtHost, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         self.btnStart = wx.Button(panel, -1, "Start", size=(100, -1))
         box.Add(self.btnStart, 0, wx.ALIGN_CENTER, 5)
+        self.btnBaseTime = wx.Button(panel, -1, "Set Base Time", size=(100, -1))
+        self.btnBaseTime.Enable(False)
+        box.Add(self.btnBaseTime, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         AT_CMD = ['MY', 'BD']
         HOST_LIST = ["192.168.191.2", "192.168.191.3", "192.168.191.4"]
-        self.PORT_LIST = ["2267", "2616", "2677", "2000"]
+        self.PORT_LIST = ["2616", "2267", "2677", "2000"]
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        box.Add(wx.StaticText(panel, wx.ID_ANY, "Remote Addr:"), 0,
-                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtRmtNode = wx.ComboBox(panel, -1, "192.168.191.2",
+        self.target = 'GND'
+        self.rbGND = wx.RadioButton(panel, wx.ID_ANY, "GND:",
+                                  style=wx.RB_GROUP)
+        box.Add(self.rbGND, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
+        self.txtGNDhost = wx.ComboBox(panel, -1, "192.168.191.2",
                                           choices=HOST_LIST)
-        box.Add(self.txtRmtNode, 0, wx.ALIGN_CENTER, 5)
-        box.Add(wx.StaticText(panel, wx.ID_ANY, "Port:"), 0,
-                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtRmtPort = wx.ComboBox(panel, -1, "2267",
-                choices=self.PORT_LIST[:-1],
-                                          validator=MyValidator(HEX_ONLY))
-        box.Add(self.txtRmtPort, 0, wx.ALIGN_CENTER, 5)
+        box.Add(self.txtGNDhost, 0, wx.ALIGN_CENTER, 5)
+        self.txtGNDport = wx.ComboBox(panel, -1, "2616",
+                choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
+        box.Add(self.txtGNDport, 0, wx.ALIGN_CENTER, 5)
+        self.btnGNDsynct = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnGNDsynct.Enable(False)
+        box.Add(self.btnGNDsynct, 0, wx.ALIGN_CENTER, 5)
+        self.txtGNDinfo = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtGNDinfo.SetForegroundColour((255, 55, 0))
+        box.Add(self.txtGNDinfo, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.rbACM = wx.RadioButton(panel, wx.ID_ANY, "ACM:")
+        box.Add(self.rbACM, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
+        self.txtACMhost = wx.ComboBox(panel, -1, "192.168.191.3",
+                                          choices=HOST_LIST)
+        box.Add(self.txtACMhost, 0, wx.ALIGN_CENTER, 5)
+        self.txtACMport = wx.ComboBox(panel, -1, "2267",
+                choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
+        box.Add(self.txtACMport, 0, wx.ALIGN_CENTER, 5)
+        self.btnACMsynct = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnACMsynct.Enable(False)
+        box.Add(self.btnACMsynct, 0, wx.ALIGN_CENTER, 5)
+        self.txtACMbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtACMbat.SetForegroundColour((255, 55, 0))
+        box.Add(self.txtACMbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.rbCMP = wx.RadioButton(panel, wx.ID_ANY, "CMP:")
+        box.Add(self.rbCMP, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
+        self.txtCMPhost = wx.ComboBox(panel, -1, "192.168.191.4",
+                                          choices=HOST_LIST)
+        box.Add(self.txtCMPhost, 0, wx.ALIGN_CENTER, 5)
+        self.txtCMPport = wx.ComboBox(panel, -1, "2677",
+                choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
+        box.Add(self.txtCMPport, 0, wx.ALIGN_CENTER, 5)
+        self.btnCMPsynct = wx.Button(panel, -1, "Sync Time", size=(100, -1))
+        self.btnCMPsynct.Enable(False)
+        box.Add(self.btnCMPsynct, 0, wx.ALIGN_CENTER, 5)
+        self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtCMPbat.SetForegroundColour((255, 55, 0))
+        box.Add(self.txtCMPbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -270,20 +312,6 @@ Supported values include the following:
 0x00 - Disable retries and route repair
 0x02 - Apply changes. '''))
         box.Add(self.txtRmtATopt, 0, wx.ALIGN_CENTER, 5)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
-
-        box = wx.BoxSizer(wx.HORIZONTAL)
-        self.btnNTP = wx.Button(panel, -1, "Sync Time", size=(100, -1))
-        self.btnNTP.Enable(False)
-        box.Add(self.btnNTP, 0, wx.ALIGN_CENTER, 5)
-        self.txtBaseTime = wx.TextCtrl(panel, -1, "0",
-                                   size=(150, -1),
-                                   validator=MyValidator(DIGIT_ONLY))
-        self.txtBaseTime.SetToolTip(wx.ToolTip('milliseconds'))
-        box.Add(self.txtBaseTime, 0, wx.ALIGN_CENTER, 5)
-        self.btnNTPP = wx.Button(panel, -1, "Set Base Time", size=(100, -1))
-        self.btnNTPP.Enable(False)
-        box.Add(self.btnNTPP, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -531,24 +559,6 @@ Unused bits must be set to 0.  '''))
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.btnTXc = wx.ToggleButton(panel, -1, "Send TX in", size=(100, -1))
-        self.btnTXc.Enable(False)
-        box.Add(self.btnTXc, 0, wx.ALIGN_CENTER, 5)
-        self.txtTXfreq = wx.TextCtrl(panel, -1, "50",
-                                     size=(50, -1),
-                                     validator=MyValidator(DIGIT_ONLY))
-        self.txtTXfreq.SetToolTip(
-            wx.ToolTip('Frequency to send ping pack periodically.'))
-        box.Add(self.txtTXfreq, 0, wx.ALIGN_CENTER, 5)
-        box.Add(wx.StaticText(panel, wx.ID_ANY, "Hz"), 0,
-                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.txtTXBR = wx.StaticText(panel, wx.ID_ANY, "")
-        box.Add(self.txtTXBR, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
-
-        box = wx.BoxSizer(wx.HORIZONTAL)
         self.txtRXSta = wx.StaticText(panel, wx.ID_ANY, "")
         box.Add(self.txtRXSta, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
@@ -578,8 +588,8 @@ Unused bits must be set to 0.  '''))
             logging.Formatter('%(asctime)s:%(message)s'))
         self.log.addHandler(self.log_handle)
         # redirect stdout to log
-        sys.stdout = RedirectInfo()
-        sys.stderr = RedirectError()
+        #sys.stdout = RedirectInfo()
+        #sys.stderr = RedirectError()
         sizer.Add(self.log_txt, 1, wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -591,36 +601,56 @@ Unused bits must be set to 0.  '''))
         sizer.Fit(panel)
         self.Bind(wx.EVT_BUTTON, self.OnStart, self.btnStart)
         self.Bind(wx.EVT_BUTTON, self.OnRmtAT, self.btnRmtAT)
-        self.Bind(wx.EVT_BUTTON, self.OnNTP, self.btnNTP)
-        self.Bind(wx.EVT_BUTTON, self.OnNTPP, self.btnNTPP)
+        self.Bind(wx.EVT_BUTTON, self.OnSyncACM, self.btnACMsynct)
+        self.Bind(wx.EVT_BUTTON, self.OnSyncCMP, self.btnCMPsynct)
+        self.Bind(wx.EVT_BUTTON, self.OnSyncGND, self.btnGNDsynct)
+        self.Bind(wx.EVT_BUTTON, self.OnSetBaseTime, self.btnBaseTime)
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnTXc, self.btnTXc)
         self.Bind(wx.EVT_BUTTON, self.OnClr, self.btnClr)
-        self.Bind(wx.EVT_TEXT, self.OnCalBD, self.txtTX)
-        self.Bind(wx.EVT_TEXT, self.OnCalBD, self.txtTXfreq)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.Bind(wx.EVT_TEXT_ENTER, self.OnTX, self.txtTX)
-        self.Bind(wx.EVT_TEXT_ENTER, self.OnRmtAT, self.txtRmtATpar)
         self.Bind(EVT_RSLT1, self.OnRX)
         self.Bind(EVT_RSLT2, self.OnRX2)
         self.Bind(EVT_STAT, self.OnRXSta)
         self.Bind(EVT_LOG, self.OnLog)
+        self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseACM, self.rbACM)
+        self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseCMP, self.rbCMP)
+        self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseGND, self.rbGND)
 
     def OnLog(self, event) :
         self.log_txt.AppendText(event.log)
 
-    def OnNTPP(self, event) :
-        self.ntp_base = int(self.txtBaseTime.GetValue().encode())*1000
+    def OnSetBaseTime(self, event) :
         self.ntp_tick0 = time.clock()
-        self.log.info('Set Local T0={}ms'.format(self.ntp_base))
+        self.log.info('Set Local T0')
 
-    def OnNTP(self, event) :
-        if not hasattr(self, 'ntp_base') :
-            self.OnNTPP(None)
+    def OnSyncGND(self, event) :
+        self.rbGND.SetValue(True)
+        self.target = 'GND'
 
-        self.ntp_T0 = self.ntp_base + int((time.clock() -
-            self.ntp_tick0)*1e6)
+        if not hasattr(self, 'ntp_tick0') :
+            self.OnSetBaseTime(None)
+        self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
+        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
+        self.log.info('Local T0={}us'.format(self.ntp_T0))
+
+    def OnSyncACM(self, event) :
+        self.rbACM.SetValue(True)
+        self.target = 'ACM'
+
+        if not hasattr(self, 'ntp_tick0') :
+            self.OnSetBaseTime(None)
+        self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
+        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
+        self.log.info('Local T0={}us'.format(self.ntp_T0))
+
+    def OnSyncCMP(self, event) :
+        self.rbCMP.SetValue(True)
+        self.target = 'CMP'
+
+        if not hasattr(self, 'ntp_tick0') :
+            self.OnSetBaseTime(None)
+        self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
         self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
         self.log.info('Local T0={}us'.format(self.ntp_T0))
 
@@ -633,29 +663,14 @@ Unused bits must be set to 0.  '''))
     def OnRXSta(self, event) :
         self.txtRXSta.SetLabel(event.txt)
 
-    def OnChoosePort1(self, event):
-        self.xbee = self.xbee1
+    def OnChooseACM(self, event):
+        self.target = 'ACM'
 
-    def OnChoosePort2(self, event):
-        self.xbee = self.xbee2
+    def OnChooseCMP(self, event):
+        self.target = 'CMP'
 
-    def OnCalBD(self, event):
-        try:
-            dt = 1 / (float(self.txtTXfreq.GetValue().encode()))
-            if dt > 0:
-                data_len = len(self.txtTX.GetValue().encode())
-                br2 = int((6 + data_len) / dt + 1) * 10
-                br1 = int((28 + 6 + data_len) / dt + 1) * 10
-                self.txtTXBR.SetLabel('Pack len={}+{}={} BR={}/{}'.format(
-                    28, 6 + data_len, 28 + 6 + data_len, br2, br1))
-                br = int(self.txtPort.GetValue().encode())
-                if br1 >= br:
-                    self.txtTXBR.SetForegroundColour((255, 0, 0))
-                else:
-                    self.txtTXBR.SetForegroundColour((0, 0, 255))
-        except:
-            #traceback.print_exc()
-            pass
+    def OnChooseGND(self, event):
+        self.target = 'GND'
 
     def OnClr(self, event):
         self.log_txt.Clear()
@@ -679,7 +694,7 @@ Unused bits must be set to 0.  '''))
 
     def OnRmtAT(self, event):
         try:
-            host = self.txtRmtNode.GetValue().encode()
+            host = self.txtACMhost.GetValue().encode()
             options = self.txtRmtATopt.GetValue().encode()[:2].decode('hex')[0]
             command = self.txtRmtATcmd.GetValue().encode()[:2]
             parameter = self.txtRmtATpar.GetValue().encode()
@@ -768,41 +783,23 @@ Unused bits must be set to 0.  '''))
         data = self.txtTX.GetValue().encode()
         self.send('P'+data)
         self.ping_tick = time.clock()
-
-    def OnTXc(self, event):
-        if event.IsChecked():
-            self.periodic_sending = 1
-            self.periodic_sending_time_all = 0.0
-            self.periodic_sending_time_max = 0.0
-            self.periodic_sending_time_min = 99e99
-            self.periodic_sending_cnt = 0.0
-            self.periodic_dt = 1.0 / float(
-                self.txtTXfreq.GetValue().encode())
-            self.periodic_data = self.txtTX.GetValue().encode()
-            self.txtTXfreq.Disable()
-            self.txtTX.Disable()
-            self.periodic_send()
-        else:
-            self.periodic_sending = 0
-            self.txtTXfreq.Enable()
-            self.txtTX.Enable()
-
-    def periodic_send(self):
-        tick = time.clock()
-        self.periodic_count += 1
-        self.send('P{:05d}'.format(self.periodic_count) + self.periodic_data,
-                  True)
-        self.ping_tick = time.clock()
-        if self.periodic_sending:
-            threading.Timer(self.periodic_dt -
-                            (time.clock() - tick), self.periodic_send).start()
+        print 'tx'
 
     def send(self, data):
         try:
             if data:
-                remote_host = self.txtRmtNode.GetValue().encode()
-                remote_port = self.port_struct.unpack(
-                        self.txtRmtPort.GetValue().decode('hex'))[0]
+                if self.target == 'ACM' :
+                    remote_host = self.txtACMhost.GetValue().encode()
+                    remote_port = self.port_struct.unpack(
+                            self.txtACMport.GetValue().decode('hex'))[0]
+                elif self.target == 'CMP' :
+                    remote_host = self.txtCMPhost.GetValue().encode()
+                    remote_port = self.port_struct.unpack(
+                            self.txtCMPport.GetValue().decode('hex'))[0]
+                else :
+                    remote_host = self.txtGNDhost.GetValue().encode()
+                    remote_port = self.port_struct.unpack(
+                            self.txtGNDport.GetValue().decode('hex'))[0]
                 self.tx_socket.sendto(pp.pack(data), (remote_host, remote_port))
                 self.tick = time.clock()
         except:
@@ -854,11 +851,12 @@ Unused bits must be set to 0.  '''))
         self.OutputCnt = 0
 
         self.btnRmtAT.Enable(True)
-        self.btnNTP.Enable(True)
-        self.btnNTPP.Enable(True)
+        self.btnACMsynct.Enable(True)
+        self.btnCMPsynct.Enable(True)
+        self.btnGNDsynct.Enable(True)
+        self.btnBaseTime.Enable(True)
         self.btnTX.Enable(True)
         self.btnTM.Enable(True)
-        self.btnTXc.Enable(True)
 
         self.halting = False
         host = self.txtHost.GetValue().encode()
@@ -922,12 +920,12 @@ Unused bits must be set to 0.  '''))
               for rf_data in rf_data_group :
                 if rf_data[0] == 'S':
                     if rf_data[1] == '\x01' :
-                        T2 = self.ntp_base + int((time.clock() -
+                        T2 = int((time.clock() -
                             self.ntp_tick0)*1e6)
                         rslt = self.packNTP1.unpack(rf_data[2:])
                         T0 = rslt[0]
                         T1 = rslt[1]
-                        T3 = self.ntp_base + int((time.clock() -
+                        T3 = int((time.clock() -
                             self.ntp_tick0)*1e6)
                         self.send(self.packNTP2.pack(ord('S'),2,T2,T3))
                         time.sleep(0.01)
@@ -939,7 +937,7 @@ Unused bits must be set to 0.  '''))
                             'Delay={}us, Offset={}us'
                             ).format(T0,T1,T2,T3,delay,offset))
                     if rf_data[1] == '\x03' :
-                        T6 = self.ntp_base + int((time.clock() -
+                        T6 = int((time.clock() -
                             self.ntp_tick0)*1e6)
                         rslt = self.packNTP3.unpack(rf_data[2:])
                         T4 = rslt[0]
@@ -952,7 +950,8 @@ Unused bits must be set to 0.  '''))
                 elif rf_data[0] == 'P':
                     deltaT = (time.clock() - self.ping_tick)*1000
                     if self.periodic_sending == 0:
-                        self.log.info('Ping back in {:.1f}ms'.format(deltaT))
+                        self.log.info('Ping back {} in {:.1f}ms, from {}'.format(
+                            rf_data[1:], deltaT, addr))
                     else :
                         self.periodic_sending_time_all += deltaT
                         self.periodic_sending_cnt += 1.0
@@ -1049,10 +1048,8 @@ Unused bits must be set to 0.  '''))
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\xAA':
                     rslt = self.packAA.unpack(rf_data)
-                    T = rslt[2]*1e-6
-                    txt = ('T{0:08.3f} GND CommStat msgTask{2:d}').format(T,*rslt)
-                    self.log.debug(txt)
-                    wx.PostEvent(self, Rx2Event(txt=txt))
+                    txt = ('msgTask{1:d}').format(*rslt)
+                    self.txtGNDinfo.SetLabel(txt)
                 elif rf_data[0] == '\x88':
                     rslt = self.pack88.unpack(rf_data)
                     B1 = rslt[1]*1.294e-2*1.515
@@ -1064,11 +1061,8 @@ Unused bits must be set to 0.  '''))
                     B3 -= B1+B2
                     if B3 < 0 :
                         B3 = 0
-                    T = rslt[4]*1e-6
-                    txt = ('T{:08.3f} ACM BattStat '
-                        'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
-                    self.log.debug(txt)
-                    wx.PostEvent(self, Rx2Event(txt=txt))
+                    txt = '{:.2f}V {:.2f}V {:.2f}V'.format(B1,B2,B3)
+                    self.txtACMbat.SetLabel(txt)
                 elif rf_data[0] == '\x99':
                     rslt = self.pack88.unpack(rf_data)
                     B1 = rslt[1]*1.294e-2*1.515
@@ -1080,11 +1074,8 @@ Unused bits must be set to 0.  '''))
                     B3 -= B1+B2
                     if B3 < 0 :
                         B3 = 0
-                    T = rslt[4]*1e-6
-                    txt = ('T{:08.3f} CMP BattStat '
-                        'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
-                    self.log.debug(txt)
-                    wx.PostEvent(self, Rx2Event(txt=txt))
+                    txt = '{:.2f}V B{:.2f}V B{:.2f}V'.format(B1,B2,B3)
+                    self.txtCMPbat.SetLabel(txt)
                 else:
                     self.log.info('RX:{}. Get {} from {}'.format(
                         recv_opts[options], rf_data.__repr__(),
