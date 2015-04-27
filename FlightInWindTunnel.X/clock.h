@@ -43,7 +43,7 @@ extern "C" {
      */
     extern unsigned int volatile elapsed_ticks;
 
-    extern uint32_t volatile offset_us;
+    extern int32_t volatile offset_us;
 
     /**
      * Get ticks in microseconds in [0-999]

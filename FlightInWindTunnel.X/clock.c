@@ -35,7 +35,7 @@
 
 __near unsigned int volatile elapsed_ticks = 0;
 unsigned int volatile elapsed_hours = 0;
-__near uint32_t volatile offset_us = 0;
+__near int32_t volatile offset_us = 0;
 
 void initClock(void) {
     elapsed_ticks = 0; /* clear software registers */
@@ -94,13 +94,8 @@ uint32_t getMicroseconds() {
 }
 
 void setMicroseconds(uint32_t microseconds) {
-    uint16_t t;
-    t = (microseconds >> 16);
-    TMR3HLD = t;
-    t = microseconds & 0xffff;
-    TMR2 = t;
-    //TMR1 = (t & 0x3FF);
-    //elapsed_ticks = 0; /* clear software registers */
-    elapsed_hours = 0;
-    offset_us = 0;
+    uint32_t lsw, msw;
+    lsw = TMR2;
+    msw = TMR3HLD;
+    offset_us = microseconds - ((msw<<16)+lsw);
 }
