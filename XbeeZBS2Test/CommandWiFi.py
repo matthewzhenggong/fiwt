@@ -229,7 +229,7 @@ class MyFrame(wx.Frame):
 
         AT_CMD = ['MY', 'BD']
         HOST_LIST = ["192.168.191.2", "192.168.191.3", "192.168.191.4"]
-        self.PORT_LIST = ["2267", "2616", "2677"]
+        self.PORT_LIST = ["2267", "2616", "2677", "2000"]
 
         box = wx.BoxSizer(wx.HORIZONTAL)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Remote Addr:"), 0,
@@ -239,7 +239,8 @@ class MyFrame(wx.Frame):
         box.Add(self.txtRmtNode, 0, wx.ALIGN_CENTER, 5)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Port:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtRmtPort = wx.ComboBox(panel, -1, "2267", choices=self.PORT_LIST,
+        self.txtRmtPort = wx.ComboBox(panel, -1, "2267",
+                choices=self.PORT_LIST[:-1],
                                           validator=MyValidator(HEX_ONLY))
         box.Add(self.txtRmtPort, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
@@ -610,7 +611,7 @@ Unused bits must be set to 0.  '''))
         self.log_txt.AppendText(event.log)
 
     def OnNTPP(self, event) :
-        self.ntp_base = int(self.txtBaseTime.GetValue().encode())
+        self.ntp_base = int(self.txtBaseTime.GetValue().encode())*1000
         self.ntp_tick0 = time.clock()
         self.log.info('Set Local T0={}ms'.format(self.ntp_base))
 
@@ -619,10 +620,9 @@ Unused bits must be set to 0.  '''))
             self.OnNTPP(None)
 
         self.ntp_T0 = self.ntp_base + int((time.clock() -
-            self.ntp_tick0)*1000)
-        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0>>16,
-            self.ntp_T0&0xffff))
-        self.log.info('Local T0={}ms'.format(self.ntp_T0))
+            self.ntp_tick0)*1e6)
+        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
+        self.log.info('Local T0={}us'.format(self.ntp_T0))
 
     def OnRX(self, event) :
         self.txtRX.SetLabel(event.txt)
@@ -836,16 +836,15 @@ Unused bits must be set to 0.  '''))
 
         self.frame_id = 1
 
-        self.pack06 = struct.Struct("<H2H6H3H6h4H6H4H")
-        self.pack22 = struct.Struct(">B6H3H6HBH6h2f")
-        self.pack77 = struct.Struct(">B5HBH")
-        self.pack78 = struct.Struct(">B4HBH")
-        self.pack88 = struct.Struct(">B3BBH")
-        self.pack33 = struct.Struct(">B4H4HBH4h")
-        self.packNTP = struct.Struct(">3BH")
-        self.packNTP1 = struct.Struct(">BHBH")
-        self.packNTP2 = struct.Struct(">3BHBH")
-        self.packNTP3 = struct.Struct(">BHhiBH")
+        self.pack22 = struct.Struct(">B6H3H6HI6h")
+        self.pack77 = struct.Struct(">B3HI")
+        self.pack78 = struct.Struct(">B3HI")
+        self.pack88 = struct.Struct(">B3BI")
+        self.pack33 = struct.Struct(">B4H4HI4h")
+        self.packNTP = struct.Struct(">2BI")
+        self.packNTP1 = struct.Struct(">2I")
+        self.packNTP2 = struct.Struct(">2B2I")
+        self.packNTP3 = struct.Struct(">IhiI")
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
@@ -862,8 +861,7 @@ Unused bits must be set to 0.  '''))
 
         self.halting = False
         host = self.txtHost.GetValue().encode()
-        self.service = XBeeIPServices.XBeeApplicationService(
-                host, self.PORT_LIST)
+        self.service = XBeeIPServices.XBeeApplicationService(host)
         self.thread = threading.Thread(target=self.run)
         self.thread.daemon = True
         self.thread.start()
@@ -881,9 +879,7 @@ Unused bits must be set to 0.  '''))
             thread.start()
             print '{} started, listening on {}'.format(thread.name,
                     sock.getsockname())
-
-        self.tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.tx_socket.bind((host,0))
+        self.tx_socket = sock
 
     def monitor(self, sock, port_name):
         while not self.halting:
@@ -926,33 +922,32 @@ Unused bits must be set to 0.  '''))
                 if rf_data[0] == 'S':
                     if rf_data[1] == '\x01' :
                         T2 = self.ntp_base + int((time.clock() -
-                            self.ntp_tick0)*1000)
+                            self.ntp_tick0)*1e6)
                         rslt = self.packNTP1.unpack(rf_data[2:])
-                        T0 = (rslt[0] << 16)+rslt[1]
-                        T1 = (rslt[2] << 16)+rslt[3]
+                        T0 = rslt[0]
+                        T1 = rslt[1]
                         T3 = self.ntp_base + int((time.clock() -
-                            self.ntp_tick0)*1000)
-                        self.send(self.packNTP2.pack(ord('S'),2,T2>>16, T2&0xffff,
-                            T3>>16, T3&0xffff))
+                            self.ntp_tick0)*1e6)
+                        self.send(self.packNTP2.pack(ord('S'),2,T2,T3))
                         time.sleep(0.01)
                         delay = (T2-self.ntp_T0)-(T1-T0)
                         offset = ((T0-self.ntp_T0)+(T1-T2))/2
-                        self.log.info(('Remote Time0={}ms\n'
-                            'Remote Time1={}ms\n'
-                            'Local Time2={}ms\nLocal Time3={}ms\n'
-                            'Delay={}ms, Offset={}ms'
+                        self.log.info(('Remote Time0={}us\n'
+                            'Remote Time1={}us\n'
+                            'Local Time2={}us\nLocal Time3={}us\n'
+                            'Delay={}us, Offset={}us'
                             ).format(T0,T1,T2,T3,delay,offset))
                     if rf_data[1] == '\x03' :
                         T6 = self.ntp_base + int((time.clock() -
-                            self.ntp_tick0)*1000)
+                            self.ntp_tick0)*1e6)
                         rslt = self.packNTP3.unpack(rf_data[2:])
-                        T4 = (rslt[0] << 16)+rslt[1]
-                        self.log.info('Remote Time4={}ms'.format(T4))
-                        delay = rslt[2]
-                        offset = rslt[3]
-                        self.log.info('Delay={}ms, Offset={}ms'.format(delay,offset))
-                        T5 = (rslt[4] << 16)+rslt[5]
-                        self.log.info('Remote Time={}ms, Local Time={}ms'.format(T5,T6))
+                        T4 = rslt[0]
+                        self.log.info('Remote Time4={}us'.format(T4))
+                        delay = rslt[1]
+                        offset = rslt[2]
+                        self.log.info('Delay={}us, Offset={}us'.format(delay,offset))
+                        T5 = rslt[3]
+                        self.log.info('Remote Time={}us, Local Time={}us'.format(T5,T6))
                 elif rf_data[0] == 'P':
                     deltaT = (time.clock() - self.ping_tick)*1000
                     if self.periodic_sending == 0:
@@ -971,30 +966,28 @@ Unused bits must be set to 0.  '''))
                         wx.PostEvent(self, RxEvent(txt=txt))
                 elif rf_data[0] == '\x22':
                     rslt = self.pack22.unpack(rf_data)
-                    T = (rslt[16]*0x10000+rslt[17])*0.001
+                    T = rslt[16]*1e-6
                     GX = Get14bit(rslt[10])*0.05
                     GY = Get14bit(rslt[11])*-0.05
                     GZ = Get14bit(rslt[12])*-0.05
                     AX = Get14bit(rslt[13])*-0.003333
                     AY = Get14bit(rslt[14])*0.003333
                     AZ = Get14bit(rslt[15])*0.003333
-                    phi = rslt[24]*57.3
-                    tht = rslt[25]*57.3
                     if self.OutputCnt > 0 :
                         self.OutputCnt -= 1
                         txt = '{:.2f},'.format(T)
                         if self.OutputSrv2Move & 1 :
-                            txt += '{},{},'.format(rslt[1], rslt[18])
+                            txt += '{},{},'.format(rslt[1], rslt[17])
                         if self.OutputSrv2Move & 2 :
-                            txt += '{},{},'.format(rslt[2], rslt[19])
+                            txt += '{},{},'.format(rslt[2], rslt[18])
                         if self.OutputSrv2Move & 4 :
-                            txt += '{},{},'.format(rslt[3], rslt[20])
+                            txt += '{},{},'.format(rslt[3], rslt[19])
                         if self.OutputSrv2Move & 8 :
-                            txt += '{},{},'.format(rslt[4], rslt[21])
+                            txt += '{},{},'.format(rslt[4], rslt[20])
                         if self.OutputSrv2Move & 16 :
-                            txt += '{},{},'.format(rslt[5], rslt[22])
+                            txt += '{},{},'.format(rslt[5], rslt[21])
                         if self.OutputSrv2Move & 32 :
-                            txt += '{},{},'.format(rslt[6], rslt[23])
+                            txt += '{},{},'.format(rslt[6], rslt[22])
                         self.log.info(txt)
                     if self.arrv_cnt > self.last_arrv_cnt+4 :
                         self.last_arrv_cnt = self.arrv_cnt
@@ -1004,30 +997,29 @@ Unused bits must be set to 0.  '''))
                             '5S{5:04d}/{20:+04d} 6S{6:04d}/{21:+04d}\n'
                             '1E{7:04d} 2E{8:04d} 3E{9:04d} '
                             'GX{10:6.1f} GY{11:6.1f} GZ{12:6.1f} '
-                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} '
-                            'phi{22:6.2f} tht{23:6.2f}').format(T,
+                            'AX{13:6.2f} AY{14:6.2f} AZ{15:6.2f} ').format(T,
                                     rslt[1],rslt[2],rslt[3],
                                     rslt[4],rslt[5],rslt[6],
                                     rslt[7],rslt[8],rslt[9],
                                     GX,GY,GZ, AX,AY,AZ,
-                                    rslt[18],rslt[19],rslt[20],rslt[21],
-                                    rslt[22],rslt[23], phi,tht )
+                                    rslt[17],rslt[18],rslt[19],rslt[20],
+                                    rslt[21],rslt[22])
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
                 elif rf_data[0] == '\x33':
                     rslt = self.pack33.unpack(rf_data)
-                    T = (rslt[9]*0x10000+rslt[10])*0.001
+                    T = rslt[9]*1e-6
                     if self.OutputCnt > 0 :
                         self.OutputCnt -= 1
                         txt = '{:.2f},'.format(T)
                         if self.OutputSrv2Move & 1 :
-                            txt += '{},{},'.format(rslt[1], rslt[11])
+                            txt += '{},{},'.format(rslt[1], rslt[10])
                         if self.OutputSrv2Move & 2 :
-                            txt += '{},{},'.format(rslt[2], rslt[12])
+                            txt += '{},{},'.format(rslt[2], rslt[11])
                         if self.OutputSrv2Move & 4 :
-                            txt += '{},{},'.format(rslt[3], rslt[13])
+                            txt += '{},{},'.format(rslt[3], rslt[12])
                         if self.OutputSrv2Move & 8 :
-                            txt += '{},{},'.format(rslt[4], rslt[14])
+                            txt += '{},{},'.format(rslt[4], rslt[13])
                         self.log.info(txt)
                     if self.arrv_cnt > self.last_arrv_cnt+4 :
                         self.last_arrv_cnt = self.arrv_cnt
@@ -1037,25 +1029,21 @@ Unused bits must be set to 0.  '''))
                             '1E{5:04d} 2E{6:04d} 3E{7:04d} 4E{8:04d} '
                             ).format(T, rslt[1],rslt[2],rslt[3], rslt[4],
                                     rslt[5],rslt[6], rslt[7],rslt[8],
-                                    rslt[11],rslt[12],rslt[13],rslt[14])
+                                    rslt[10],rslt[11],rslt[12],rslt[13])
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
                 elif rf_data[0] == '\x77':
                     rslt = self.pack77.unpack(rf_data)
-                    T = rslt[4]*0x10000+rslt[5]
-                    T = (rslt[4]*0x10000+rslt[5])*0.001
-                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
-                           'senTask{3:d}us svoTask{4:d}us '
-                           'ekfTask{5:d}us sndTask{6:d}us').format(T,*rslt)
+                    T = rslt[4]*1e-6
+                    txt = ('T{0:08.3f} CommPack senTask{2:d}us svoTask{3:d}us '
+                           'msgTask{4:d}us').format(T,*rslt)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\x78' :
                     rslt = self.pack78.unpack(rf_data)
-                    T = rslt[4]*0x10000+rslt[5]
-                    T = (rslt[4]*0x10000+rslt[5])*0.001
-                    txt = ('T{0:08.2f} CommPack revTask{2:d}us '
-                           'senTask{3:d}us svoTask{4:d}us '
-                           'sndTask{5:d}us').format(T,*rslt)
+                    T = rslt[4]*1e-6
+                    txt = ('T{0:08.3f} CommPack senTask{2:d}us svoTask{3:d}us '
+                           'msgTask{4:d}us').format(T,*rslt)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\x88' or rf_data[0] == '\x99':
@@ -1069,24 +1057,11 @@ Unused bits must be set to 0.  '''))
                     B3 -= B1+B2
                     if B3 < 0 :
                         B3 = 0
-                    T = (rslt[4]*0x10000+rslt[5])*0.001
+                    T = rslt[4]*1e-6
                     txt = ('T{:08.2f} BattPack '
                         'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
-                elif rf_data[0] == '\x06':
-                    rslt = self.pack06.unpack(rf_data)
-                    wx.PostEvent(self, RxEvent(txt=
-                        'Sensor {1}.{2:03d} B{9}B{10}B{11} 1S{3:04d} 2S{4:04d} 3S{5:04d} 4S{6:04d} 5S{7:04d} 6S{8:04d}\n1E{18:04d} 2E{19:04d} 3E{20:04d} 4E{21:04d} 1L{28:03d} 2L{29:03d} 3L{30:03d} 4L{31:03d}'.format(
-                            *rslt)))
-                    if self.test_motor_ticks > 0:
-                        sec = rslt[1]
-                        msec = rslt[2]
-                        pos = rslt[3 + self.ch]
-                        ctrl = rslt[12 + self.ch]
-                        self.log.info('Sensor\t{0}.{1:03d}\t{2}\t{3}'.format(
-                            sec, msec, pos, ctrl))
-                        self.test_motor_ticks -= 1
                 else:
                     self.log.info('RX:{}. Get {} from {}'.format(
                         recv_opts[options], rf_data.__repr__(),
