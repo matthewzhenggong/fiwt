@@ -839,6 +839,7 @@ Unused bits must be set to 0.  '''))
         self.pack22 = struct.Struct(">B6H3H6HI6h")
         self.pack77 = struct.Struct(">B3HI")
         self.pack78 = struct.Struct(">B3HI")
+        self.packAA = struct.Struct(">BHI")
         self.pack88 = struct.Struct(">B3BI")
         self.pack33 = struct.Struct(">B4H4HI4h")
         self.packNTP = struct.Struct(">2BI")
@@ -1035,18 +1036,24 @@ Unused bits must be set to 0.  '''))
                 elif rf_data[0] == '\x77':
                     rslt = self.pack77.unpack(rf_data)
                     T = rslt[4]*1e-6
-                    txt = ('T{0:08.3f} CommPack senTask{2:d}us svoTask{3:d}us '
+                    txt = ('T{0:08.3f} ACM CommStat senTask{2:d}us svoTask{3:d}us '
                            'msgTask{4:d}us').format(T,*rslt)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
                 elif rf_data[0] == '\x78' :
                     rslt = self.pack78.unpack(rf_data)
                     T = rslt[4]*1e-6
-                    txt = ('T{0:08.3f} CommPack senTask{2:d}us svoTask{3:d}us '
+                    txt = ('T{0:08.3f} CMP CommStat senTask{2:d}us svoTask{3:d}us '
                            'msgTask{4:d}us').format(T,*rslt)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
-                elif rf_data[0] == '\x88' or rf_data[0] == '\x99':
+                elif rf_data[0] == '\xAA':
+                    rslt = self.packAA.unpack(rf_data)
+                    T = rslt[2]*1e-6
+                    txt = ('T{0:08.3f} GND CommStat msgTask{2:d}').format(T,*rslt)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif rf_data[0] == '\x88':
                     rslt = self.pack88.unpack(rf_data)
                     B1 = rslt[1]*1.294e-2*1.515
                     B2 = rslt[2]*1.294e-2*3.0606
@@ -1058,7 +1065,23 @@ Unused bits must be set to 0.  '''))
                     if B3 < 0 :
                         B3 = 0
                     T = rslt[4]*1e-6
-                    txt = ('T{:08.2f} BattPack '
+                    txt = ('T{:08.3f} ACM BattStat '
+                        'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
+                    self.log.debug(txt)
+                    wx.PostEvent(self, Rx2Event(txt=txt))
+                elif rf_data[0] == '\x99':
+                    rslt = self.pack88.unpack(rf_data)
+                    B1 = rslt[1]*1.294e-2*1.515
+                    B2 = rslt[2]*1.294e-2*3.0606
+                    B3 = rslt[3]*1.294e-2*4.6363
+                    B2 -= B1
+                    if B2 < 0 :
+                        B2 = 0
+                    B3 -= B1+B2
+                    if B3 < 0 :
+                        B3 = 0
+                    T = rslt[4]*1e-6
+                    txt = ('T{:08.3f} CMP BattStat '
                         'B{:.2f} B{:.2f} B{:.2f} ').format(T,B1,B2,B3)
                     self.log.debug(txt)
                     wx.PostEvent(self, Rx2Event(txt=txt))
