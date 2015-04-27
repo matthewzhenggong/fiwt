@@ -487,18 +487,34 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         _payloadPtr += pack_length;
         *_payloadLength += 1+pack_length;
     }
-    if ((parameters->cnt & 0x7FFF) == 10000 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
+#if AC_MODEL
+    if ((parameters->cnt & 0xFFF) == 0x3E9 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateBattPack(_payloadPtr);
         _payloadPtr += pack_length;
         *_payloadLength += 1+pack_length;
-    } else if ((parameters->cnt & 0x7FFF) == 20000 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
+    } else if ((parameters->cnt & 0xFFF) == 0x7E9 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateCommPack(parameters->sen_Task,
                     parameters->serov_Task, task, _payloadPtr);
         _payloadPtr += pack_length;
         *_payloadLength += 1+pack_length;
     }
+#else
+    if ((parameters->cnt & 0xFFF) == 0xBE9 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateBattPack(_payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+    } else if ((parameters->cnt & 0xFFF) == FE9 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateCommPack(parameters->sen_Task,
+                    parameters->serov_Task, task, _payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
+    }
+#endif
+
 #elif GNDBOARD
     if (SPIRX_RX_PCKT_PTR) {
         switch (SPIRX_RX_PCKT_PTR->RF_DATA[0]) {
@@ -518,7 +534,7 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         *_payloadLength += pack_length;
         return true;
     }
-    if ((parameters->cnt & 0x7FFF) == 30000 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
+    if ((parameters->cnt & 0xFFF) == 0x1F3 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateCommPack(task, _payloadPtr);
         _payloadPtr += pack_length;
