@@ -189,6 +189,7 @@ xxxx:
 #define COMMPACKLEN (1+4*2+3)
 size_t updateCommPack(TaskHandle_p task, uint8_t head[]) {
     uint8_t *pack;
+    uint32_t t;
     pack = head;
 
     pack = EscapeByte(pack, CODE_GNDBOARD_COM_STATS);
@@ -196,9 +197,11 @@ size_t updateCommPack(TaskHandle_p task, uint8_t head[]) {
     pack = EscapeByte(pack, task->load_max >> 8);
     pack = EscapeByte(pack, task->load_max & 0xFF);
 
-    pack = EscapeByte(pack, RTclock.TimeStampMSW & 0xFF);
-    pack = EscapeByte(pack, RTclock.TimeStampLSW >> 8);
-    pack = EscapeByte(pack, RTclock.TimeStampLSW & 0xFF);
+    t = getMicroseconds();
+    pack = EscapeByte(pack, t >> 24);
+    pack = EscapeByte(pack, t >> 16);
+    pack = EscapeByte(pack, t >> 8);
+    pack = EscapeByte(pack, t & 0xFF);
     return pack - head;
 }
 
@@ -328,6 +331,7 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
                     ntp->TimeStampR2 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
                     ntp->TimeStampR3 = ((uint32_t)msg_ptr[6]<<24)+((uint32_t)msg_ptr[7]<<16)+((uint32_t)msg_ptr[8]<<8)+(uint32_t)msg_ptr[9];
                     reset_clock(ntp);
+                    parameters->cnt = 0;
                     ntp->stage = 3u;
                     break;
             }
@@ -483,12 +487,12 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         _payloadPtr += pack_length;
         *_payloadLength += 1+pack_length;
     }
-    if ((parameters->cnt & 0x7FF) == 1001 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
+    if ((parameters->cnt & 0x7FFF) == 10000 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateBattPack(_payloadPtr);
         _payloadPtr += pack_length;
         *_payloadLength += 1+pack_length;
-    } else if ((parameters->cnt & 0x7FF) == 2001 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
+    } else if ((parameters->cnt & 0x7FFF) == 20000 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateCommPack(parameters->sen_Task,
                     parameters->serov_Task, task, _payloadPtr);
@@ -514,7 +518,7 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         *_payloadLength += pack_length;
         return true;
     }
-    if ((parameters->cnt & 0x7FF) == 2001 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
+    if ((parameters->cnt & 0x7FFF) == 30000 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateCommPack(task, _payloadPtr);
         _payloadPtr += pack_length;
@@ -596,15 +600,20 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
             packin = XBeeReadPacket(parameters->xbee);
         }
 
-        if (++parameters->cnt % 10 == 0) {
-                offset_us += 1u;
-        }
+        ++parameters->cnt;
         if (prepare_tx_data(task, parameters, &parameters->tx_req._payloadLength, parameters->tx_req._payloadPtr, MAX_S6_PAYLOAD_DATA_SIZE)) {
             XBeeTxIPv4Request(parameters->xbee, &parameters->tx_req, 0u);
             // Reset to send to MSG_DEST_PORT
             if (parameters->tx_req._des_port != MSG_DEST_PORT) {
                 parameters->tx_req._des_port = MSG_DEST_PORT;
             }
+        }
+
+        // clock adjust
+        if (parameters->cnt %10 == 0) {
+                offset_us += 1u;
+        } else if (parameters->cnt % 289 == 0) {
+                offset_us -= 1u;
         }
 
         PT_YIELD(pt);
