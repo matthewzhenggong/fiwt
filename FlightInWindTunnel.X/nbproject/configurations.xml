@@ -26,14 +26,10 @@
       <itemPath>IMU.h</itemPath>
       <itemPath>SPIS.h</itemPath>
       <itemPath>config_servo.h</itemPath>
-      <itemPath>msg_gnd.h</itemPath>
       <itemPath>senTask.h</itemPath>
       <itemPath>LedExtBoard.h</itemPath>
-      <itemPath>msg_recv.h</itemPath>
-      <itemPath>msg_send.h</itemPath>
       <itemPath>msg_code.h</itemPath>
-      <itemPath>EKFF.h</itemPath>
-      <itemPath>ekfTask.h</itemPath>
+      <itemPath>msg.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -64,12 +60,8 @@
       <itemPath>Enc.c</itemPath>
       <itemPath>IMU.c</itemPath>
       <itemPath>SPIS.c</itemPath>
-      <itemPath>msg_gnd.c</itemPath>
       <itemPath>senTask.c</itemPath>
-      <itemPath>msg_recv.c</itemPath>
-      <itemPath>msg_send.c</itemPath>
-      <itemPath>EKFF.c</itemPath>
-      <itemPath>ekfTask.c</itemPath>
+      <itemPath>msg.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -298,6 +290,7 @@
         <property key="UART 3" value="true"/>
         <property key="UART 4" value="true"/>
         <property key="USB" value="true"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>

@@ -23,17 +23,11 @@
 /******************************************************************************/
 
 #include "config.h"
-
+#include "msg.h"
 #if AC_MODEL || AEROCOMP
 #include "servoTask.h"
 #include "senTask.h"
-#if USE_EKF
-#include "ekfTask.h"
-#endif
-#include "msg_recv.h"
-#include "msg_send.h"
 #elif GNDBOARD
-#include "msg_gnd.h"
 #include <xc.h>
 #elif STARTKITBOARD
 #include "IMU.h"
@@ -54,19 +48,8 @@ servoParam_t servo;
 TaskHandle_p servoTask;
 senParam_t sen;
 TaskHandle_p senTask;
-msgRecvParam_t msg_recv;
-TaskHandle_p msgRecvTask;
-msgSendParam_t msg_send;
-#if USE_EKF
-ekfParam_t ekf;
 #endif
-TaskHandle_p ekfTask;
-
-#elif GNDBOARD
-#define TASK_PERIOD (2u) // 500Hz
 msgParam_t msg;
-
-#endif
 
 idleParam_t idle_params;
 
@@ -95,25 +78,16 @@ int main(void) {
     /* Add Task */
 #if AC_MODEL || AEROCOMP
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SERV", (void *) &servo, TASK_PERIOD, 0, 20);
-
-    msgRecvInit(&msg_recv, &Xbee1, XBEE1_SERIES, servoTask, &msg_send);
-    msgRecvTask = TaskCreate(msgRecvLoop, "MSGR", (void *) &msg_recv, 1, 0, 10);
+    servoTask = TaskCreate(servoLoop, "SVO", (void *) &servo, TASK_PERIOD, 0, 20);
 
     senInit(&sen);
-    senTask = TaskCreate(senLoop, "SENS", (void *) &sen, TASK_PERIOD, 0, 30);
+    senTask = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
 
-    msgSendInit(&msg_send, &Xbee1,XBEE1_SERIES, msgRecvTask, senTask, servoTask, ekfTask);
-    TaskCreate(msgSendLoop, "MSGS", (void *) &msg_send, 1, 0, 0);
-#if USE_EKF
-    ekfInit(&ekf,TASK_PERIOD/1000.0f);
-    ekfTask = TaskCreate(ekfLoop, "EKF", (void *) &ekf, TASK_PERIOD, 0, 0);
-#else
-    ekfTask = NULL;
-#endif
+    msgInit(&msg, &Xbee1, senTask, servoTask);
+    TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
 #elif GNDBOARD
-    msgInit(&msg, &Xbee1, &Xbee2, &Xbee3, &Xbee4);
-    TaskCreate(msgLoop, "MSGC", (void *) &msg, TASK_PERIOD, 0, 10);
+    msgInit(&msg, &Xbee1);
+    TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 10);
 #elif STARTKITBOARD
     while (1) {
         asm ("repeat #4000;");
