@@ -33,54 +33,74 @@
  * and interrupt on period match
  */
 
-clockType_t volatile RTclock;
-
-unsigned int volatile elapsed_ticks = 0;
+__near unsigned int volatile elapsed_ticks = 0;
+unsigned int volatile elapsed_hours = 0;
+__near uint32_t volatile offset_us = 0;
 
 void initClock(void) {
     elapsed_ticks = 0; /* clear software registers */
-    RTclock.TimeStampLSW = 0;
-    RTclock.TimeStampMSW = 0;
-    RTclock.milliseconds = 0;
-    RTclock.seconds = 0;
+    elapsed_hours = 0;
+    offset_us = 0;
 
     T1CONbits.TON = 0; /* Disable Timer*/
     T1CONbits.TCS = 0; /* set internal clock source */
     T1CONbits.TGATE = 0; /* Disable Gated Timer mode */
     T1CONbits.TCKPS = 0b10; /* Select 1:64 Prescaler */
 
+    T3CONbits.TON = 0; /* Disable Timer*/
+    T2CONbits.TON = 0; /* Disable Timer*/
+    T2CONbits.T32 = 1; /* Enable 32-bit Timer mode*/
+    T2CONbits.TCS = 0; /* set internal clock source */
+    T2CONbits.TGATE = 0; /* Disable Gated Timer mode */
+    T2CONbits.TCKPS = 0b10; /* Select 1:64 Prescaler */
+
     TMR1 = 0; /* clear timer1 register */
+    TMR2 = 0; /* clear timer2 register */
+    TMR3 = 0; /* clear timer3 register */
     /** Timer1 period for 1 ms */
-    PR1 = 1000; /* set period1 register */
+    PR1 = 999; /* set period1 register */
 
-    IPC0bits.T1IP = SCHEDULE_TIMER_PRIORITY_LEVEL; /* set priority level */
-    IFS0bits.T1IF = 0; /* clear interrupt flag */
-    IEC0bits.T1IE = 1; /* enable interrupts */
+    /** Timer1 period for 1 ms */
+    PR3 = 0xD693; /* set period3 register, MSW */
+    PR2 = 0xA3FF; /* set period2 register, LSW */
 
+    _T1IP = SCHEDULE_TIMER_PRIORITY_LEVEL; /* set priority level */
+    _T1IF = 0; /* clear interrupt flag */
+    _T1IE = 1; /* enable interrupts */
+
+    _T3IP = SCHEDULE_TIMER_PRIORITY_LEVEL; /* set priority level */
+    _T3IF = 0; /* clear interrupt flag */
+    _T3IE = 1; /* enable interrupts */
+
+    T2CONbits.TON = 1; /* start the timer*/
     T1CONbits.TON = 1; /* start the timer*/
 }
 
-void resetClock(uint32_t milliseconds, uint16_t microseconds) {
-    RTclock.TimeStampMSW = (milliseconds >> 16);
-    RTclock.TimeStampLSW = (milliseconds & 0xffff);
-    RTclock.milliseconds = milliseconds % 1000;
-    RTclock.seconds = milliseconds/1000;
-    TMR1 = microseconds;
-}
-
 __interrupt(no_auto_psv) void _T1Interrupt(void) {
-    ++elapsed_ticks;
-    if (++RTclock.milliseconds >= 1000u) { /* increment ticks counter */
-        /* if time to rollover */
-        RTclock.milliseconds = 0u; /* clear seconds ticks */
-        ++RTclock.seconds; /* and increment seconds */
-    }
-    if (++RTclock.TimeStampLSW == 0u) { /* increment ticks counter */
-        /* if time to rollover */
-        RTclock.TimeStampLSW = 0u; /* clear seconds ticks */
-        ++RTclock.TimeStampMSW; /* and increment seconds */
-    }
-
     IFS0bits.T1IF = 0; /* clear interrupt flag */
+    ++elapsed_ticks;
 }
 
+__interrupt(no_auto_psv) void _T3Interrupt(void) {
+    IFS0bits.T3IF = 0; /* clear interrupt flag */
+    ++elapsed_hours;
+}
+
+uint32_t getMicroseconds() {
+    uint32_t lsw, msw;
+    lsw = TMR2;
+    msw = TMR3HLD;
+    return (msw<<16)+lsw+offset_us;
+}
+
+void setMicroseconds(uint32_t microseconds) {
+    uint16_t t;
+    t = (microseconds >> 16);
+    TMR3HLD = t;
+    t = microseconds & 0xffff;
+    TMR2 = t;
+    //TMR1 = (t & 0x3FF);
+    //elapsed_ticks = 0; /* clear software registers */
+    elapsed_hours = 0;
+    offset_us = 0;
+}

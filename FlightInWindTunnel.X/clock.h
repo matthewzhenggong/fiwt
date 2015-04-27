@@ -35,18 +35,6 @@
 extern "C" {
 #endif
 
-    /** Clock providing seconds and milliseconds */
-    struct clockType {
-        uint16_t TimeStampLSW; /**< Store 16-Bit Timer LSW */
-        uint16_t TimeStampMSW; /**< Store 16-Bit Timer MSW */
-        unsigned int milliseconds; /**< absolute time, seconds */
-        unsigned int seconds; /**< absolute time, milliseconds */
-    };
-    typedef struct clockType clockType_t;
-
-    /** The global clock instance */
-    extern clockType_t volatile RTclock;
-
     /**
      * Tick instance
      *
@@ -55,18 +43,22 @@ extern "C" {
      */
     extern unsigned int volatile elapsed_ticks;
 
+    extern uint32_t volatile offset_us;
+
     /**
-     * Get clock in microseconds
+     * Get ticks in microseconds in [0-999]
      *
      */
     #define microsec_ticks (TMR1)
+
+    uint32_t getMicroseconds();
+    
+    void setMicroseconds(uint32_t microseconds);
 
     /**
      * Reset this global clock.
      */
     void initClock(void);
-
-    void resetClock(uint32_t milliseconds, uint16_t microseconds);
 
 #ifdef	__cplusplus
 }

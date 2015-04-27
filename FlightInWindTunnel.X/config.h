@@ -35,17 +35,20 @@
 #define STARTKITBOARD 0
 
 #define XBEE1_ATAP 2
-#define XBEE1_SERIES XBeeS6
+//#define XBEE1_SERIES XBeeS6
 
 // IP=192.169.191.255
 #define MSG_DEST_ADDR_MSW (0xc0a8)
 #define MSG_DEST_ADDR_LSW (0xbfff)
 #define MSG_DEST_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\xff"
+#define MSG_DEST_AP_PORT 0x2000
 #if AC_MODEL || AEROCOMP
 #define MSG_DEST_PORT 0x2616
 #elif GNDBOARD
+#define MSG_DEST_PORT 0x2000
 #define MSG_DEST_ACM_PORT 0x2267
 #define MSG_DEST_CMP_PORT 0x2677
+#define MSG_SRC_PORT 0x2616
 #endif
 #if AC_MODEL
 #define MSG_SRC_PORT 0x2267
@@ -88,11 +91,11 @@
 #define XBEE2_ATAP 2
 
 #elif GNDBOARD
-#define TASK_PERIOD (2u) // 500Hz
+#define TASK_PERIOD (1u) // 1000Hz
 #define USE_UART1 1
-#define USE_UART2 1
-#define USE_UART3 1
-#define USE_UART4 1
+#define USE_UART2 0
+#define USE_UART3 0
+#define USE_UART4 0
 #define USE_ADC1  0
 #define USE_PWM   0
 #define USE_ENC   0

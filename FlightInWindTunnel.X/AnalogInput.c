@@ -38,11 +38,10 @@ unsigned int ServoPos[SERVOPOSADCNUM];
 #endif
 #endif
 
-uint16_t ADC_TimeStamp[2];
+uint32_t ADC_TimeStamp;
 
 void UpdateAnalogInputs(void) {
-    ADC_TimeStamp[0] = RTclock.TimeStampMSW;
-    ADC_TimeStamp[1] = RTclock.TimeStampLSW;
+    ADC_TimeStamp = getMicroseconds();
     /* Read ADC conversion result */
 #if AC_MODEL
     // Servo's Potentiometer readings

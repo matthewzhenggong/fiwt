@@ -31,7 +31,7 @@ extern "C" {
     typedef struct{
         uint32_t call_per_second;
         uint32_t cnt;
-        unsigned int seconds;
+        unsigned int secticks;
     } idleParam_t;
     typedef idleParam_t * idleParam_p;
 

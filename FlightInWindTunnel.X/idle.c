@@ -26,21 +26,23 @@
 void idleInit(idleParam_p parameters) {
     parameters->call_per_second = 0u;
     parameters->cnt = 0u;
-    parameters->seconds = RTclock.seconds;
+    parameters->secticks = (getMicroseconds()>>20);
 }
 
 char idleLoop(TaskHandle_p task) {
     idleParam_t *parameters;
+    unsigned sec;
     parameters = (idleParam_t *)(task->parameters);
 
     ++(parameters->cnt);
-    if (parameters->seconds == RTclock.seconds)
+    sec = (getMicroseconds()>>20);
+    if (parameters->secticks == sec)
     {
         return 0;
     }
     else
     {
-        parameters->seconds = RTclock.seconds;
+        parameters->secticks = sec;
         parameters->call_per_second = parameters->cnt;
         parameters->cnt = 0u;
 #if USE_LEDEXTBOARD
