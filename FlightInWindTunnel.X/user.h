@@ -40,8 +40,12 @@ extern "C" {
     /**************************************************************************/
     /* User Instance Prototypes                                               */
     /**************************************************************************/
+#if USE_UART1
     extern XBee_t Xbee1;
+#endif
+#if USE_UART2
     extern XBee_t Xbee2;
+#endif
 #if USE_UART3
     extern XBee_t Xbee3;
 #endif /*USE_UART3*/

@@ -337,9 +337,17 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             }
             break;
         case 'P':
-            if (msg_len <= 256) {
+            if (msg_ptr[1] == 0 && msg_len <= 256) {
+#if AC_MODEL
+                msg_ptr[1] = 2;
+#elif AEROCOMP
+                msg_ptr[1] = 3;
+#elif GNDBOARD
+                msg_ptr[1] = 1;
+#endif
                 memcpy(parameters->msg_buff+parameters->msg_len, msg_ptr, msg_len);
                 parameters->msg_len += msg_len;
+                mLED_8_Toggle();
             }
             break;
 #if AC_MODEL || AEROCOMP
@@ -380,7 +388,7 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             //22-24	Time Stamp	TimeStampH, TimeStampM, TimeStampL
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 31, 3);
             SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            mLED_3_Toggle();
+            mLED_4_Toggle();
             break;
         case CODE_AEROCOMP_SERVO_POS:
             /* self.pack33 = struct.Struct(">B4H4HBH4h") */
@@ -398,7 +406,7 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 17, 3);
             SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            mLED_4_Toggle();
+            mLED_5_Toggle();
             break;
         case CODE_AC_MODEL_BAT_LEV:
             /*self.pack88 = struct.Struct(">B3BBH")*/
@@ -525,7 +533,6 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
                 parameters->tx_req._des_port = MSG_DEST_CMP_PORT;
                 break;
         }
-        mLED_2_On();
         pack_length = pull_payload(_payloadPtr, SPIRX_RX_PCKT_PTR->RF_DATA,
                 (SPIRX_RX_PCKT_PTR->PCKT_LENGTH_MSB << 8) + SPIRX_RX_PCKT_PTR->PCKT_LENGTH_LSB)
                 - parameters->tx_req._payloadPtr;
@@ -549,6 +556,7 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         memcpy(_payloadPtr, parameters->msg_buff, pack_length);
         _payloadPtr += pack_length;
         *_payloadLength += 1 + pack_length;
+        mLED_7_Toggle();
     }
 
     return (*_payloadLength > 2u);
@@ -610,6 +618,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                     if (XBeeRxIPv4Response(parameters->xbee, &parameters->rx_rsp)) {
                         ++parameters->rx_cnt;
                         process_packages(parameters, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
+                        mLED_3_Toggle();
                     }
                     break;
             }
@@ -620,6 +629,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         if (prepare_tx_data(task, parameters, &parameters->tx_req._payloadLength, parameters->tx_req._payloadPtr, MAX_S6_PAYLOAD_DATA_SIZE)) {
             XBeeTxIPv4Request(parameters->xbee, &parameters->tx_req, 0u);
             // Reset to send to MSG_DEST_PORT
+            mLED_2_Toggle();
             if (parameters->tx_req._des_port != MSG_DEST_PORT) {
                 parameters->tx_req._des_port = MSG_DEST_PORT;
             }

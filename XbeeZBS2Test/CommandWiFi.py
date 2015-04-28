@@ -12,6 +12,7 @@ Funtions include:
 6) Echo RX response for range test
 """
 
+import os
 import time
 import wx
 import string
@@ -31,6 +32,8 @@ RxEvent, EVT_RSLT1 = NewEvent()
 Rx2Event, EVT_RSLT2 = NewEvent()
 RxStaEvent, EVT_STAT = NewEvent()
 LogEvent, EVT_LOG = NewEvent()
+RxCmpEvent, EVT_RSLT1C = NewEvent()
+Rx2CmpEvent, EVT_RSLT2C = NewEvent()
 
 log = logging.getLogger(__name__)
 
@@ -605,6 +608,18 @@ Unused bits must be set to 0.  '''))
         box.Add(self.txtRX2, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.txtRX_CMP = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 32))
+        self.txtRX_CMP.SetForegroundColour((0, 0, 255))
+        box.Add(self.txtRX_CMP, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.txtRX2_CMP = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtRX2_CMP.SetForegroundColour((255, 55, 0))
+        box.Add(self.txtRX2_CMP, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
         self.log_txt = wx.TextCtrl(
             panel, -1, "",
             size=(300, 300),
@@ -625,6 +640,8 @@ Unused bits must be set to 0.  '''))
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.btnClr = wx.Button(panel, -1, "Clear")
         box.Add(self.btnClr, 1, wx.ALIGN_CENTER, 5)
+        self.btnSaveLog = wx.Button(panel, -1, "Save Log")
+        box.Add(self.btnSaveLog, 1, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         panel.SetSizer(sizer)
@@ -641,9 +658,12 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
         self.Bind(wx.EVT_BUTTON, self.OnClr, self.btnClr)
+        self.Bind(wx.EVT_BUTTON, self.OnSaveLog, self.btnSaveLog)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(EVT_RSLT1, self.OnRX)
         self.Bind(EVT_RSLT2, self.OnRX2)
+        self.Bind(EVT_RSLT1C, self.OnRX_CMP)
+        self.Bind(EVT_RSLT2C, self.OnRX2_CMP)
         self.Bind(EVT_STAT, self.OnRXSta)
         self.Bind(EVT_LOG, self.OnLog)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseACM, self.rbACM)
@@ -733,6 +753,12 @@ Unused bits must be set to 0.  '''))
     def OnRX2(self, event) :
         self.txtRX2.SetLabel(event.txt)
 
+    def OnRX_CMP(self, event) :
+        self.txtRX_CMP.SetLabel(event.txt)
+
+    def OnRX2_CMP(self, event) :
+        self.txtRX2_CMP.SetLabel(event.txt)
+
     def OnRXSta(self, event) :
         self.txtRXSta.SetLabel(event.txt)
 
@@ -748,11 +774,22 @@ Unused bits must be set to 0.  '''))
         self.target = 'GND'
         self.log.info('Target {}'.format(self.target))
 
+    def OnSaveLog(self, event):
+        dlg = wx.FileDialog(
+            self, message="Save log as ...", defaultDir=os.getcwd(),
+            defaultFile="log.txt", wildcard="Text file(*.txt)|*.txt",
+            style=wx.SAVE)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.log_txt.SaveFile(dlg.GetPath())
+
     def OnClr(self, event):
         self.log_txt.Clear()
         self.txtRXSta.SetLabel('')
         self.txtRX.SetLabel('')
         self.txtRX2.SetLabel('')
+        self.txtACMbat.SetLabel('')
+        self.txtCMPbat.SetLabel('')
+        self.txtGNDinfo.SetLabel('')
         self.first_cnt = True
         self.arrv_cnt = 0
         self.last_arrv_cnt = 0
@@ -880,7 +917,7 @@ Unused bits must be set to 0.  '''))
 
     def OnTX(self, event):
         data = self.txtTX.GetValue().encode()
-        self.send('P'+data)
+        self.send('P\x00'+data)
         self.ping_tick = time.clock()
 
     def send(self, data):
@@ -925,7 +962,6 @@ Unused bits must be set to 0.  '''))
         self.last_arrv_cnt = 0
         self.arrv_bcnt = 0
         self.periodic_count = 0
-        self.periodic_sending = 0
 
         self.frame_id = 1
 
@@ -1051,21 +1087,15 @@ Unused bits must be set to 0.  '''))
                         self.log.info('Remote Time={}us, Local Time={}us'.format(T5,T6))
                 elif rf_data[0] == 'P':
                     deltaT = (time.clock() - self.ping_tick)*1000
-                    if self.periodic_sending == 0:
-                        self.log.info('Ping back {} in {:.1f}ms, from {}'.format(
-                            rf_data[1:], deltaT, addr))
-                    else :
-                        self.periodic_sending_time_all += deltaT
-                        self.periodic_sending_cnt += 1.0
-                        if deltaT > self.periodic_sending_time_max:
-                            self.periodic_sending_time_max = deltaT
-                        if deltaT < self.periodic_sending_time_min:
-                            self.periodic_sending_time_min = deltaT
-                        txt = 'Ping back in {:.1f}/{:.1f}/{:.1f}ms'.format(
-                                self.periodic_sending_time_all/self.periodic_sending_cnt,
-                                self.periodic_sending_time_max,
-                                self.periodic_sending_time_min)
-                        wx.PostEvent(self, RxEvent(txt=txt))
+                    if rf_data[1] == '\x01':
+                        self.log.info('Ping back {} in {:.1f}ms, from GND {}'.format(
+                            rf_data[2:], deltaT, addr))
+                    elif rf_data[1] == '\x02':
+                        self.log.info('Ping back {} in {:.1f}ms, from ACM {}'.format(
+                            rf_data[2:], deltaT, addr))
+                    elif rf_data[1] == '\x03':
+                        self.log.info('Ping back {} in {:.1f}ms, from CMP {}'.format(
+                            rf_data[2:], deltaT, addr))
                 elif rf_data[0] == '\x22':
                     if self.fileACM:
                         self.fileACM.write(self.packHdr.pack(0x7e,
@@ -1144,7 +1174,7 @@ Unused bits must be set to 0.  '''))
                             ).format(T, rslt[1],rslt[2],rslt[3], rslt[4],
                                     rslt[5],rslt[6], rslt[7],rslt[8],
                                     rslt[10],rslt[11],rslt[12],rslt[13])
-                        wx.PostEvent(self, RxEvent(txt=txt))
+                        wx.PostEvent(self, RxCmpEvent(txt=txt))
                         self.log.debug(txt)
                 elif rf_data[0] == '\x77':
                     rslt = self.pack77.unpack(rf_data)
@@ -1159,7 +1189,7 @@ Unused bits must be set to 0.  '''))
                     txt = ('T{0:08.3f} CMP CommStat senTask{2:d}us svoTask{3:d}us '
                            'msgTask{4:d}us').format(T,*rslt)
                     self.log.debug(txt)
-                    wx.PostEvent(self, Rx2Event(txt=txt))
+                    wx.PostEvent(self, Rx2CmpEvent(txt=txt))
                 elif rf_data[0] == '\xAA':
                     rslt = self.packAA.unpack(rf_data)
                     txt = ('msgTask{1:d}').format(*rslt)

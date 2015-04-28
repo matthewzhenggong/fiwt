@@ -86,7 +86,7 @@ int main(void) {
     msgInit(&msg, &Xbee1, senTask, servoTask);
     TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
 #elif GNDBOARD
-    msgInit(&msg, &Xbee1);
+    msgInit(&msg, &Xbee2);
     TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 10);
 #elif STARTKITBOARD
     while (1) {

@@ -44,13 +44,21 @@
 #define MSG_DEST_AP_PORT 0x2000
 #if AC_MODEL || AEROCOMP
 #define MSG_DEST_PORT 0x2616
-#define UART1BAUdRATE (0x3D0900)
+#define UARTBAUdRATE (0x3D0900)
 #elif GNDBOARD
 #define MSG_DEST_PORT 0x2000
 #define MSG_DEST_ACM_PORT 0x2267
 #define MSG_DEST_CMP_PORT 0x2677
 #define MSG_SRC_PORT 0x2616
-#define UART1BAUdRATE (0x1E8480)
+/***************************
+ Fcy=64M
+BRG=0 BD=8000000.00 7A1200
+BRG=1 BD=4000000.00 3D0900
+BRG=2 BD=2000000.00 1E8480
+BRG=3 BD=1000000.00 0f4240
+BRG=4 BD=800000.00 0xc3500
+***************************/
+#define UARTBAUdRATE (0x3D0900)
 #endif
 #if AC_MODEL
 #define MSG_SRC_PORT 0x2267
@@ -94,8 +102,8 @@
 
 #elif GNDBOARD
 #define TASK_PERIOD (1u) // 1000Hz
-#define USE_UART1 1
-#define USE_UART2 0
+#define USE_UART1 0
+#define USE_UART2 1
 #define USE_UART3 0
 #define USE_UART4 0
 #define USE_ADC1  0
