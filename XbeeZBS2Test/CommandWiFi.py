@@ -738,12 +738,15 @@ Unused bits must be set to 0.  '''))
 
     def OnChooseACM(self, event):
         self.target = 'ACM'
+        self.log.info('Target {}'.format(self.target))
 
     def OnChooseCMP(self, event):
         self.target = 'CMP'
+        self.log.info('Target {}'.format(self.target))
 
     def OnChooseGND(self, event):
         self.target = 'GND'
+        self.log.info('Target {}'.format(self.target))
 
     def OnClr(self, event):
         self.log_txt.Clear()
@@ -785,13 +788,18 @@ Unused bits must be set to 0.  '''))
 
     def OnRmtAT(self, event):
         try:
-            host = self.txtACMhost.GetValue().encode()
+            if self.target == 'ACM' :
+                remote_host = self.txtACMhost.GetValue().encode()
+            elif self.target == 'CMP' :
+                remote_host = self.txtCMPhost.GetValue().encode()
+            else :
+                remote_host = self.txtGNDhost.GetValue().encode()
             options = self.txtRmtATopt.GetValue().encode()[:2].decode('hex')[0]
             command = self.txtRmtATcmd.GetValue().encode()[:2]
             parameter = self.txtRmtATpar.GetValue().encode()
             if len(parameter) == 0:
                 parameter = None
-                self.log.info('get AT ' + command + ' from ' + host +
+                self.log.info('get AT ' + command + ' from ' + remote_host +
                               ' with option {:02x}'.format(ord(options)))
             else:
                 if len(parameter) % 2 == 1:
@@ -799,9 +807,9 @@ Unused bits must be set to 0.  '''))
                 parameter = parameter.decode('hex')
                 self.log.debug('send AT ' + command + '=' + ':'.join(
                     '{:02x}'.format(ord(c)) for c in parameter) + ' to '
-                    + host + ' with option {:02x}'.format(ord(options)))
+                    + remote_host + ' with option {:02x}'.format(ord(options)))
             self.frame_id = self.getFrameId()
-            self.service.sendConfigCommand(host, command, parameter,
+            self.service.sendConfigCommand(remote_host, command, parameter,
                     frame_id=self.frame_id, options=options)
         except:
             traceback.print_exc()
