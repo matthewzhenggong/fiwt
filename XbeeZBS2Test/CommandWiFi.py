@@ -253,6 +253,9 @@ class MyFrame(wx.Frame):
         self.txtGNDport = wx.ComboBox(panel, -1, "2616",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtGNDport, 0, wx.ALIGN_CENTER, 5)
+        self.chkGNDsynct = wx.CheckBox(panel, -1, "")
+        self.chkGNDsynct.SetValue(True)
+        box.Add(self.chkGNDsynct, 0, wx.ALIGN_CENTER, 5)
         self.btnGNDsynct = wx.Button(panel, -1, "Sync Time")
         self.btnGNDsynct.Enable(False)
         box.Add(self.btnGNDsynct, 0, wx.ALIGN_CENTER, 5)
@@ -273,6 +276,9 @@ class MyFrame(wx.Frame):
         self.txtACMport = wx.ComboBox(panel, -1, "2267",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtACMport, 0, wx.ALIGN_CENTER, 5)
+        self.chkACMsynct = wx.CheckBox(panel, -1, "")
+        self.chkACMsynct.SetValue(True)
+        box.Add(self.chkACMsynct, 0, wx.ALIGN_CENTER, 5)
         self.btnACMsynct = wx.Button(panel, -1, "Sync Time")
         self.btnACMsynct.Enable(False)
         box.Add(self.btnACMsynct, 0, wx.ALIGN_CENTER, 5)
@@ -293,6 +299,9 @@ class MyFrame(wx.Frame):
         self.txtCMPport = wx.ComboBox(panel, -1, "2677",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtCMPport, 0, wx.ALIGN_CENTER, 5)
+        self.chkCMPsynct = wx.CheckBox(panel, -1, "")
+        self.chkCMPsynct.SetValue(True)
+        box.Add(self.chkCMPsynct, 0, wx.ALIGN_CENTER, 5)
         self.btnCMPsynct = wx.Button(panel, -1, "Sync Time")
         self.btnCMPsynct.Enable(False)
         box.Add(self.btnCMPsynct, 0, wx.ALIGN_CENTER, 5)
@@ -715,36 +724,39 @@ Unused bits must be set to 0.  '''))
         self.rbGND.SetValue(True)
         self.target = 'GND'
 
+        code = 0 if self.rbGND.GetValue() else 5
         self.btnGNDrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
         self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
-        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
+        self.send(self.packNTP.pack(ord('S'),code,self.ntp_T0))
         self.log.info('Local T0={}us'.format(self.ntp_T0))
 
     def OnSyncACM(self, event) :
         self.rbACM.SetValue(True)
         self.target = 'ACM'
 
+        code = 0 if self.rbACM.GetValue() else 5
         self.btnACMrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
         self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
-        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
+        self.send(self.packNTP.pack(ord('S'),code,self.ntp_T0))
         self.log.info('Local T0={}us'.format(self.ntp_T0))
 
     def OnSyncCMP(self, event) :
         self.rbCMP.SetValue(True)
         self.target = 'CMP'
 
+        code = 0 if self.rbCMP.GetValue() else 5
         self.btnCMPrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
         self.ntp_T0 = int((time.clock() - self.ntp_tick0)*1e6)
-        self.send(self.packNTP.pack(ord('S'),0,self.ntp_T0))
+        self.send(self.packNTP.pack(ord('S'),code,self.ntp_T0))
         self.log.info('Local T0={}us'.format(self.ntp_T0))
 
     def OnRX(self, event) :
@@ -787,6 +799,8 @@ Unused bits must be set to 0.  '''))
         self.txtRXSta.SetLabel('')
         self.txtRX.SetLabel('')
         self.txtRX2.SetLabel('')
+        self.txtRX_CMP.SetLabel('')
+        self.txtRX2_CMP.SetLabel('')
         self.txtACMbat.SetLabel('')
         self.txtCMPbat.SetLabel('')
         self.txtGNDinfo.SetLabel('')
@@ -976,6 +990,7 @@ Unused bits must be set to 0.  '''))
         self.packNTP1 = struct.Struct(">2I")
         self.packNTP2 = struct.Struct(">2B2I")
         self.packNTP3 = struct.Struct(">IhiI")
+        self.packNTP13 = struct.Struct(">bhi")
         self.packHdr = struct.Struct(">BH")
         self.ch = 0
         self.test_motor_ticks = 0
@@ -1074,7 +1089,7 @@ Unused bits must be set to 0.  '''))
                             'Local Time2={}us\nLocal Time3={}us\n'
                             'Delay={}us, Offset={}us'
                             ).format(T0,T1,T2,T3,delay,offset))
-                    if rf_data[1] == '\x03' :
+                    elif rf_data[1] == '\x03' :
                         T6 = int((time.clock() -
                             self.ntp_tick0)*1e6)
                         rslt = self.packNTP3.unpack(rf_data[2:])
@@ -1085,6 +1100,14 @@ Unused bits must be set to 0.  '''))
                         self.log.info('Delay={}us, Offset={}us'.format(delay,offset))
                         T5 = rslt[3]
                         self.log.info('Remote Time={}us, Local Time={}us'.format(T5,T6))
+                    elif rf_data[1] == '\x13' :
+                        rslt = self.packNTP13.unpack(rf_data[2:])
+                        target = rslt[0]
+                        delay = rslt[1]
+                        offset = rslt[2]
+                        self.log.info('{} Delay={}us, Offset={}us'.format(
+                            {ord('A'):'ACM',ord('C'):'CMP'}[target], 
+                            delay,offset))
                 elif rf_data[0] == 'P':
                     deltaT = (time.clock() - self.ping_tick)*1000
                     if rf_data[1] == '\x01':
@@ -1209,6 +1232,7 @@ Unused bits must be set to 0.  '''))
                     self.txtACMbat.SetLabel(txt)
                 elif rf_data[0] == '\x99':
                     rslt = self.pack88.unpack(rf_data)
+                    self.log.debug('CMP BAT:{}(raw)'.format(rslt.__str__()))
                     B1 = rslt[1]*1.294e-2*1.515
                     B2 = rslt[2]*1.294e-2*3.0606
                     B3 = rslt[3]*1.294e-2*4.6363
@@ -1275,6 +1299,7 @@ Unused bits must be set to 0.  '''))
 
 if __name__ == '__main__':
     app = wx.App(False)
-    frame = MyFrame(None, wx.ID_ANY, 'XBee ZigBee Station', size=(650, 800))
+    frame = MyFrame(None, wx.ID_ANY, 'Monitor Station', size=(650, 800))
     frame.Show(True)
     app.MainLoop()
+

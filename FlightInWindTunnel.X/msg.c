@@ -45,7 +45,7 @@ static uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
 }
 
 #if AC_MODEL || AEROCOMP
-#define BATTPACKLEN (1+BATTCELLADCNUM+3)
+#define BATTPACKLEN (1+BATTCELLADCNUM+4)
 size_t updateBattPack(uint8_t head[]) {
     uint8_t *pack;
     int i;
@@ -249,12 +249,47 @@ uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
     return spis_pkg_buff;
 }
 
+size_t updatePingPack(PM_p pm, uint8_t *head) {
+    uint8_t *pack;
+    pm->stage = 1u;
+    pack = head;
+    pack = EscapeByte(pack, 'S');
+    pack = EscapeByte(pack, '\x11');
+    pm->TimeStampL1 = getMicroseconds();
+    return pack - head;
+}
+
+#define PINPACK2LEN (10)
+size_t updatePingPack2(PM_p pm, uint8_t *head) {
+    int32_t T1, T2, T3, T4;
+    uint8_t *pack;
+    pm->stage = 0u;
+    T1 = pm->TimeStampL1;
+    T2 = pm->TimeStampR2;
+    T3 = pm->TimeStampR3;
+    T4 = pm->TimeStampL4;
+    pm->delay = (T4-T1) - (T3-T2);
+    pm->offset = ((T2-T1) + (T3-T4))/2;
+
+    pack = head;
+    pack = EscapeByte(pack, 'S');
+    pack = EscapeByte(pack, '\x13');
+    pack = EscapeByte(pack, pm->target);
+    pack = EscapeByte(pack, pm->delay >> 8);
+    pack = EscapeByte(pack, pm->delay & 0xff);
+    pack = EscapeByte(pack, pm->offset >> 24);
+    pack = EscapeByte(pack, pm->offset >> 16);
+    pack = EscapeByte(pack, pm->offset >> 8);
+    pack = EscapeByte(pack, pm->offset & 0xff);
+
+    return pack - head;
+}
 
 #endif
 
 size_t updateNTPPack(NTP_p ntp, uint8_t *head) {
     uint8_t *pack;
-    ntp->stage = 2u;
+    ntp->stage++;
     pack = head;
     pack = EscapeByte(pack, 'S');
     pack = EscapeByte(pack, '\x01');
@@ -295,7 +330,26 @@ size_t updateNTPPack3(NTP_p ntp, uint8_t *head) {
     return pack - head;
 }
 
-void reset_clock(NTP_p ntp) {
+size_t updateNTPPack11(NTP_p ntp, uint8_t *head) {
+    uint8_t *pack;
+    uint32_t ts;
+    ntp->stage = 0u;
+    pack = head;
+    pack = EscapeByte(pack, 'S');
+    pack = EscapeByte(pack, '\x12');
+    pack = EscapeByte(pack, ntp->TimeStampLP >>24);
+    pack = EscapeByte(pack, ntp->TimeStampLP >>16);
+    pack = EscapeByte(pack, ntp->TimeStampLP >> 8);
+    pack = EscapeByte(pack, ntp->TimeStampLP & 0xff);
+    ts = getMicroseconds();
+    pack = EscapeByte(pack, ts >>24);
+    pack = EscapeByte(pack, ts >>16);
+    pack = EscapeByte(pack, ts >> 8);
+    pack = EscapeByte(pack, ts & 0xff);
+    return pack - head;
+}
+
+void reset_clock(NTP_p ntp, bool set) {
     int32_t T;
     int32_t T1, T2, T3, T4;
     T1 = ntp->TimeStampL1;
@@ -304,14 +358,20 @@ void reset_clock(NTP_p ntp) {
     T4 = ntp->TimeStampL4;
     ntp->delay = (T4-T1) - (T3-T2);
     ntp->offset = ((T2-T1) + (T3-T4))/2;
+    if (ntp->offset < 5000 && ntp->offset > -5000) {
+        ntp->offset >>= 2;
+    }
     T = getMicroseconds();
     T += ntp->offset;
-    setMicroseconds(T);
+    if (set) {
+        setMicroseconds(T);
+    }
 }
 
 void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
     NTP_p ntp;
 #if GNDBOARD
+    PM_p pm;
     uint8_t * spis_pkg_buff;
 
     spis_pkg_buff = parameters->spis_pkg_buff;
@@ -320,20 +380,39 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
         case 'S':
             switch (msg_ptr[1]) {
                 case 0u :
+                case 5u :
                     ntp = &(parameters->ntp);
                     ntp->TimeStampL0 = getMicroseconds();
                     ntp->TimeStampR0 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
-                    ntp->stage = 1u;
+                    ntp->stage = msg_ptr[1]+1u;
                     break;
                 case 2u :
                     ntp = &(parameters->ntp);
                     ntp->TimeStampL4 = getMicroseconds();
                     ntp->TimeStampR2 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
                     ntp->TimeStampR3 = ((uint32_t)msg_ptr[6]<<24)+((uint32_t)msg_ptr[7]<<16)+((uint32_t)msg_ptr[8]<<8)+(uint32_t)msg_ptr[9];
-                    reset_clock(ntp);
-                    parameters->cnt = 0;
-                    ntp->stage = 3u;
+                    if (ntp->stage == 2u) {
+                        reset_clock(ntp, true);
+                        parameters->cnt = 0;
+                    } else {
+                        reset_clock(ntp, false);
+                    }
+                    ntp->stage++;
                     break;
+                case 0x11 :
+                    ntp = &(parameters->ntp);
+                    ntp->TimeStampLP = getMicroseconds();
+                    ntp->stage = 0x11u;
+                    break;
+#if GNDBOARD
+                case 0x12 :
+                    pm  = &parameters->pm;
+                    pm->TimeStampL4 = getMicroseconds();
+                    pm->TimeStampR2 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
+                    pm->TimeStampR3 = ((uint32_t)msg_ptr[6]<<24)+((uint32_t)msg_ptr[7]<<16)+((uint32_t)msg_ptr[8]<<8)+(uint32_t)msg_ptr[9];
+                    pm->stage = 2u;
+                    break;
+#endif
             }
             break;
         case 'P':
@@ -347,7 +426,6 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
 #endif
                 memcpy(parameters->msg_buff+parameters->msg_len, msg_ptr, msg_len);
                 parameters->msg_len += msg_len;
-                mLED_8_Toggle();
             }
             break;
 #if AC_MODEL || AEROCOMP
@@ -387,8 +465,10 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             *(spis_pkg_buff++) = 0;
             //22-24	Time Stamp	TimeStampH, TimeStampM, TimeStampL
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 31, 3);
-            SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            mLED_4_Toggle();
+            if (parameters->cnt % 5 == 1) {//TODO
+                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
+                mLED_4_Toggle();
+            }
             break;
         case CODE_AEROCOMP_SERVO_POS:
             /* self.pack33 = struct.Struct(">B4H4HBH4h") */
@@ -405,8 +485,10 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 9, 8);
             //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 17, 3);
-            SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            mLED_5_Toggle();
+            if (parameters->cnt % 5 == 3) {//TODO
+                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
+                mLED_5_Toggle();
+            }
             break;
         case CODE_AC_MODEL_BAT_LEV:
             /*self.pack88 = struct.Struct(">B3BBH")*/
@@ -473,6 +555,7 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
 
     switch (parameters->ntp.stage) {
         case 1u:
+        case 6u:
             *(_payloadPtr++) = MSG_DILIMITER;
             parameters->tx_req._des_port = MSG_DEST_AP_PORT;
             pack_length = updateNTPPack(&parameters->ntp, _payloadPtr);
@@ -480,12 +563,18 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
             *_payloadLength += 1 + pack_length;
             return true;
         case 3u:
+        case 8u:
             *(_payloadPtr++) = MSG_DILIMITER;
             parameters->tx_req._des_port = MSG_DEST_AP_PORT;
             pack_length = updateNTPPack3(&parameters->ntp, _payloadPtr);
             _payloadPtr += pack_length;
             *_payloadLength += 1 + pack_length;
             return true;
+        case 0x11:
+            *(_payloadPtr++) = MSG_DILIMITER;
+            pack_length = updateNTPPack11(&parameters->ntp, _payloadPtr);
+            _payloadPtr += pack_length;
+            *_payloadLength += 1 + pack_length;
     }
 
 #if AC_MODEL || AEROCOMP
@@ -514,7 +603,7 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         pack_length = updateBattPack(_payloadPtr);
         _payloadPtr += pack_length;
         *_payloadLength += 1+pack_length;
-    } else if ((parameters->cnt & 0xFFF) == FE9 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
+    } else if ((parameters->cnt & 0xFFF) == 0xFE9 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateCommPack(parameters->sen_Task,
                     parameters->serov_Task, task, _payloadPtr);
@@ -541,9 +630,32 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         *_payloadLength += pack_length;
         return true;
     }
+    if ((parameters->cnt & 0x1FFF) == 0x5DF) {
+        parameters->tx_req._des_port = MSG_DEST_ACM_PORT;
+        *(_payloadPtr++) = MSG_DILIMITER;
+        parameters->pm.target = 'A';
+        pack_length = updatePingPack(&parameters->pm, _payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1 + pack_length;
+        return true;
+    } else if ((parameters->cnt & 0x1FFF) == 0x9C7) {
+        parameters->tx_req._des_port = MSG_DEST_CMP_PORT;
+        *(_payloadPtr++) = MSG_DILIMITER;
+        parameters->pm.target = 'C';
+        pack_length = updatePingPack(&parameters->pm, _payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1 + pack_length;
+        return true;
+    }
     if ((parameters->cnt & 0xFFF) == 0x1F3 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = updateCommPack(task, _payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1 + pack_length;
+    }
+    if (parameters->pm.stage == 2u && (*_payloadLength + 1u + PINPACK2LEN) < max_payloadLength) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updatePingPack2(&parameters->pm, _payloadPtr);
         _payloadPtr += pack_length;
         *_payloadLength += 1 + pack_length;
     }
@@ -556,8 +668,8 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         memcpy(_payloadPtr, parameters->msg_buff, pack_length);
         _payloadPtr += pack_length;
         *_payloadLength += 1 + pack_length;
-        mLED_7_Toggle();
     }
+    
 
     return (*_payloadLength > 2u);
 }
@@ -594,6 +706,7 @@ void msgInit(msgParam_p parameters, XBee_p s6, TaskHandle_p senTask, TaskHandle_
 #elif GNDBOARD
 void msgInit(msgParam_p parameters, XBee_p s6) {
     msgInitComm(parameters, s6);
+    parameters->pm.stage = 0;
 }
 #endif
 
@@ -618,7 +731,9 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                     if (XBeeRxIPv4Response(parameters->xbee, &parameters->rx_rsp)) {
                         ++parameters->rx_cnt;
                         process_packages(parameters, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
-                        mLED_3_Toggle();
+#if USE_LEDEXTBOARD
+                        mLED_2_Toggle();
+#endif
                     }
                     break;
             }
@@ -629,7 +744,9 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         if (prepare_tx_data(task, parameters, &parameters->tx_req._payloadLength, parameters->tx_req._payloadPtr, MAX_S6_PAYLOAD_DATA_SIZE)) {
             XBeeTxIPv4Request(parameters->xbee, &parameters->tx_req, 0u);
             // Reset to send to MSG_DEST_PORT
-            mLED_2_Toggle();
+#if USE_LEDEXTBOARD
+            mLED_3_Toggle();
+#endif
             if (parameters->tx_req._des_port != MSG_DEST_PORT) {
                 parameters->tx_req._des_port = MSG_DEST_PORT;
             }

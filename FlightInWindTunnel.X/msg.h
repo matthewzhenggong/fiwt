@@ -45,7 +45,19 @@ extern "C" {
         uint32_t TimeStampR2;
         uint32_t TimeStampR3;
         uint32_t TimeStampL4;
+        uint32_t TimeStampLP;
     } NTP_t, *NTP_p;
+
+    typedef struct PM {
+        int32_t offset;
+        int16_t delay;
+        uint8_t target;
+        int stage;
+        uint32_t TimeStampL1;
+        uint32_t TimeStampR2;
+        uint32_t TimeStampR3;
+        uint32_t TimeStampL4;
+    } PM_t, *PM_p;
 
     typedef struct {
         struct pt PT;
@@ -68,6 +80,7 @@ extern "C" {
         TaskHandle_p recv_Task;
 #elif GNDBOARD
         uint8_t spis_pkg_buff[SPI_PKG_MAXLEN];
+        PM_t pm;
 #endif
     } msgParam_t, *msgParam_p;
 
