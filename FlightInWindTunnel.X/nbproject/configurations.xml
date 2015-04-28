@@ -30,6 +30,9 @@
       <itemPath>LedExtBoard.h</itemPath>
       <itemPath>msg_code.h</itemPath>
       <itemPath>msg.h</itemPath>
+      <itemPath>msg_acm.h</itemPath>
+      <itemPath>msg_gnd.h</itemPath>
+      <itemPath>msg_comm.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -62,6 +65,9 @@
       <itemPath>SPIS.c</itemPath>
       <itemPath>senTask.c</itemPath>
       <itemPath>msg.c</itemPath>
+      <itemPath>msg_comm.c</itemPath>
+      <itemPath>msg_acm.c</itemPath>
+      <itemPath>msg_gnd.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

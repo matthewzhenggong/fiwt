@@ -27,53 +27,49 @@
  */
 
 #define GNDBOARD 1
-
 #define AC_MODEL 0
-
 #define AEROCOMP 0
-
 #define STARTKITBOARD 0
-
-#define XBEE1_ATAP 2
-//#define XBEE1_SERIES XBeeS6
 
 // IP=192.169.191.255
 #define MSG_DEST_ADDR_MSW (0xc0a8)
 #define MSG_DEST_ADDR_LSW (0xbfff)
 #define MSG_DEST_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\xff"
+
 #define MSG_DEST_AP_PORT 0x2000
+
 #if AC_MODEL || AEROCOMP
+#define TASK_PERIOD (4u) // 250Hz
+#define XBEE1_ATAP 2
 #define MSG_DEST_PORT 0x2616
-#define UARTBAUdRATE (0x3D0900)
-#elif GNDBOARD
-#define MSG_DEST_PORT 0x2000
-#define MSG_DEST_ACM_PORT 0x2267
-#define MSG_DEST_CMP_PORT 0x2677
-#define MSG_SRC_PORT 0x2616
-/***************************
- Fcy=64M
-BRG=0 BD=8000000.00 7A1200
-BRG=1 BD=4000000.00 3D0900
-BRG=2 BD=2000000.00 1E8480
-BRG=3 BD=1000000.00 0f4240
-BRG=4 BD=800000.00 0xc3500
-***************************/
-#define UARTBAUdRATE (0x3D0900)
-#endif
 #if AC_MODEL
 #define MSG_SRC_PORT 0x2267
 #elif AEROCOMP
 #define MSG_SRC_PORT 0x2677
 #endif
 
+#elif GNDBOARD
+#define TASK_PERIOD (1u) // 1000Hz
+#define XBEE2_ATAP 2
+#define MSG_DEST_PORT 0x2000
+#define MSG_DEST_ACM_PORT 0x2267
+#define MSG_DEST_CMP_PORT 0x2677
+#define MSG_SRC_PORT 0x2616
+
+#endif
+
+
+/*************************
+ * Hardware configuration
+ *************************/
+#define UARTBAUdRATE (0x3D0900)
+
 
 /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        (128000000L)
-
 #define Fcy             (SYS_FREQ/2L)
 
 #if AC_MODEL
-#define TASK_PERIOD (4u) // 250Hz
 #define USE_UART1 1
 #define USE_UART2 0
 #define USE_UART3 0
@@ -85,8 +81,8 @@ BRG=4 BD=800000.00 0xc3500
 #define USE_SPIS  0
 #define USE_EKF   0
 #define USE_TESTBOARD 1
+
 #elif AEROCOMP
-#define TASK_PERIOD (4u) // 250Hz
 #define USE_UART1 1
 #define USE_UART2 0
 #define USE_UART3 0
@@ -97,11 +93,8 @@ BRG=4 BD=800000.00 0xc3500
 #define USE_IMU   0
 #define USE_SPIS  0
 #define USE_EKF   0
-#define XBEE1_ATAP 2
-#define XBEE2_ATAP 2
 
 #elif GNDBOARD
-#define TASK_PERIOD (1u) // 1000Hz
 #define USE_UART1 0
 #define USE_UART2 1
 #define USE_UART3 0
@@ -114,10 +107,6 @@ BRG=4 BD=800000.00 0xc3500
 #define USE_EKF   0
 #define USE_LEDEXTBOARD 1
 #define NOT_USE_EXTOSC 0
-#define XBEE1_ATAP 2
-#define XBEE2_ATAP 2
-#define XBEE3_ATAP 2
-#define XBEE4_ATAP 2
 
 #elif STARTKITBOARD
 #define USE_UART1 0
@@ -130,6 +119,7 @@ BRG=4 BD=800000.00 0xc3500
 #define USE_IMU   1
 #define USE_SPIS  0
 #define USE_EKF   0
+
 #else
 #define USE_UART1 0
 #define USE_UART2 0

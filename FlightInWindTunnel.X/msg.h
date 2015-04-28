@@ -1,5 +1,5 @@
 /*
- * File:   msg_gnd.h
+ * File:   msg.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,22 +18,25 @@
  * License along with this library.
  */
 
-#ifndef MSG_GND_H
-#define	MSG_GND_H
+#ifndef MSG_H
+#define	MSG_H
 
 #include "config.h"
 
 #include "XBeeZBS2.h"
 #include "task.h"
-#include "pt.h"
-
+#include <pt.h>
+#include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+
+#if GNDBOARD
+#define SPI_PKG_MAXLEN 86
+#endif
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-#define SPI_PKG_MAXLEN 86
 
     typedef struct NTP {
         int32_t offset;
@@ -84,17 +87,24 @@ extern "C" {
 #endif
     } msgParam_t, *msgParam_p;
 
-#if AC_MODEL || AEROCOMP
-    void msgInit(msgParam_p parameters, XBee_p, TaskHandle_p, TaskHandle_p);
-#elif GNDBOARD
-    void msgInit(msgParam_p parameters, XBee_p);
-#endif
-
     PT_THREAD(msgLoop)(TaskHandle_p task);
+
+    uint8_t* EscapeByte(uint8_t* pack, uint8_t b);
+
+    size_t updateNTPPack(NTP_p ntp, uint8_t *head);
+
+    size_t updateNTPPack3(NTP_p ntp, uint8_t *head);
+
+    size_t updateNTPPack11(NTP_p ntp, uint8_t *head);
+
+    void reset_clock(NTP_p ntp, bool apply);
+
+    void msgInitComm(msgParam_p parameters, XBee_p s6);
+
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* MSG_GND_H */
+#endif	/* MSG_H */
 

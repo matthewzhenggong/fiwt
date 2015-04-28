@@ -23,12 +23,16 @@
 /******************************************************************************/
 
 #include "config.h"
-#include "msg.h"
+
 #if AC_MODEL || AEROCOMP
+#include "msg_acm.h"
 #include "servoTask.h"
 #include "senTask.h"
+
 #elif GNDBOARD
+#include "msg_gnd.h"
 #include <xc.h>
+
 #elif STARTKITBOARD
 #include "IMU.h"
 #endif
