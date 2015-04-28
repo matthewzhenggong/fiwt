@@ -85,7 +85,7 @@ BRG=33 BD=117647.06 0x1cb8f
         
 #if USE_UART1
 /** UART1 Baudrate definition (Posible values: 9600, 57600, 115200) */
-#define UART1BAUdRATE  (0x3D0900)//(0x3d090 0x61a80 0x7a120 0xc3500 0xf4240 0xf4240)
+#define UART1BAUdRATE  UART1BAUdRATE
 #define UART1TXBUFFLEN (512)
 #define UART1RXBUFFLEN (512)
 #if GNDBOARD  /* Only for GNDBOARD */

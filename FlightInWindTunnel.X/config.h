@@ -26,9 +26,9 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 0
+#define GNDBOARD 1
 
-#define AC_MODEL 1
+#define AC_MODEL 0
 
 #define AEROCOMP 0
 
@@ -44,11 +44,13 @@
 #define MSG_DEST_AP_PORT 0x2000
 #if AC_MODEL || AEROCOMP
 #define MSG_DEST_PORT 0x2616
+#define UART1BAUdRATE (0x3D0900)
 #elif GNDBOARD
 #define MSG_DEST_PORT 0x2000
 #define MSG_DEST_ACM_PORT 0x2267
 #define MSG_DEST_CMP_PORT 0x2677
 #define MSG_SRC_PORT 0x2616
+#define UART1BAUdRATE (0x1E8480)
 #endif
 #if AC_MODEL
 #define MSG_SRC_PORT 0x2267
