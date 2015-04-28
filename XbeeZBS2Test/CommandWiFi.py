@@ -308,6 +308,9 @@ class MyFrame(wx.Frame):
         self.btnCMPrec = wx.ToggleButton(panel, -1, "REC")
         self.btnCMPrec.Enable(False)
         box.Add(self.btnCMPrec, 0, wx.ALIGN_CENTER, 5)
+        self.btnALLrec = wx.ToggleButton(panel, -1, "ALL")
+        self.btnALLrec.Enable(False)
+        box.Add(self.btnALLrec, 0, wx.ALIGN_CENTER, 5)
         self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtCMPbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtCMPbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -663,6 +666,7 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecACM, self.btnACMrec)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecCMP, self.btnCMPrec)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecGND, self.btnGNDrec)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecALL, self.btnALLrec)
         self.Bind(wx.EVT_BUTTON, self.OnSetBaseTime, self.btnBaseTime)
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
@@ -692,6 +696,22 @@ Unused bits must be set to 0.  '''))
             self.fileACM.close()
             self.log.info('ACM Stop Recording.')
             self.fileACM = None
+
+    def OnRecALL(self, event) :
+        if event.IsChecked():
+            filename = time.strftime('ALL%Y%m%d%H%M%S.dat')
+            self.fileALL = open(filename, 'wb')
+            self.log.info('ALL Recording to {}'.format(filename))
+            self.btnACMrec.Enable(False)
+            self.btnCMPrec.Enable(False)
+            self.btnGNDrec.Enable(False)
+        else:
+            self.fileALL.close()
+            self.log.info('ALL Stop Recording.')
+            self.fileALL = None
+            self.btnACMrec.Enable(True)
+            self.btnCMPrec.Enable(True)
+            self.btnGNDrec.Enable(True)
 
     def OnRecCMP(self, event) :
         if event.IsChecked():
@@ -726,6 +746,7 @@ Unused bits must be set to 0.  '''))
 
         code = 0 if self.rbGND.GetValue() else 5
         self.btnGNDrec.Enable(True)
+        self.btnALLrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
@@ -739,6 +760,7 @@ Unused bits must be set to 0.  '''))
 
         code = 0 if self.rbACM.GetValue() else 5
         self.btnACMrec.Enable(True)
+        self.btnALLrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
@@ -752,6 +774,7 @@ Unused bits must be set to 0.  '''))
 
         code = 0 if self.rbCMP.GetValue() else 5
         self.btnCMPrec.Enable(True)
+        self.btnALLrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
             self.OnSetBaseTime(None)
@@ -833,6 +856,8 @@ Unused bits must be set to 0.  '''))
             self.fileCMP.close()
         if self.fileGND:
             self.fileGND.close()
+        if self.fileALL:
+            self.fileALL.close()
 
         self.log.removeHandler(self.log_handle)
         event.Skip()
@@ -1120,12 +1145,16 @@ Unused bits must be set to 0.  '''))
                         self.log.info('Ping back {} in {:.1f}ms, from CMP {}'.format(
                             rf_data[2:], deltaT, addr))
                 elif rf_data[0] == '\x22':
-                    if self.fileACM:
+                    if self.fileALL:
+                        self.fileALL.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileALL.write(rf_data)
+                    elif self.fileACM:
                         self.fileACM.write(self.packHdr.pack(0x7e,
                             len(rf_data)))
                         self.fileACM.write(rf_data)
                     if self.OutputCnt > 0 or \
-                        self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.arrv_cnt > self.last_arrv_cnt+9 :
                         rslt = self.pack22.unpack(rf_data)
                         T = rslt[16]*1e-6
                         GX = Get14bit(rslt[10])*0.05
@@ -1150,7 +1179,7 @@ Unused bits must be set to 0.  '''))
                         if self.OutputSrv2Move & 32 :
                             txt += '{},{},'.format(rslt[6], rslt[22])
                         self.log.info(txt)
-                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                    if self.arrv_cnt > self.last_arrv_cnt+9 :
                         self.last_arrv_cnt = self.arrv_cnt
                         txt = ('T{0:08.3f} SenPack '
                             '1S{1:04d}/{16:+04d} 2S{2:04d}/{17:+04d} '
@@ -1168,12 +1197,16 @@ Unused bits must be set to 0.  '''))
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
                 elif rf_data[0] == '\x33':
-                    if self.fileCMP:
+                    if self.fileALL:
+                        self.fileALL.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileALL.write(rf_data)
+                    elif self.fileCMP:
                         self.fileCMP.write(self.packHdr.pack(0x7e,
                             len(rf_data)))
                         self.fileCMP.write(rf_data)
                     if self.OutputCnt > 0 or \
-                        self.arrv_cnt > self.last_arrv_cnt+4 :
+                        self.arrv_cnt > self.last_arrv_cnt+9 :
                         rslt = self.pack33.unpack(rf_data)
                         T = rslt[9]*1e-6
                     if self.OutputCnt > 0 :
@@ -1188,7 +1221,7 @@ Unused bits must be set to 0.  '''))
                         if self.OutputSrv2Move & 8 :
                             txt += '{},{},'.format(rslt[4], rslt[13])
                         self.log.info(txt)
-                    if self.arrv_cnt > self.last_arrv_cnt+4 :
+                    if self.arrv_cnt > self.last_arrv_cnt+9 :
                         self.last_arrv_cnt = self.arrv_cnt
                         txt = ('T{0:08.2f} SenPack '
                             '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
