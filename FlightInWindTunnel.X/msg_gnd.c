@@ -66,6 +66,15 @@ static bool Equal2DataHeader(uint8_t Byte2Vrfy) {
     }
 }
 
+static bool Equal2CmdDataHeader(uint8_t Byte2Vrfy) {
+    if ((Byte2Vrfy == CODE_AC_MODEL_NEW_SERV_CMD) || (Byte2Vrfy == CODE_AEROCOMP_NEW_SERV_CMD)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
 uint8_t * push_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length) {
     size_t i;
     for (i = 0u; i < length; ++i) {
@@ -79,16 +88,46 @@ uint8_t * push_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
     return spis_pkg_buff;
 }
 
+uint8_t * push_timestamp(uint8_t *spis_pkg_buff, const uint8_t *timestamp, size_t length) {
+    size_t i;
+    uint32_t t;
+    uint8_t buff[3];
+    t = ((uint32_t)timestamp[0] << 24) + ((uint32_t)timestamp[1] << 16)
+             + ((uint32_t)timestamp[3] << 8)  + ((uint32_t)timestamp[4] & 0xff);
+    t /= 1000;
+    buff[0] = t >> 16;
+    buff[1] = t >> 8;
+    buff[2] = t && 0xff;
+    for (i = 0u; i < length; ++i) {
+        if (Equal2DataHeader(buff[i])) {
+            *(spis_pkg_buff++) = MASK_BYTE;
+            *(spis_pkg_buff++) = buff[i] ^ 0x3D;
+        } else {
+            *(spis_pkg_buff++) = buff[i];
+        }
+    }
+    return spis_pkg_buff;
+}
+
 uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length) {
     //TODO
     size_t i;
+    bool escape;
+    escape = false;
     for (i = 0u; i < length; ++i) {
-        if (*buff == MASK_BYTE) {
+        if (escape) {
+            spis_pkg_buff = EscapeByte(spis_pkg_buff, *(buff++) ^ 0x3D);
+            escape = false;
+        }
+        else if (Equal2CmdDataHeader(*buff)) {
+            spis_pkg_buff = EscapeByte(spis_pkg_buff, MSG_DILIMITER);
+            spis_pkg_buff = EscapeByte(spis_pkg_buff, *(buff++));
+        }
+        else if (*buff == MASK_BYTE) {
             ++buff;
-            ++i;
-            *(spis_pkg_buff++) = *(buff++) ^ 0x3D;
+            escape = true;
         } else {
-            *(spis_pkg_buff++) = *(buff++);
+            spis_pkg_buff = EscapeByte(spis_pkg_buff, *(buff++));
         }
     }
     return spis_pkg_buff;

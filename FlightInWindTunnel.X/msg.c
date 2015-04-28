@@ -100,20 +100,20 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             break;
 #elif GNDBOARD
         case CODE_AC_MODEL_SERVO_POS:
-            /* self.pack22 = struct.Struct(">B6H3H6HBH6h") */
-            /* 1+12+6+12+3+12 = 46 */
+            /* self.pack22 = struct.Struct(">B6H3H6HI6h") */
+            /* 1+12+6+12+4+12 = 47 */
             // DATA_ID == CODE_AC_MODEL_SERVO_POS
             *(spis_pkg_buff++) = CODE_AC_MODEL_SERVO_POS;
             //2-13	Data		SERVOx_H, SERVOx_L
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 12);
             //14-16	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 31, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 31, 4);
             // DATA_ID ==  CODE_AC_MODEL_ENCOD_POS
             *(spis_pkg_buff++) = CODE_AC_MODEL_ENCOD_POS;
             //2- 7	Data		DIGENCx_H, DIGENCx_L
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 13, 6);
             //8-10	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 31, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 31, 4);
             //DATA_ID ==	CODE_AC_MODEL_IMU_DATA
             *(spis_pkg_buff++) = CODE_AC_MODEL_IMU_DATA;
             //2-21		Data    GxH,GxL,GyH,GyL...
@@ -129,52 +129,52 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             *(spis_pkg_buff++) = 0;
             *(spis_pkg_buff++) = 0;
             //22-24	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 31, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 31, 4);
             if (parameters->cnt % 5 == 1) {//TODO
                 SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
                 mLED_4_Toggle();
             }
             break;
         case CODE_AEROCOMP_SERVO_POS:
-            /* self.pack33 = struct.Struct(">B4H4HBH4h") */
-            /* 1+8+8+3+8 = 28 */
+            /* self.pack33 = struct.Struct(">B4H4HI4h") */
+            /* 1+8+8+4+8 = 29 */
             //DATA_ID == 	CODE_AC_MODEL_SERVO_POS
             *(spis_pkg_buff++) = CODE_AEROCOMP_SERVO_POS;
             //2- 9	Data		SERVOx_H, SERVOx_L
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 8);
             //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 17, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 17, 4);
             // DATA_ID ==  CODE_AEROCOMP_ENCOD_POS
             *(spis_pkg_buff++) = CODE_AEROCOMP_ENCOD_POS;
             //2-9	Data		DIGENCx_H, DIGENCx_L
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 9, 8);
             //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 17, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 17, 4);
             if (parameters->cnt % 5 == 3) {//TODO
                 SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
                 mLED_5_Toggle();
             }
             break;
         case CODE_AC_MODEL_BAT_LEV:
-            /*self.pack88 = struct.Struct(">B3BBH")*/
-            /* 1+3+3 */
+            /*self.pack88 = struct.Struct(">B3BI")*/
+            /* 1+3+4 */
             //DATA_ID == 	CODE_AC_MODEL_BAT_LEV
             *(spis_pkg_buff++) = CODE_AC_MODEL_BAT_LEV;
             //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 3);
             //5- 7	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 4, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 4, 4);
             SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
             break;
         case CODE_AEROCOMP_BAT_LEV:
-            /*self.pack88 = struct.Struct(">B3HBH")*/
-            /* 1+3+3 */
+            /*self.pack88 = struct.Struct(">B3HI")*/
+            /* 1+3+4 */
             //DATA_ID == 	CODE_AEROCOMP_BAT_LEV
             *(spis_pkg_buff++) = CODE_AEROCOMP_BAT_LEV;
             //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
             spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 3);
             //5- 7	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 4, 3);
+            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 4, 4);
             SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
             break;
         case CODE_AC_MODEL_COM_STATS:
@@ -287,12 +287,13 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
                 parameters->tx_req._des_port = MSG_DEST_CMP_PORT;
                 break;
         }
+        *(_payloadPtr++) = MSG_DILIMITER;
         pack_length = pull_payload(_payloadPtr, SPIRX_RX_PCKT_PTR->RF_DATA,
                 (SPIRX_RX_PCKT_PTR->PCKT_LENGTH_MSB << 8) + SPIRX_RX_PCKT_PTR->PCKT_LENGTH_LSB)
                 - parameters->tx_req._payloadPtr;
         SPIRX_RX_PCKT_PTR = NULL; //clear for sent
         _payloadPtr += pack_length;
-        *_payloadLength += pack_length;
+        *_payloadLength += 1+ pack_length;
         return true;
     }
     if ((parameters->cnt & 0x1FFF) == 0x5DF) {
