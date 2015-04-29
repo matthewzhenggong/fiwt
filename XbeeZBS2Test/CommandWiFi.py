@@ -223,24 +223,30 @@ class MyFrame(wx.Frame):
         self.parser = parser
 
         panel = wx.Panel(self, -1)
-        panel.SetDoubleBuffered(True)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
+        self.btnStart = wx.Button(panel, -1, "Start", size=(100, -1))
+        box.Add(self.btnStart, 0, wx.ALIGN_CENTER, 5)
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Host:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
         self.txtHost = wx.TextCtrl(panel, -1, parser.get('host','AP'), size=(100, -1))
         box.Add(self.txtHost, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.btnStart = wx.Button(panel, -1, "Start", size=(100, -1))
-        box.Add(self.btnStart, 0, wx.ALIGN_CENTER, 5)
         self.btnBaseTime = wx.Button(panel, -1, "Set Base Time", size=(100, -1))
         self.btnBaseTime.Enable(False)
         box.Add(self.btnBaseTime, 0, wx.ALIGN_CENTER, 5)
+        self.txtRecName = wx.TextCtrl(panel, -1, parser.get('rec','prefix'), )
+        box.Add(self.txtRecName, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
+        self.btnALLrec = wx.ToggleButton(panel, -1, "REC")
+        self.btnALLrec.Enable(False)
+        box.Add(self.btnALLrec, 0, wx.ALIGN_CENTER, 5)
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
-        AT_CMD = ['MY', 'BD', 'C0', 'AI', 'WR', 'FR']
+        AT_CMD = ['MY', 'MK', 'GW', 'SH', 'SL', 'DL', 'C0', 'ID', 'AH', 'MA',
+                'PL', 'BD', 'AI', 'WR', 'FR',]
         HOST_LIST = ["192.168.191.2", "192.168.191.3", "192.168.191.4"]
         self.PORT_LIST = ["2616", "2267", "2677", "2000"]
+
 
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.target = 'GND'
@@ -259,9 +265,6 @@ class MyFrame(wx.Frame):
         self.btnGNDsynct = wx.Button(panel, -1, "Sync Time")
         self.btnGNDsynct.Enable(False)
         box.Add(self.btnGNDsynct, 0, wx.ALIGN_CENTER, 5)
-        self.btnGNDrec = wx.ToggleButton(panel, -1, "REC")
-        self.btnGNDrec.Enable(False)
-        box.Add(self.btnGNDrec, 0, wx.ALIGN_CENTER, 5)
         self.txtGNDinfo = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtGNDinfo.SetForegroundColour((255, 55, 0))
         box.Add(self.txtGNDinfo, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -282,9 +285,6 @@ class MyFrame(wx.Frame):
         self.btnACMsynct = wx.Button(panel, -1, "Sync Time")
         self.btnACMsynct.Enable(False)
         box.Add(self.btnACMsynct, 0, wx.ALIGN_CENTER, 5)
-        self.btnACMrec = wx.ToggleButton(panel, -1, "REC")
-        self.btnACMrec.Enable(False)
-        box.Add(self.btnACMrec, 0, wx.ALIGN_CENTER, 5)
         self.txtACMbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtACMbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtACMbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -305,12 +305,6 @@ class MyFrame(wx.Frame):
         self.btnCMPsynct = wx.Button(panel, -1, "Sync Time")
         self.btnCMPsynct.Enable(False)
         box.Add(self.btnCMPsynct, 0, wx.ALIGN_CENTER, 5)
-        self.btnCMPrec = wx.ToggleButton(panel, -1, "REC")
-        self.btnCMPrec.Enable(False)
-        box.Add(self.btnCMPrec, 0, wx.ALIGN_CENTER, 5)
-        self.btnALLrec = wx.ToggleButton(panel, -1, "ALL")
-        self.btnALLrec.Enable(False)
-        box.Add(self.btnALLrec, 0, wx.ALIGN_CENTER, 5)
         self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtCMPbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtCMPbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -357,6 +351,37 @@ Supported values include the following:
 0x00 - Disable retries and route repair
 0x02 - Apply changes. '''))
         box.Add(self.txtRmtATopt, 0, wx.ALIGN_CENTER, 5)
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.btnTX = wx.Button(panel, -1, "Send Ping", size=(100, -1))
+        self.btnTX.Enable(False)
+        box.Add(self.btnTX, 0, wx.ALIGN_CENTER, 5)
+        self.txtTX = wx.TextCtrl(panel, -1, "", size=(130, -1))
+        self.txtTX.SetToolTip(wx.ToolTip(
+            'Text to be sent\nIf in continoous mode, the sent text will be prefixed with "P" and 5-digital index number.'))
+        box.Add(self.txtTX, 1, wx.ALIGN_CENTER, 5)
+        self.txtTXrad = wx.TextCtrl(panel, -1, "01",
+                                    size=(30, -1),
+                                    validator=MyValidator(HEX_ONLY))
+        self.txtTXrad.SetToolTip(wx.ToolTip(
+            '''Sets maximum number of hops a broadcast transmission can occur.
+If set to 0, the broadcast radius will be set to the maximum hops value.'''))
+        box.Add(self.txtTXrad, 0, wx.ALIGN_CENTER, 5)
+        self.txtTXopt = wx.TextCtrl(panel, -1, "01",
+                                    size=(30, -1),
+                                    validator=MyValidator(HEX_ONLY))
+        self.txtTXopt.SetToolTip(wx.ToolTip(
+            '''Bitfield of supported transmission options. Supported values include the following:
+0x01 - Disable retries and route repair
+0x20 - Enable APS encryption (if EE=1)
+0x40 - Use the extended transmission timeout
+Enabling APS encryption presumes the source and destination have been authenticated.  I also decreases the maximum number of RF payload bytes by 4 (below the value reported by NP).
+The extended transmission timeout is needed when addressing sleeping end devices.It also increases the retry interval between retries to compensate for end device polling.See Chapter 4, Transmission Timeouts, Extended Timeout for a description.
+Unused bits must be set to 0.  '''))
+        box.Add(self.txtTXopt, 0, wx.ALIGN_CENTER, 5)
+
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -572,65 +597,42 @@ Supported values include the following:
 
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
-        box = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.btnTX = wx.Button(panel, -1, "Send Ping", size=(100, -1))
-        self.btnTX.Enable(False)
-        box.Add(self.btnTX, 0, wx.ALIGN_CENTER, 5)
-        self.txtTX = wx.TextCtrl(panel, -1, "", size=(130, -1))
-        self.txtTX.SetToolTip(wx.ToolTip(
-            'Text to be sent\nIf in continoous mode, the sent text will be prefixed with "P" and 5-digital index number.'))
-        box.Add(self.txtTX, 1, wx.ALIGN_CENTER, 5)
-        self.txtTXrad = wx.TextCtrl(panel, -1, "01",
-                                    size=(30, -1),
-                                    validator=MyValidator(HEX_ONLY))
-        self.txtTXrad.SetToolTip(wx.ToolTip(
-            '''Sets maximum number of hops a broadcast transmission can occur.
-If set to 0, the broadcast radius will be set to the maximum hops value.'''))
-        box.Add(self.txtTXrad, 0, wx.ALIGN_CENTER, 5)
-        self.txtTXopt = wx.TextCtrl(panel, -1, "01",
-                                    size=(30, -1),
-                                    validator=MyValidator(HEX_ONLY))
-        self.txtTXopt.SetToolTip(wx.ToolTip(
-            '''Bitfield of supported transmission options. Supported values include the following:
-0x01 - Disable retries and route repair
-0x20 - Enable APS encryption (if EE=1)
-0x40 - Use the extended transmission timeout
-Enabling APS encryption presumes the source and destination have been authenticated.  I also decreases the maximum number of RF payload bytes by 4 (below the value reported by NP).
-The extended transmission timeout is needed when addressing sleeping end devices.It also increases the retry interval between retries to compensate for end device polling.See Chapter 4, Transmission Timeouts, Extended Timeout for a description.
-Unused bits must be set to 0.  '''))
-        box.Add(self.txtTXopt, 0, wx.ALIGN_CENTER, 5)
-
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_panel = wx.Panel(panel, -1)
+        sub_panel.SetDoubleBuffered(True)
+        sub_sizer = wx.BoxSizer(wx.VERTICAL)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.txtRXSta = wx.StaticText(panel, wx.ID_ANY, "")
+
+        self.txtRXSta = wx.StaticText(sub_panel, wx.ID_ANY, "")
         box.Add(self.txtRXSta, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.txtRX = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 32))
+        self.txtRX = wx.StaticText(sub_panel, wx.ID_ANY, "", size=(32, 32))
         self.txtRX.SetForegroundColour((0, 0, 255))
         box.Add(self.txtRX, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.txtRX2 = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtRX2 = wx.StaticText(sub_panel, wx.ID_ANY, "", size=(32, 16))
         self.txtRX2.SetForegroundColour((255, 55, 0))
         box.Add(self.txtRX2, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.txtRX_CMP = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 32))
+        self.txtRX_CMP = wx.StaticText(sub_panel, wx.ID_ANY, "", size=(32, 32))
         self.txtRX_CMP.SetForegroundColour((0, 0, 255))
         box.Add(self.txtRX_CMP, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.txtRX2_CMP = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtRX2_CMP = wx.StaticText(sub_panel, wx.ID_ANY, "", size=(32, 16))
         self.txtRX2_CMP.SetForegroundColour((255, 55, 0))
         box.Add(self.txtRX2_CMP, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_panel.SetSizer(sub_sizer)
+        #sub_sizer.Fit(sub_panel)
+        sizer.Add(sub_panel, 0, wx.ALL | wx.EXPAND, 1)
 
         self.log_txt = wx.TextCtrl(
             panel, -1, "",
@@ -663,9 +665,6 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_BUTTON, self.OnSyncACM, self.btnACMsynct)
         self.Bind(wx.EVT_BUTTON, self.OnSyncCMP, self.btnCMPsynct)
         self.Bind(wx.EVT_BUTTON, self.OnSyncGND, self.btnGNDsynct)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecACM, self.btnACMrec)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecCMP, self.btnCMPrec)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecGND, self.btnGNDrec)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecALL, self.btnALLrec)
         self.Bind(wx.EVT_BUTTON, self.OnSetBaseTime, self.btnBaseTime)
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
@@ -683,55 +682,18 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseCMP, self.rbCMP)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseGND, self.rbGND)
 
-        self.fileACM = None
-        self.fileCMP = None
-        self.fileGND = None
-
-    def OnRecACM(self, event) :
-        if event.IsChecked():
-            filename = time.strftime('ACM%Y%m%d%H%M%S.dat')
-            self.fileACM = open(filename, 'wb')
-            self.log.info('ACM Recording to {}'.format(filename))
-        else:
-            self.fileACM.close()
-            self.log.info('ACM Stop Recording.')
-            self.fileACM = None
+        self.fileALL = None
 
     def OnRecALL(self, event) :
         if event.IsChecked():
-            filename = time.strftime('ALL%Y%m%d%H%M%S.dat')
+            self.filename = time.strftime('{}%Y%m%d%H%M%S.dat'.format(
+                self.txtRecName.GetValue()))
             self.fileALL = open(filename, 'wb')
-            self.log.info('ALL Recording to {}'.format(filename))
-            self.btnACMrec.Enable(False)
-            self.btnCMPrec.Enable(False)
-            self.btnGNDrec.Enable(False)
+            self.log.info('Recording to {}.'.format(self.filename))
         else:
             self.fileALL.close()
-            self.log.info('ALL Stop Recording.')
+            self.log.info('Stop Recording to {}.'.format(self.filename))
             self.fileALL = None
-            self.btnACMrec.Enable(True)
-            self.btnCMPrec.Enable(True)
-            self.btnGNDrec.Enable(True)
-
-    def OnRecCMP(self, event) :
-        if event.IsChecked():
-            filename = time.strftime('CMP%Y%m%d%H%M%S.dat')
-            self.fileCMP = open(filename, 'wb')
-            self.log.info('CMP Recording to {}'.format(filename))
-        else:
-            self.fileCMP.close()
-            self.log.info('CMP Stop Recording.')
-            self.fileCMP = None
-
-    def OnRecGND(self, event) :
-        if event.IsChecked():
-            filename = time.strftime('GND%Y%m%d%H%M%S.dat')
-            self.fileGND = open(filename, 'wb')
-            self.log.info('GND Recording to {}'.format(filename))
-        else:
-            self.fileGND.close()
-            self.log.info('GND Stop Recording.')
-            self.fileGND = None
 
     def OnLog(self, event) :
         self.log_txt.AppendText(event.log)
@@ -745,7 +707,6 @@ Unused bits must be set to 0.  '''))
         self.target = 'GND'
 
         code = 0 if self.rbGND.GetValue() else 5
-        self.btnGNDrec.Enable(True)
         self.btnALLrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
@@ -759,7 +720,6 @@ Unused bits must be set to 0.  '''))
         self.target = 'ACM'
 
         code = 0 if self.rbACM.GetValue() else 5
-        self.btnACMrec.Enable(True)
         self.btnALLrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
@@ -773,7 +733,6 @@ Unused bits must be set to 0.  '''))
         self.target = 'CMP'
 
         code = 0 if self.rbCMP.GetValue() else 5
-        self.btnCMPrec.Enable(True)
         self.btnALLrec.Enable(True)
 
         if not hasattr(self, 'ntp_tick0') :
@@ -829,6 +788,8 @@ Unused bits must be set to 0.  '''))
         self.txtGNDinfo.SetLabel('')
         self.first_cnt = True
         self.arrv_cnt = 0
+        self.arrv_cnt_22 = 0
+        self.arrv_cnt_33 = 0
         self.last_arrv_cnt = 0
         self.arrv_bcnt = 0
         self.periodic_count = 0
@@ -846,16 +807,11 @@ Unused bits must be set to 0.  '''))
         parser.set('host','GND', self.txtGNDhost.GetValue())
         parser.set('host','ACM', self.txtACMhost.GetValue())
         parser.set('host','CMP', self.txtCMPhost.GetValue())
+        parser.set('rec','prefix', self.txtRecName.GetValue())
         cfg = open('config.ini', 'w')
         parser.write(cfg)
         cfg.close()
 
-        if self.fileACM:
-            self.fileACM.close()
-        if self.fileCMP:
-            self.fileCMP.close()
-        if self.fileGND:
-            self.fileGND.close()
         if self.fileALL:
             self.fileALL.close()
 
@@ -998,6 +954,8 @@ Unused bits must be set to 0.  '''))
         self.frame_id = 0
         self.first_cnt = True
         self.arrv_cnt = 0
+        self.arrv_cnt_22 = 0
+        self.arrv_cnt_33 = 0
         self.last_arrv_cnt = 0
         self.arrv_bcnt = 0
         self.periodic_count = 0
@@ -1094,6 +1052,10 @@ Unused bits must be set to 0.  '''))
               addr = data['source_addr']
               data_group = data['rf_data']
               self.updateStatistics(len(data_group))
+              '''
+              self.log.info( 'rf_data:{}'.format(
+                            ':'.join('{:02x}'.format(ord(c)) for c in data_group)))
+              '''
               rf_data_group = pp.unpack(data_group)
               for rf_data in rf_data_group :
                 if rf_data[0] == 'S':
@@ -1149,12 +1111,8 @@ Unused bits must be set to 0.  '''))
                         self.fileALL.write(self.packHdr.pack(0x7e,
                             len(rf_data)))
                         self.fileALL.write(rf_data)
-                    elif self.fileACM:
-                        self.fileACM.write(self.packHdr.pack(0x7e,
-                            len(rf_data)))
-                        self.fileACM.write(rf_data)
                     if self.OutputCnt > 0 or \
-                        self.arrv_cnt > self.last_arrv_cnt+9 :
+                        self.arrv_cnt_22 > 10 :
                         rslt = self.pack22.unpack(rf_data)
                         T = rslt[16]*1e-6
                         GX = Get14bit(rslt[10])*0.05
@@ -1179,8 +1137,8 @@ Unused bits must be set to 0.  '''))
                         if self.OutputSrv2Move & 32 :
                             txt += '{},{},'.format(rslt[6], rslt[22])
                         self.log.info(txt)
-                    if self.arrv_cnt > self.last_arrv_cnt+9 :
-                        self.last_arrv_cnt = self.arrv_cnt
+                    if self.arrv_cnt_22 > 10 :
+                        self.arrv_cnt_22 = 0
                         txt = ('T{0:08.3f} SenPack '
                             '1S{1:04d}/{16:+04d} 2S{2:04d}/{17:+04d} '
                             '3S{3:04d}/{18:+04d} 4S{4:04d}/{19:+04d} '
@@ -1196,17 +1154,15 @@ Unused bits must be set to 0.  '''))
                                     rslt[21],rslt[22])
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
+                    else:
+                        self.arrv_cnt22 += 1
                 elif rf_data[0] == '\x33':
                     if self.fileALL:
                         self.fileALL.write(self.packHdr.pack(0x7e,
                             len(rf_data)))
                         self.fileALL.write(rf_data)
-                    elif self.fileCMP:
-                        self.fileCMP.write(self.packHdr.pack(0x7e,
-                            len(rf_data)))
-                        self.fileCMP.write(rf_data)
                     if self.OutputCnt > 0 or \
-                        self.arrv_cnt > self.last_arrv_cnt+9 :
+                            self.arrv_cnt_33 > 10:
                         rslt = self.pack33.unpack(rf_data)
                         T = rslt[9]*1e-6
                     if self.OutputCnt > 0 :
@@ -1221,7 +1177,8 @@ Unused bits must be set to 0.  '''))
                         if self.OutputSrv2Move & 8 :
                             txt += '{},{},'.format(rslt[4], rslt[13])
                         self.log.info(txt)
-                    if self.arrv_cnt > self.last_arrv_cnt+9 :
+                    if self.arrv_cnt_33 > 10:
+                        self.arrv_cnt33 = 0
                         self.last_arrv_cnt = self.arrv_cnt
                         txt = ('T{0:08.2f} SenPack '
                             '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
@@ -1232,6 +1189,24 @@ Unused bits must be set to 0.  '''))
                                     rslt[10],rslt[11],rslt[12],rslt[13])
                         wx.PostEvent(self, RxCmpEvent(txt=txt))
                         self.log.debug(txt)
+                    else:
+                        self.arrv_cnt33 += 1
+                elif rf_data[0] == '\xA5':
+                    #rslt = self.packAA.unpack(rf_data)
+                    if self.fileALL:
+                        self.fileALL.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileALL.write(rf_data)
+                    txt = ('A5 cmd')
+                    self.txtGNDinfo.SetLabel(txt)
+                elif rf_data[0] == '\xA6':
+                    #rslt = self.packAA.unpack(rf_data)
+                    if self.fileALL:
+                        self.fileALL.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileALL.write(rf_data)
+                    txt = ('A6 cmd')
+                    self.txtGNDinfo.SetLabel(txt)
                 elif rf_data[0] == '\x77':
                     rslt = self.pack77.unpack(rf_data)
                     T = rslt[4]*1e-6
@@ -1258,6 +1233,7 @@ Unused bits must be set to 0.  '''))
                     B2 -= B1
                     if B2 < 0 :
                         B2 = 0
+                    B2 =0 #TODO
                     B3 -= B1+B2
                     if B3 < 0 :
                         B3 = 0
@@ -1272,15 +1248,15 @@ Unused bits must be set to 0.  '''))
                     B2 -= B1
                     if B2 < 0 :
                         B2 = 0
+                    B2 =0 #TODO
                     B3 -= B1+B2
                     if B3 < 0 :
                         B3 = 0
                     txt = '{:.2f}V B{:.2f}V B{:.2f}V'.format(B1,B2,B3)
                     self.txtCMPbat.SetLabel(txt)
                 else:
-                    self.log.info('RX:{}. Get {} from {}'.format(
-                        recv_opts[options], rf_data.__repr__(),
-                        addr))
+                    self.log.info('Get {} from {}'.format(
+                        rf_data.__repr__(), addr))
             except:
                 traceback.print_exc()
                 self.log.error(repr(data))
