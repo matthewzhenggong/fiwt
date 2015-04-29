@@ -94,22 +94,33 @@ size_t updateNTPPack11(NTP_p ntp, uint8_t *head) {
     return pack - head;
 }
 
-void reset_clock(NTP_p ntp, bool apply) {
+void reset_clock(NTP_p ntp, int apply) {
     int32_t T;
     int32_t T1, T2, T3, T4;
-    T1 = ntp->TimeStampL1;
-    T2 = ntp->TimeStampR2;
-    T3 = ntp->TimeStampR3;
-    T4 = ntp->TimeStampL4;
-    ntp->delay = (T4-T1) - (T3-T2);
-    ntp->offset = ((T2-T1) + (T3-T4))/2;
-    if (ntp->offset < 5000 && ntp->offset > -5000) {
-        ntp->offset >>= 2;
-    }
-    T = getMicroseconds();
-    T += ntp->offset;
-    if (apply) {
+    if (apply == 2) {
+        ntp->offset = ntp->TimeStampRP - ntp->TimeStampLP;
+        ntp->offset += 3000; //TODO
+        if (ntp->offset < 5000 && ntp->offset > -5000) {
+            ntp->offset >>= 2;
+        }
+        T = getMicroseconds();
+        T += ntp->offset;
         setMicroseconds(T);
+    } else {
+        T1 = ntp->TimeStampL1;
+        T2 = ntp->TimeStampR2;
+        T3 = ntp->TimeStampR3;
+        T4 = ntp->TimeStampL4;
+        ntp->delay = (T4-T1) - (T3-T2);
+        ntp->offset = ((T2-T1) + (T3-T4))/2;
+        if (ntp->offset < 5000 && ntp->offset > -5000) {
+            ntp->offset >>= 2;
+        }
+        T = getMicroseconds();
+        T += ntp->offset;
+        if (apply) {
+            setMicroseconds(T);
+        }
     }
 }
 

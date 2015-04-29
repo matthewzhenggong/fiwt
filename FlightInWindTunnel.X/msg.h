@@ -49,6 +49,7 @@ extern "C" {
         uint32_t TimeStampR3;
         uint32_t TimeStampL4;
         uint32_t TimeStampLP;
+        uint32_t TimeStampRP;
     } NTP_t, *NTP_p;
 
     typedef struct PM {
@@ -97,7 +98,7 @@ extern "C" {
 
     size_t updateNTPPack11(NTP_p ntp, uint8_t *head);
 
-    void reset_clock(NTP_p ntp, bool apply);
+    void reset_clock(NTP_p ntp, int apply);
 
     void msgInitComm(msgParam_p parameters, XBee_p s6);
 

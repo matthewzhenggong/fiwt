@@ -120,7 +120,7 @@ uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
             escape = false;
         }
         else if (Equal2CmdDataHeader(*buff)) {
-            spis_pkg_buff = EscapeByte(spis_pkg_buff, MSG_DILIMITER);
+            *(spis_pkg_buff++) = MSG_DILIMITER;
             spis_pkg_buff = EscapeByte(spis_pkg_buff, *(buff++));
         }
         else if (*buff == MASK_BYTE) {
@@ -135,14 +135,19 @@ uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t lengt
 
 size_t updatePingPack(PM_p pm, uint8_t *head) {
     uint8_t *pack;
+    uint32_t ts;
     pm->stage = 1u;
     pack = head;
     pack = EscapeByte(pack, 'S');
     pack = EscapeByte(pack, '\x11');
-    pm->TimeStampL1 = getMicroseconds();
+    ts = getMicroseconds();
+    pm->TimeStampL1 = ts;
+    pack = EscapeByte(pack, ts >> 24);
+    pack = EscapeByte(pack, ts >> 16);
+    pack = EscapeByte(pack, ts >> 8);
+    pack = EscapeByte(pack, ts & 0xff);
     return pack - head;
 }
-
 
 size_t updatePingPack2(PM_p pm, uint8_t *head) {
     int32_t T1, T2, T3, T4;
