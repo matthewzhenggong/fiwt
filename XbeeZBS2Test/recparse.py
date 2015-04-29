@@ -17,6 +17,7 @@ class fileParser(object):
         self.packHdr = struct.Struct(">BH")
         self.pack22 = struct.Struct(">B6H3H6HI6h")
         self.pack33 = struct.Struct(">B4H4HI4h")
+        self.packA6 = struct.Struct(">BB4H16BI")
 
         self.head22 = np.array([ "T", "Enc1","Enc2","Enc3",
                     "GX","GY","GZ","AX","AY","AZ",
@@ -25,6 +26,8 @@ class fileParser(object):
                     ], dtype=np.object)
         self.head33 = np.array([ "T", "Enc1","Enc2","Enc3","Enc4",
                 "Mot1","Mot2","Mot3","Mot4" ], dtype=np.object)
+        self.headA6 = np.array([ "T", "Svo1","Svo2","Svo3","Svo4", "Type" ],
+                dtype=np.object)
 
     def parse_data(self, data):
         if data[0] == '\x22':
@@ -72,10 +75,20 @@ class fileParser(object):
             Mot4 = rslt[13]
             self.data33.append( [T, Enc1,Enc2,Enc3,Enc4,
                 Mot1,Mot2,Mot3,Mot4] )
+        elif data[0] == '\xa6':
+            rslt = self.packA6.unpack(data)
+            itype = rslt[1]
+            Svo1 = rslt[2]
+            Svo2 = rslt[3]
+            Svo3 = rslt[4]
+            Svo4 = rslt[5]
+            T = rslt[5+17]*1e-6
+            self.dataA6.append( [T, Svo1,Svo2,Svo3,Svo4,itype] )
 
     def parse_file(self, filename):
         self.data22 = []
         self.data33 = []
+        self.dataA6 = []
         with open(filename, 'rb') as f:
             head = f.read(3)
             while len(head) == 3:
@@ -88,8 +101,11 @@ class fileParser(object):
                 head = f.read(3)
         self.data22 = np.array(self.data22)
         self.data33 = np.array(self.data33)
+        self.dataA6 = np.array(self.dataA6)
         return {'data22':self.data22,'data33':self.data33,
-                'head22':self.head22,'head33':self.head33}
+                'head22':self.head22,'head33':self.head33,
+                'headA6':self.headA6,'dataA6':self.dataA6,
+                }
 
 if __name__=='__main__' :
     parser = argparse.ArgumentParser(
