@@ -38,7 +38,9 @@ extern "C" {
 #endif
 
     void msgInit(msgParam_p parameters, XBee_p);
-    
+
+    size_t updateRigPack(uint8_t head[]);
+
     size_t updateCommPack(TaskHandle_p task, uint8_t head[]);
 
     uint8_t * push_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length);

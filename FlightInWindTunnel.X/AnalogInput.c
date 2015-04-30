@@ -22,13 +22,11 @@
 #include "AnalogInput.h"
 #include "Enc.h"
 
-#if USE_PWM && USE_ADC1
+#if USE_ADC1
 
 /* External variables declaration */
 #if GNDBOARD
-#if DEBUG == 0
-extern unsigned int ADC_Input[8];
-#endif
+unsigned int RigPos[RIGPOSADCNUM];
 #else
 uint8_t BattCell[BATTCELLADCNUM];
 #if AC_MODEL
@@ -65,6 +63,12 @@ void UpdateAnalogInputs(void) {
     BattCell[0] = ADC1BUF2 >> 4; // Read data from AN12 input.
     BattCell[1] = ADC1BUF3 >> 4; // Read data from AN13 input.
     BattCell[2] = ADC1BUF4 >> 4; // Read data from AN14 input.
+#elif GNDBOARD
+    // Servo's Potentiometer readings
+    RigPos[0] = ADC1BUF3; // Read data from AN20 input.
+    RigPos[1] = ADC1BUF2; // Read data from AN21 input.
+    RigPos[2] = ADC1BUF1; // Read data from AN5 input.
+    RigPos[3] = ADC1BUF0; // Read data from AN4 input.
 #endif
 
 }

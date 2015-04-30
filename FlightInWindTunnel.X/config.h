@@ -100,7 +100,7 @@
 #define USE_UART2 1
 #define USE_UART3 1
 #define USE_UART4 0
-#define USE_ADC1  0
+#define USE_ADC1  1
 #define USE_PWM   0
 #define USE_ENC   0
 #define USE_IMU   0
@@ -158,9 +158,7 @@
 #define MAX_NUM_TASKS (8)
 
 #if GNDBOARD
-#define BATTCELLADCNUM (0)
-#define SERVOPOSADCNUM (0)
-#define SEVERONUM (0)
+#define RIGPOSADCNUM (4)
 #else
 #define BATTCELLADCNUM (3)
 #if AC_MODEL

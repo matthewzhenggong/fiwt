@@ -153,7 +153,6 @@ void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
             spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 17, 4);
             if (parameters->cnt % 10 == 3) {//TODO
                 SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-                mLED_5_Toggle();
             }
             break;
         case CODE_AC_MODEL_BAT_LEV:
@@ -321,6 +320,12 @@ static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_p
         _payloadPtr += pack_length;
         *_payloadLength += 1 + pack_length;
         return true;
+    }
+    if ((parameters->cnt & 3) == 1) {
+        *(_payloadPtr++) = MSG_DILIMITER;
+        pack_length = updateRigPack(_payloadPtr);
+        _payloadPtr += pack_length;
+        *_payloadLength += 1+pack_length;
     }
     if ((parameters->cnt & 0xFFF) == 0x1F3 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
         *(_payloadPtr++) = MSG_DILIMITER;

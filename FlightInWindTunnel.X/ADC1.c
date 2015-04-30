@@ -63,6 +63,14 @@ void ADC1Init(void) {
 
     /* 1) Enable and configure analog inputs */
 #if GNDBOARD
+    _TRISB4 = 1; // AN4/RB4 is enabled as input
+    _ANSB4 = 1; // AN4/RB4 is analog
+    _TRISB5 = 1; // AN5/RB5 is enabled as input
+    _ANSB5 = 1; // AN5/RB5 is analog
+    _TRISE9 = 1; // AN21/RE9 is enabled as input
+    _ANSE9 = 1; // AN21/RE9 is analog
+    _TRISE8 = 1; // AN20/RE8 is enabled as input
+    _ANSE8 = 1; // AN20/RE8 is analog
 #else
 #if AC_MODEL
     TRISBbits.TRISB1 = 1; // AN1/RB1 is enabled as input
@@ -109,8 +117,8 @@ void ADC1Init(void) {
                          0x0030 = Scans AN20, AN21. */
     /* GNDBOARD, AC_MODEL & AEROCOMP Specific analog inputs*/
 #if GNDBOARD
-    AD1CSSL = 0x003F; /* ADC1 Input Scan Select Register Low:
-                      0x702E = Scans AN0, AN1, AN2, AN3, AN4, AN5. */
+    AD1CSSL = 0x0030; /* ADC1 Input Scan Select Register Low:
+                      0x0030 = Scans AN4, AN5. */
 #elif AC_MODEL
     AD1CSSL = 0x702E; /* ADC1 Input Scan Select Register Low:
                       0x702E = Scans AN1, AN2, AN3, AN5, AN12, AN13, AN14. */
@@ -118,7 +126,7 @@ void ADC1Init(void) {
 
     /* 12) Select the interrupt rate or DMA buffer pointer increment rate (ADxCON2<6:2>) */
 #if GNDBOARD
-    AD1CON2bits.SMPI = 8-1; /* Sample and Conversion Operation bits
+    AD1CON2bits.SMPI = 4-1; /* Sample and Conversion Operation bits
                                                               0b01000 = ADC interrupt is generated at the completion of every
                                                               8th sample/conversion operation. */
 #elif AC_MODEL

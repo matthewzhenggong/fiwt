@@ -23,6 +23,7 @@
 #if GNDBOARD
 
 #include "SPIS.h"
+#include "AnalogInput.h"
 #include "msg_code.h"
 #include "clock.h"
 #include <stdbool.h>
@@ -30,6 +31,23 @@
 void msgInit(msgParam_p parameters, XBee_p s6) {
     msgInitComm(parameters, s6);
     parameters->pm.stage = 0;
+}
+
+size_t updateRigPack(uint8_t head[]) {
+    uint8_t *pack;
+    int i;
+    pack = head;
+    pack = EscapeByte(pack, CODE_GNDBOARD_ADCM_READ);
+    UpdateAnalogInputs();
+    for (i = 0; i < RIGPOSADCNUM; ++i) {
+        pack = EscapeByte(pack, RigPos[i] >> 8);
+        pack = EscapeByte(pack, RigPos[i] & 0xff);
+    }
+    pack = EscapeByte(pack, ADC_TimeStamp >>24);
+    pack = EscapeByte(pack, ADC_TimeStamp >>16);
+    pack = EscapeByte(pack, ADC_TimeStamp >> 8);
+    pack = EscapeByte(pack, ADC_TimeStamp & 0xFF);
+    return pack - head;
 }
 
 size_t updateCommPack(TaskHandle_p task, uint8_t head[]) {

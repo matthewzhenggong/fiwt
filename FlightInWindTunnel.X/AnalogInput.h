@@ -24,7 +24,7 @@
 
 #include "config.h"
 
-#if USE_PWM && USE_ADC1
+#if USE_ADC1
 
 #include "clock.h"
 #include "config_adc.h"
@@ -33,6 +33,7 @@
 extern "C" {
 #endif
 
+#if AC_MODEL || AEROCOMP
     /** BattCell ADC Value
      * Unit : 10mV
      */
@@ -42,6 +43,11 @@ extern "C" {
      * from 0-180deg, 0-4096 output
      */
     extern unsigned int ServoPos[SERVOPOSADCNUM];
+#elif GNDBOARD
+    /** Rig ADC Value
+     */
+    extern unsigned int RigPos[RIGPOSADCNUM];
+#endif
 
     /** Analog Input Time Stamp
      *  Update when call function UpdateAnalogInputs()
