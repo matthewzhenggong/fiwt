@@ -23,6 +23,7 @@ import threading
 import struct
 import socket
 from ConfigParser import SafeConfigParser
+from butter import Butter
 
 from wx.lib.newevent import NewEvent
 import XBeeIPServices
@@ -34,6 +35,7 @@ RxStaEvent, EVT_STAT = NewEvent()
 LogEvent, EVT_LOG = NewEvent()
 RxCmpEvent, EVT_RSLT1C = NewEvent()
 Rx2CmpEvent, EVT_RSLT2C = NewEvent()
+RxGndEvent, EVT_RSLT1G = NewEvent()
 
 log = logging.getLogger(__name__)
 
@@ -630,6 +632,12 @@ Unused bits must be set to 0.  '''))
         self.txtRX2_CMP.SetForegroundColour((255, 55, 0))
         box.Add(self.txtRX2_CMP, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
         sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.txtRX_GND = wx.StaticText(sub_panel, wx.ID_ANY, "", size=(32, 16))
+        self.txtRX_GND.SetForegroundColour((155, 55, 0))
+        box.Add(self.txtRX_GND, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
+        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
         sub_panel.SetSizer(sub_sizer)
         #sub_sizer.Fit(sub_panel)
         sizer.Add(sub_panel, 0, wx.ALL | wx.EXPAND, 1)
@@ -676,6 +684,7 @@ Unused bits must be set to 0.  '''))
         self.Bind(EVT_RSLT2, self.OnRX2)
         self.Bind(EVT_RSLT1C, self.OnRX_CMP)
         self.Bind(EVT_RSLT2C, self.OnRX2_CMP)
+        self.Bind(EVT_RSLT1G, self.OnRX_GND)
         self.Bind(EVT_STAT, self.OnRXSta)
         self.Bind(EVT_LOG, self.OnLog)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseACM, self.rbACM)
@@ -683,6 +692,7 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseGND, self.rbGND)
 
         self.fileALL = None
+        self.butt = [Butter()]*4
 
     def OnRecALL(self, event) :
         if event.IsChecked():
@@ -747,6 +757,9 @@ Unused bits must be set to 0.  '''))
     def OnRX2(self, event) :
         self.txtRX2.SetLabel(event.txt)
 
+    def OnRX_GND(self, event) :
+        self.txtRX_GND.SetLabel(event.txt)
+
     def OnRX_CMP(self, event) :
         self.txtRX_CMP.SetLabel(event.txt)
 
@@ -781,6 +794,7 @@ Unused bits must be set to 0.  '''))
         self.txtRXSta.SetLabel('')
         self.txtRX.SetLabel('')
         self.txtRX2.SetLabel('')
+        self.txtRX_GND.SetLabel('')
         self.txtRX_CMP.SetLabel('')
         self.txtRX2_CMP.SetLabel('')
         self.txtACMbat.SetLabel('')
@@ -969,6 +983,7 @@ Unused bits must be set to 0.  '''))
         self.packAA = struct.Struct(">BHI")
         self.pack88 = struct.Struct(">B3BI")
         self.pack33 = struct.Struct(">B4H4HI4h")
+        self.pack44 = struct.Struct(">B4HI")
         self.packNTP = struct.Struct(">2BI")
         self.packNTP1 = struct.Struct(">2I")
         self.packNTP2 = struct.Struct(">2B2I")
@@ -1241,22 +1256,18 @@ Unused bits must be set to 0.  '''))
                         B3 = 0
                     txt = '{:.2f}V {:.2f}V {:.2f}V'.format(B1,B2,B3)
                     self.txtACMbat.SetLabel(txt)
-                elif rf_data[0] == '\x99':
-                    rslt = self.pack88.unpack(rf_data)
-                    self.log.debug('CMP BAT:{}(raw)'.format(rslt.__str__()))
-                    B1 = rslt[1]*1.294e-2*1.515
-                    B2 = rslt[2]*1.294e-2*3.0606
-                    B3 = rslt[3]*1.294e-2*4.6363
-                    B2 -= B1
-                    if B2 < 0 :
-                        B2 = 0
-                    B2 =0 #TODO
-                    B3 -= B1+B2
-                    if B3 < 0 :
-                        B3 = 0
-                    txt = '{:.2f}V B{:.2f}V B{:.2f}V'.format(B1,B2,B3)
-                    self.txtCMPbat.SetLabel(txt)
-                if rf_data[0] == 'T':
+                elif rf_data[0] == '\x44':
+                    rslt = self.pack44.unpack(rf_data)
+                    if self.fileALL:
+                        self.fileALL.write(self.packHdr.pack(0x7e,
+                            len(rf_data)))
+                        self.fileALL.write(rf_data)
+                    T = rslt[5]*1e-6
+                    ADC = [self.butt[i].update(rslt[1+i]) for i in range(4)]
+                    txt = ('RIG {:.3f}s ADC:{:04.0f}|{:04.0f}'
+                            '|{:04.0f}|{:04.0f}(filted)').format(T,*ADC)
+                    wx.PostEvent(self, RxGndEvent(txt=txt))
+                elif rf_data[0] == 'T':
                     try:
                         txt = rf_data[5:-2]
                         items = txt.split(',')
