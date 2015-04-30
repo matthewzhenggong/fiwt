@@ -1263,7 +1263,8 @@ Unused bits must be set to 0.  '''))
                             len(rf_data)))
                         self.fileALL.write(rf_data)
                     T = rslt[5]*1e-6
-                    ADC = [self.butt[i].update(rslt[1+i]) for i in range(4)]
+                    #ADC = [self.butt[i].update(rslt[1+i]) for i in range(4)]
+                    ADC = [rslt[1+i] for i in range(4)]
                     txt = ('RIG {:.3f}s ADC:{:04.0f}|{:04.0f}'
                             '|{:04.0f}|{:04.0f}(filted)').format(T,*ADC)
                     wx.PostEvent(self, RxGndEvent(txt=txt))
