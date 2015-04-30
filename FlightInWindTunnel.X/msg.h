@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-#include "XBeeZBS2.h"
+#include "XBee.h"
 #include "task.h"
 #include <pt.h>
 #include <stdint.h>

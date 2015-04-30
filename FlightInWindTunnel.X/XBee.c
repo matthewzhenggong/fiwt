@@ -1,5 +1,5 @@
 /*
- * File:   XBeeZBS2.c
+ * File:   XBee.c
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  * Modified from XBee-Arduino project<https://code.google.com/p/xbee-arduino/>
  *
@@ -19,7 +19,7 @@
  * License along with this library.
  */
 
-#include "XBeeZBS2.h"
+#include "XBee.h"
 
 #include <string.h>
 

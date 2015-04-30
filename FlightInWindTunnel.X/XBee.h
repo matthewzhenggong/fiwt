@@ -1,5 +1,5 @@
 /*
- * File:   XBeeZBS2.h
+ * File:   XBee.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  * Modified from XBee-Arduino project<https://code.google.com/p/xbee-arduino/>
  *
@@ -19,8 +19,8 @@
  * License along with this library.
  */
 
-#ifndef XBeeZBS2_H
-#define XBeeZBS2_H
+#ifndef XBee_H
+#define XBee_H
 
 #include "config.h"
 #include "SerialStream.h"
@@ -358,5 +358,5 @@ extern "C" {
 }
 #endif
 
-#endif /* XBeeZBS2_H */
+#endif /* XBee_H */
 
