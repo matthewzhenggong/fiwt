@@ -25,6 +25,7 @@
 #include "remoteSenTask.h"
 
 #include "LedExtBoard.h"
+#include "clock.h"
 #include <string.h>
 
 void remoteSenInit(remoteSenParam_p parameters, msgParam_p msg, XBee_p s2) {
@@ -49,6 +50,9 @@ PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
     int packin;
     remoteSenParam_p parameters;
     struct pt *pt;
+    uint32_t TimeStamp;
+    uint8_t *pack;
+    int i;
 
     parameters = (remoteSenParam_p) (task->parameters);
     pt = &(parameters->PT);
@@ -65,9 +69,17 @@ PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
                 case ZB_RX_RESPONSE:
                     if (XBeeZBRxResponse(parameters->xbee, &parameters->rx_rsp)) {
                         ++parameters->rx_cnt;
-                        *(parameters->msg->msg_buff) = 'T';
-                        memcpy(parameters->msg->msg_buff+1, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
-                        parameters->msg->msg_len = parameters->rx_rsp._payloadLength+1;
+                        TimeStamp = getMicroseconds();
+                        pack = parameters->msg->msg_buff;
+                        pack = EscapeByte(pack, 'T');
+                        pack = EscapeByte(pack, TimeStamp >>24);
+                        pack = EscapeByte(pack, TimeStamp >>16);
+                        pack = EscapeByte(pack, TimeStamp >> 8);
+                        pack = EscapeByte(pack, TimeStamp & 0xff);
+                        for (i=0; i<parameters->rx_rsp._payloadLength; ++i ) {
+                            pack = EscapeByte(pack, parameters->rx_rsp._payloadPtr[i]);
+                        }
+                        parameters->msg->msg_len = pack - parameters->msg->msg_buff;
 #if USE_LEDEXTBOARD
                         mLED_2_Toggle();
 #endif

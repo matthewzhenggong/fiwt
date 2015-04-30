@@ -688,7 +688,7 @@ Unused bits must be set to 0.  '''))
         if event.IsChecked():
             self.filename = time.strftime('{}%Y%m%d%H%M%S.dat'.format(
                 self.txtRecName.GetValue()))
-            self.fileALL = open(filename, 'wb')
+            self.fileALL = open(self.filename, 'wb')
             self.log.info('Recording to {}.'.format(self.filename))
         else:
             self.fileALL.close()
@@ -975,6 +975,8 @@ Unused bits must be set to 0.  '''))
         self.packNTP3 = struct.Struct(">IhiI")
         self.packNTP13 = struct.Struct(">bhi")
         self.packHdr = struct.Struct(">BH")
+        self.packT = struct.Struct(">I")
+        self.packMeter = struct.Struct(">B2f")
         self.ch = 0
         self.test_motor_ticks = 0
         self.starting = False
@@ -1255,11 +1257,22 @@ Unused bits must be set to 0.  '''))
                     txt = '{:.2f}V B{:.2f}V B{:.2f}V'.format(B1,B2,B3)
                     self.txtCMPbat.SetLabel(txt)
                 if rf_data[0] == 'T':
-                    txt = rf_data[1:].split(',')
-                    self.log.info('Get {} {} {} from {}'.format(
-                        txt[0],txt[1],txt[2], addr))
-                    self.log.info('Get Text {} len {}'.format(rf_data[1:],
-                        len(rf_data[1:])))
+                    try:
+                        txt = rf_data[5:-2]
+                        items = txt.split(',')
+                        vel = float(items[1])
+                        dp = float(items[4])
+                        T = self.packT.unpack(rf_data[1:5])[0]*1e-6
+                        if self.fileALL:
+                            data = self.packMeter.pack(ord('A'),vel,dp)
+                            self.fileALL.write(self.packHdr.pack(0x7e,
+                                len(data)))
+                            self.fileALL.write(data)
+                        txt = 'Get Vel{:.2f}m/s {:.1f}pa from {} at {:.3f}'.format(
+                                vel, dp, addr, T)
+                        wx.PostEvent(self, Rx2CmpEvent(txt=txt))
+                    except :
+                        pass
                 else:
                     self.log.debug('Get {} from {}'.format(
                         rf_data.__repr__(), addr))
