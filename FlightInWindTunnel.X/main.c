@@ -31,6 +31,7 @@
 
 #elif GNDBOARD
 #include "msg_gnd.h"
+#include "remoteSenTask.h"
 #include <xc.h>
 
 #elif STARTKITBOARD
@@ -52,6 +53,8 @@ servoParam_t servo;
 TaskHandle_p servoTask;
 senParam_t sen;
 TaskHandle_p senTask;
+#elif GNDBOARD
+remoteSenParam_t remoteSen;
 #endif
 msgParam_t msg;
 
@@ -92,6 +95,8 @@ int main(void) {
 #elif GNDBOARD
     msgInit(&msg, &Xbee2);
     TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 10);
+    remoteSenInit(&remoteSen, &msg, &Xbee3);
+    TaskCreate(remoteSenLoop, "WS", (void *) &remoteSen, 100, 0, 10);
 #elif STARTKITBOARD
     while (1) {
         asm ("repeat #4000;");

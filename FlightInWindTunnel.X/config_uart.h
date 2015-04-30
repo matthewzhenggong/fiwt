@@ -122,8 +122,8 @@ BRG=33 BD=117647.06 0x1cb8f
 #if USE_UART3
 /** UART3 Baudrate definition (Posible values: 9600, 57600, 115200) */
 #define UART3BAUdRATE  (0x3d090)//(0x3d090 0x61a80 0x7a120 0xc3500)
-#define UART3TXBUFFLEN (128)
-#define UART3RXBUFFLEN (256)
+#define UART3TXBUFFLEN (32)
+#define UART3RXBUFFLEN (128)
 #define UART3TXTRIS (_TRISD6)
 #define UART3RXTRIS (_TRISD7)
 #define UART3RXPR (71) /* U3RX Input tied to RP71 */

@@ -31,8 +31,8 @@
       <itemPath>msg.h</itemPath>
       <itemPath>msg_acm.h</itemPath>
       <itemPath>msg_gnd.h</itemPath>
-      <itemPath>msg_comm.h</itemPath>
       <itemPath>XBee.h</itemPath>
+      <itemPath>remoteSenTask.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -68,6 +68,7 @@
       <itemPath>msg_acm.c</itemPath>
       <itemPath>msg_gnd.c</itemPath>
       <itemPath>XBee.c</itemPath>
+      <itemPath>remoteSenTask.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

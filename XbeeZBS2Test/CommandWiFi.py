@@ -1155,7 +1155,7 @@ Unused bits must be set to 0.  '''))
                         wx.PostEvent(self, RxEvent(txt=txt))
                         self.log.debug(txt)
                     else:
-                        self.arrv_cnt22 += 1
+                        self.arrv_cnt_22 += 1
                 elif rf_data[0] == '\x33':
                     if self.fileALL:
                         self.fileALL.write(self.packHdr.pack(0x7e,
@@ -1178,7 +1178,7 @@ Unused bits must be set to 0.  '''))
                             txt += '{},{},'.format(rslt[4], rslt[13])
                         self.log.info(txt)
                     if self.arrv_cnt_33 > 10:
-                        self.arrv_cnt33 = 0
+                        self.arrv_cnt_33 = 0
                         self.last_arrv_cnt = self.arrv_cnt
                         txt = ('T{0:08.2f} SenPack '
                             '1S{1:04d}/{9:+04d} 2S{2:04d}/{10:+04d} '
@@ -1190,7 +1190,7 @@ Unused bits must be set to 0.  '''))
                         wx.PostEvent(self, RxCmpEvent(txt=txt))
                         self.log.debug(txt)
                     else:
-                        self.arrv_cnt33 += 1
+                        self.arrv_cnt_33 += 1
                 elif rf_data[0] == '\xA5':
                     #rslt = self.packAA.unpack(rf_data)
                     if self.fileALL:
@@ -1254,8 +1254,14 @@ Unused bits must be set to 0.  '''))
                         B3 = 0
                     txt = '{:.2f}V B{:.2f}V B{:.2f}V'.format(B1,B2,B3)
                     self.txtCMPbat.SetLabel(txt)
+                if rf_data[0] == 'T':
+                    txt = rf_data[1:].split(',')
+                    self.log.info('Get {} {} {} from {}'.format(
+                        txt[0],txt[1],txt[2], addr))
+                    self.log.info('Get Text {} len {}'.format(rf_data[1:],
+                        len(rf_data[1:])))
                 else:
-                    self.log.info('Get {} from {}'.format(
+                    self.log.debug('Get {} from {}'.format(
                         rf_data.__repr__(), addr))
             except:
                 traceback.print_exc()

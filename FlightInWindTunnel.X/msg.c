@@ -370,9 +370,6 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                     if (XBeeRxIPv4Response(parameters->xbee, &parameters->rx_rsp)) {
                         ++parameters->rx_cnt;
                         process_packages(parameters, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
-#if USE_LEDEXTBOARD
-                        mLED_2_Toggle();
-#endif
                     }
                     break;
             }
