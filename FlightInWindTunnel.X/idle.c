@@ -18,8 +18,11 @@
  * License along with this library.
  */
 
+#include "config.h"
+
 #include "idle.h"
 #include "clock.h"
+#include "IMU.h"
 
 #include "LedExtBoard.h"
 
@@ -36,6 +39,10 @@ char idleLoop(TaskHandle_p task) {
 
     ++(parameters->cnt);
     sec = (getMicroseconds()>>20);
+    
+#if USE_IMU
+    IMURead2DMA();
+#endif
     if (parameters->secticks == sec)
     {
         return 0;

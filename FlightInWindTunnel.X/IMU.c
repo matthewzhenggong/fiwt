@@ -173,24 +173,23 @@ void IMUInit(void) {
     _INT4IF = 0; /*  Clear INT Interrupt Flag */
 }
 
-__near bool volatile imu_reading = false;
+/*
+ * 1 - ready to read
+ * 2 - reading to DMA
+ * 3 - finish reading to DMA
+ * 0 - outputed from DMA to RAM
+ */
+__near unsigned int volatile imu_reading = 0;
 
 __interrupt(no_auto_psv) void _INT4Interrupt(void) {
-    if (!imu_reading) {
-        // Initialize IMU Burst Read
-        SPI1BUF = 0x3E00;
-        // Wait for transmission to finish
-        while (!SPI1STATbits.SPIRBF);
-
-        imu_reading = true;
-        DMA8CONbits.CHEN = 1; /* Enable DMA channel */
-        DMA8REQbits.FORCE = 0b1;
+    if (imu_reading != 2) {
+        imu_reading = 1;
     }
     _INT4IF = 0; /*  Clear INT Interrupt Flag */
 }
 
 __interrupt(no_auto_psv) void _DMA8Interrupt(void) {
-    imu_reading = false;
+    imu_reading = 3;
     DMA8CONbits.CHEN = 0; /* Enable DMA channel */
     _DMA8IF = 0; /*  Clear the DMAx Interrupt Flag; */
 }
@@ -231,31 +230,47 @@ void IMUStart(void) {
 }
 
 void IMUUpdate(void) {
-    // Read IMU Output Data Registers
-    // Store IMU Voltage Supply Data
-    IMU_Supply = IMUBUFF[1] & 0x0FFF;
-    // Store IMU X Gyro Data
-    IMU_XGyro = IMUBUFF[2] & 0x3FFF;
-    // Store IMU Y Gyro Data
-    IMU_YGyro = IMUBUFF[3] & 0x3FFF;
-    // Store IMU Z Gyro Data
-    IMU_ZGyro = IMUBUFF[4] & 0x3FFF;
-    // Store IMU X Accl Data
-    IMU_XAccl = IMUBUFF[5] & 0x3FFF;
-    // Store IMU Y Accl Data
-    IMU_YAccl = IMUBUFF[6] & 0x3FFF;
-    // Store IMU Z Accl Data
-    IMU_ZAccl = IMUBUFF[7] & 0x3FFF;
-    // Store IMU X Gyro Temperature Data
-    IMU_XGyroTemp = IMUBUFF[8] & 0x0FFF;
-    // Store IMU Y Gyro Temperature Data
-    IMU_YGyroTemp = IMUBUFF[9] & 0x0FFF;
-    // Store IMU Z Gyro Temperature Data
-    IMU_ZGyroTemp = IMUBUFF[10] & 0x0FFF;
-    // Store IMU Auxiliary ADC Output Data
-    IMU_AUX_ADC = IMUBUFF[11] & 0x0FFF;
+    if (imu_reading == 3) {
+        // Read IMU Output Data Registers
+        // Store IMU Voltage Supply Data
+        IMU_Supply = IMUBUFF[1] & 0x0FFF;
+        // Store IMU X Gyro Data
+        IMU_XGyro = IMUBUFF[2] & 0x3FFF;
+        // Store IMU Y Gyro Data
+        IMU_YGyro = IMUBUFF[3] & 0x3FFF;
+        // Store IMU Z Gyro Data
+        IMU_ZGyro = IMUBUFF[4] & 0x3FFF;
+        // Store IMU X Accl Data
+        IMU_XAccl = IMUBUFF[5] & 0x3FFF;
+        // Store IMU Y Accl Data
+        IMU_YAccl = IMUBUFF[6] & 0x3FFF;
+        // Store IMU Z Accl Data
+        IMU_ZAccl = IMUBUFF[7] & 0x3FFF;
+        // Store IMU X Gyro Temperature Data
+        IMU_XGyroTemp = IMUBUFF[8] & 0x0FFF;
+        // Store IMU Y Gyro Temperature Data
+        IMU_YGyroTemp = IMUBUFF[9] & 0x0FFF;
+        // Store IMU Z Gyro Temperature Data
+        IMU_ZGyroTemp = IMUBUFF[10] & 0x0FFF;
+        // Store IMU Auxiliary ADC Output Data
+        IMU_AUX_ADC = IMUBUFF[11] & 0x0FFF;
+        imu_reading = 0;
+    }
 }
 
+void IMURead2DMA(void) {
+    if (imu_reading == 1) {
+        imu_reading = 2;
+        // Initialize IMU Burst Read
+        SPI1BUF = 0x3E00;
+        // Wait for transmission to finish
+        while (!SPI1STATbits.SPIRBF);
+
+        imu_reading = true;
+        DMA8CONbits.CHEN = 1; /* Enable DMA channel */
+        DMA8REQbits.FORCE = 0b1;
+    }
+}
 #endif /* USE_IMU */
 
 

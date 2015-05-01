@@ -60,6 +60,11 @@ extern unsigned int IMU_AUX_ADC;
      */
     void IMUUpdate(void);
 
+    /**
+     * Start DMA to read IMU data if there's new data.
+     */
+    void IMURead2DMA(void);
+
 #ifdef	__cplusplus
 }
 #endif
