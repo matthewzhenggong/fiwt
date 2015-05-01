@@ -28,19 +28,11 @@
 #include "clock.h"
 #include <stdint.h>
 
-#if AC_MODEL
-#define ENCNUM (3)
-#elif AEROCOMP
-#define ENCNUM (4)
-#elif GNDBOARD
-#define ENCNUM (0)
-#endif
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    extern uint16_t EncPos[ENCNUM];
+    extern unsigned int  EncPos[ENCNUM];
 
     /**
      * Start Encodes

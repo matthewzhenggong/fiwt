@@ -60,6 +60,7 @@ extern "C" {
     void UpdateAnalogInputs(void);
 
 #if AEROCOMP
+    extern uint16_t EncPos[ENCNUM];
     void UpdateServoPosFromEnc(void);
 #endif
 

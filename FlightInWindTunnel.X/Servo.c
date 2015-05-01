@@ -49,28 +49,47 @@ AEROCOMP    Servo2		AN21        PMW2	LATJ6 	/ LATJ7
             Servo4		AN2         PMW5	LATJ12	/ LATJ13
  ************************************************************************/
 
+//Position;DutyCycle;lat_cw;lat_cw_mask;lat_cw_pos;lat_ccw;lat_ccw_mask;lat_ccw_pos;MaxPosition;MinPosition;
+//Kp;ShiftKp;Kd;ShiftKd;shake;
+
 Servo_t Servos[] = {
 #if AC_MODEL
 #if USE_TESTBOARD
-    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, 3800, 200},
-    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, 3800, 200},
-    {&ServoPos[2], &PWM3DC, &LATG, _LATG_LATG12_MASK, ~_LATG_LATG12_MASK, &LATG, _LATG_LATG14_MASK, ~_LATG_LATG14_MASK, 3800, 200},
-    {&ServoPos[3], &PWM7DC, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, 3800, 200},
-    {&ServoPos[4], &PWM5DC, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, 3800, 200},
-    {&ServoPos[5], &PWM6DC, &LATG, _LATG_LATG7_MASK, ~_LATG_LATG7_MASK, &LATG, _LATG_LATG6_MASK, ~_LATG_LATG6_MASK, 3800, 200},
+    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[2], &PWM3DC, &LATG, _LATG_LATG12_MASK, ~_LATG_LATG12_MASK, &LATG, _LATG_LATG14_MASK, ~_LATG_LATG14_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[3], &PWM7DC, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[4], &PWM5DC, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[5], &PWM6DC, &LATG, _LATG_LATG7_MASK, ~_LATG_LATG7_MASK, &LATG, _LATG_LATG6_MASK, ~_LATG_LATG6_MASK, 3800, 200,
+            10, 3, 11, 0,455},
 #else
-    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, 3800, 200},
-    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, 3800, 200},
-    {&ServoPos[2], &PWM3DC, &LATG, _LATG_LATG14_MASK, ~_LATG_LATG14_MASK, &LATG, _LATG_LATG12_MASK, ~_LATG_LATG12_MASK, 3800, 200},
-    {&ServoPos[3], &PWM7DC, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, 3800, 200},
-    {&ServoPos[4], &PWM5DC, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, 3800, 200},
-    {&ServoPos[5], &PWM6DC, &LATG, _LATG_LATG6_MASK, ~_LATG_LATG6_MASK, &LATG, _LATG_LATG7_MASK, ~_LATG_LATG7_MASK, 3800, 200},
+    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[2], &PWM3DC, &LATG, _LATG_LATG14_MASK, ~_LATG_LATG14_MASK, &LATG, _LATG_LATG12_MASK, ~_LATG_LATG12_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[3], &PWM7DC, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[4], &PWM5DC, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, 3800, 200,
+            10, 3, 11, 0,455},
+    {&ServoPos[5], &PWM6DC, &LATG, _LATG_LATG6_MASK, ~_LATG_LATG6_MASK, &LATG, _LATG_LATG7_MASK, ~_LATG_LATG7_MASK, 3800, 200,
+            10, 3, 11, 0,455},
 #endif
 #elif AEROCOMP
-    {&ServoPos[0], &PWM1DC, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, 3000, 1100},
-    {&ServoPos[1], &PWM2DC, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, 3000, 1100},
-    {&ServoPos[2], &PWM7DC, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, 3000, 1100},
-    {&ServoPos[3], &PWM5DC, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, 3000, 1100},
+    {&EncPos[0], &PWM1DC, &LATJ, _LATJ_LATJ5_MASK, ~_LATJ_LATJ5_MASK, &LATJ, _LATJ_LATJ4_MASK, ~_LATJ_LATJ4_MASK, 3000, 1100,
+            19, 3, 20, 0,343},
+    {&EncPos[1], &PWM2DC, &LATJ, _LATJ_LATJ7_MASK, ~_LATJ_LATJ7_MASK, &LATJ, _LATJ_LATJ6_MASK, ~_LATJ_LATJ6_MASK, 3000, 1100,
+            19, 3, 20, 0,343},
+    {&EncPos[2], &PWM7DC, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, 3000, 1100,
+            19, 3, 20, 0,343},
+    {&EncPos[3], &PWM5DC, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, 3000, 1100,
+            19, 3, 20, 0,343},
 #endif
 };
 
@@ -115,6 +134,7 @@ void ServoStart(void) {
         servo->butt[1] = 0;
         servo->butt[2] = 0;
         servo->Ctrl = 0;
+        servo->SERVO_DIFF_LMT = ((0x8000)/(servo->Kp+1));
     }
 }
 
@@ -151,6 +171,7 @@ void ServoUpdate(unsigned int ch, unsigned int ref) {
     signed int rate;
     signed int diff;
     signed int accel;
+    signed int SERVO_DIFF_LMT;
 
     if (ch < SEVERONUM) {
         servo = Servos + ch;
@@ -174,6 +195,7 @@ void ServoUpdate(unsigned int ch, unsigned int ref) {
         }
 
         diff = servo->Reference - pos;
+        SERVO_DIFF_LMT = servo->SERVO_DIFF_LMT;
         if (diff > SERVO_DIFF_LMT) diff = SERVO_DIFF_LMT;
         else if (diff < -SERVO_DIFF_LMT) diff = -SERVO_DIFF_LMT;
         /** python code to generate feedback coefficients
@@ -188,22 +210,22 @@ def pval(fb_coeff, shifts) :
      max_fb_val = 2**15 / fb_coeff_i
      return (fb_coeff_i,err,max_fb_val)
          */
-        duty_circle = (SERVO_KP * diff >> SERVO_SP) /* Proportion */
-                + (SERVO_KD * -rate >> SERVO_SD); /* Difference */
+        duty_circle = ((servo->Kp) * diff >> (servo->ShiftKp)) /* Proportion */
+                + ((servo->Kd) * -rate >> (servo->ShiftKd)); /* Difference */
         if (diff > SERVO_SHAKE_DZ || diff < -SERVO_SHAKE_DZ
                 || rate > SERVO_SHAKE_RDZ || rate < -SERVO_SHAKE_RDZ) {
             servo->tick = 0u;
             if (duty_circle > 0) {
-                duty_circle += SERVO_SHAKE;
+                duty_circle += servo->shake;
             } else {
-                duty_circle -= SERVO_SHAKE;
+                duty_circle -= servo->shake;
             }
         } else {
             if (servo->tick < SERVO_SHAKE_TICKS) {
                 if (++servo->tick & 1) {
-                    duty_circle = SERVO_SHAKE;
+                    duty_circle = servo->shake;
                 } else {
-                    duty_circle = -SERVO_SHAKE;
+                    duty_circle = -servo->shake;
                 }
             } else {
                 duty_circle = 0;

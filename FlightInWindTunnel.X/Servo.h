@@ -42,6 +42,12 @@ extern "C" {
         unsigned int lat_ccw_pos;
         unsigned int MaxPosition;
         unsigned int MinPosition;
+        signed int Kp;
+        int ShiftKp;
+        signed int Kd;
+        int ShiftKd;
+        signed int shake;
+        signed int SERVO_DIFF_LMT;
         signed int  PrevPosition;
         signed int  PrevRate;
         signed int  Reference;

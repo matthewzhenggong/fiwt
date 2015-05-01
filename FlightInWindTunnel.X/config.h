@@ -27,8 +27,8 @@
  */
 
 #define GNDBOARD 0
-#define AC_MODEL 1
-#define AEROCOMP 0
+#define AC_MODEL 0
+#define AEROCOMP 1
 #define STARTKITBOARD 0
 
 // IP=192.169.191.255
@@ -82,6 +82,7 @@
 #define USE_SPIS  0
 #define USE_EKF   0
 #define USE_TESTBOARD 0
+#define ENCNUM (3)
 
 #elif AEROCOMP
 #define USE_UART1 1
@@ -94,6 +95,7 @@
 #define USE_IMU   0
 #define USE_SPIS  0
 #define USE_EKF   0
+#define ENCNUM (4)
 
 #elif GNDBOARD
 #define USE_UART1 0
@@ -108,6 +110,7 @@
 #define USE_EKF   0
 #define USE_LEDEXTBOARD 1
 #define NOT_USE_EXTOSC 0
+#define ENCNUM (0)
 
 #elif STARTKITBOARD
 #define USE_UART1 0
@@ -120,6 +123,7 @@
 #define USE_IMU   1
 #define USE_SPIS  0
 #define USE_EKF   0
+#define ENCNUM (0)
 
 #else
 #define USE_UART1 0
@@ -132,6 +136,7 @@
 #define USE_IMU   0
 #define USE_SPIS  0
 #define USE_EKF   0
+#define ENCNUM (0)
 #endif
 
 /**

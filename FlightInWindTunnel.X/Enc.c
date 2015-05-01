@@ -43,8 +43,8 @@ struct ENC {
 #endif
 };
 
-uint16_t EncPos[ENCNUM];
-static int16_t LastEncPos[ENCNUM];
+unsigned int  EncPos[ENCNUM];
+static int16_t  LastEncPos[ENCNUM];
 
 void EncInit(void) {
     /* 1) Configure ENC_CLOCK pin as output and ENC1_DATA, ENC2_DATA, ENC3_DATA pins as inputs*/
@@ -62,7 +62,7 @@ void EncUpdate(void) {
     int i;
     /* Declare local variables */
     unsigned int EncBit_CNT;
-    uint8_t sample[ENCNUM];
+    unsigned int sample[ENCNUM];
     int16_t CurEncPos[ENCNUM];
 
     /* Initialize local variables */
