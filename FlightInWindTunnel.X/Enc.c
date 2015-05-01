@@ -70,7 +70,7 @@ void EncUpdate(void) {
     //trigger for start
     ENC_CLOCK = 0;
     timestamp0 = getMicroseconds();
-    timestamp1 = timestamp0+5;
+    timestamp1 = timestamp0+ENC_HALF_PEROID;
 
     //work
     /* Initialize local variables */
@@ -91,7 +91,7 @@ void EncUpdate(void) {
     for (EncBit_CNT = 0; EncBit_CNT < 13; ++EncBit_CNT) {
         // Trigger ENC_CLOCK to a logical high state
         ENC_CLOCK = 1;        
-        timestamp1 += 5;
+        timestamp1 += ENC_HALF_PEROID;
 
         //work
         // Read Encoder data
@@ -109,7 +109,7 @@ void EncUpdate(void) {
 
         // Trigger ENC_CLOCK to a logical low state
         ENC_CLOCK = 0;
-        timestamp1 += 5;
+        timestamp1 += ENC_HALF_PEROID;
 
         //work
         // Read Encoder data
@@ -122,6 +122,7 @@ void EncUpdate(void) {
         timestamp = getMicroseconds();
         if (timestamp>=timestamp1) {
            phase_sync = false;
+           break;
         }
         while (timestamp<timestamp1) {
             timestamp = getMicroseconds();

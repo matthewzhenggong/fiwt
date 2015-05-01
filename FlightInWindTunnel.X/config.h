@@ -26,8 +26,8 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 1
-#define AC_MODEL 0
+#define GNDBOARD 0
+#define AC_MODEL 1
 #define AEROCOMP 0
 #define STARTKITBOARD 0
 
@@ -47,6 +47,7 @@
 #elif AEROCOMP
 #define MSG_SRC_PORT 0x2677
 #endif
+#define ENC_HALF_PEROID (3)
 
 #elif GNDBOARD
 #define TASK_PERIOD (1u) // 1000Hz
