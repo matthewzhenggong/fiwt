@@ -215,9 +215,10 @@ void process_packages(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
 
 static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_payloadLength, uint8_t *_payloadPtr, size_t max_payloadLength) {
     size_t pack_length;
+#if GNDBOARD
     uint32_t ts;
     uint8_t *ptr;
-
+#endif
     *_payloadLength = 0;
 
     switch (parameters->ntp.stage) {

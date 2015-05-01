@@ -8,3 +8,5 @@ XbeeZBS2Test/log.txt
 *.dat
 *.mat
 *.txt
+*.7z
+*.zip
