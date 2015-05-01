@@ -44,7 +44,6 @@ struct ENC {
 };
 
 unsigned int  EncPos[ENCNUM];
-static int16_t  LastEncPos[ENCNUM];
 
 void EncInit(void) {
     /* 1) Configure ENC_CLOCK pin as output and ENC1_DATA, ENC2_DATA, ENC3_DATA pins as inputs*/
@@ -63,7 +62,7 @@ void EncUpdate(void) {
     /* Declare local variables */
     unsigned int EncBit_CNT;
     unsigned int sample[ENCNUM];
-    int16_t CurEncPos[ENCNUM];
+    unsigned int  CurEncPos[ENCNUM];
 
     /* Initialize local variables */
 
@@ -73,7 +72,7 @@ void EncUpdate(void) {
     
     // pull down for start
     ENC_CLOCK = 0;
-    asm ("repeat #32;"); Nop();
+    asm ("repeat #313;"); Nop();
 
     /* Read 13-bit resolution Digital Encoders */
     /* 454.5 kHz Clock, Synchro-Serial Interface reading */
@@ -86,8 +85,8 @@ void EncUpdate(void) {
             CurEncPos[i] <<= 1;
             sample[i] = 0;
         }
-        asm ("repeat #16;"); Nop();
-        
+        asm ("repeat #125;"); Nop();
+
         //first sample
         for (i = 0; i < ENCNUM; ++i) {
             if (*(enc_data[i].port) & enc_data[i].mask)
@@ -119,13 +118,8 @@ void EncUpdate(void) {
 
     //End. Set ENC_CLOCK to a logical high state
     ENC_CLOCK = 1;
-
-    // Speed limitation check
     for (i = 0; i < ENCNUM; ++i) {
-        if (CurEncPos[i] > LastEncPos[i]-256u && CurEncPos[i] < LastEncPos[i]+256u) {
             EncPos[i] = CurEncPos[i];
-        }
-        LastEncPos[i] = CurEncPos[i];
     }
 }
 

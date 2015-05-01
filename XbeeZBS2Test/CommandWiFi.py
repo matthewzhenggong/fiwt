@@ -1256,6 +1256,20 @@ Unused bits must be set to 0.  '''))
                         B3 = 0
                     txt = '{:.2f}V {:.2f}V {:.2f}V'.format(B1,B2,B3)
                     self.txtACMbat.SetLabel(txt)
+                elif rf_data[0] == '\x99':
+                    rslt = self.pack88.unpack(rf_data)
+                    B1 = rslt[1]*1.294e-2*1.515
+                    B2 = rslt[2]*1.294e-2*3.0606
+                    B3 = rslt[3]*1.294e-2*4.6363
+                    B2 -= B1
+                    if B2 < 0 :
+                        B2 = 0
+                    B2 =0 #TODO
+                    B3 -= B1+B2
+                    if B3 < 0 :
+                        B3 = 0
+                    txt = '{:.2f}V {:.2f}V {:.2f}V'.format(B1,B2,B3)
+                    self.txtCMPbat.SetLabel(txt)
                 elif rf_data[0] == '\x44':
                     rslt = self.pack44.unpack(rf_data)
                     if self.fileALL:

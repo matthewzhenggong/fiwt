@@ -26,7 +26,14 @@
 
 /* External variables declaration */
 #if GNDBOARD
+#include <dsp.h>
 unsigned int RigPos[RIGPOSADCNUM];
+int32_t RigRollPos=0;
+int16_t RigPitchPos=0;
+int16_t RigYawPos=0;
+int16_t RigRollRate=0;
+int16_t RigPitchRate=0;
+int16_t RigYawRate=0;
 #else
 uint8_t BattCell[BATTCELLADCNUM];
 #if AC_MODEL
@@ -92,7 +99,100 @@ void UpdateServoPosFromEnc(void) {
     } else {
         EncPos[3] = 2030 - EncPos[3];
     }
+//    static int16_t  LastEncPos[ENCNUM];
+//
+//    // Speed limitation check
+//    for (i = 0; i < ENCNUM; ++i) {
+//        if (CurEncPos[i] > LastEncPos[i]-256u && CurEncPos[i] < LastEncPos[i]+256u) {
+//            EncPos[i] = CurEncPos[i];
+//        }
+//        LastEncPos[i] = CurEncPos[i];
+//    }
 }
+//#elif GNDBOARD
+#elif 0
+
+/** two-order butterwolf filter 10Hz */
+#define BUTTER_ORDER (2)
+//    0.6012  -0.2536 0.3586
+//    0.2536   0.9598 0.0568
+//    0.08966  0.6929 0.02008
+// x 2^15 =
+static fractional _butter_mat_frac[] = { \
+     19700, -8310, 11752,
+      8310, 31452,  1861,
+      2938, 22705,   658,
+};
+
+static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER + 1]) {
+    fractional dstM[BUTTER_ORDER];
+    int i;
+
+    butt[BUTTER_ORDER] = input;
+    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac, butt);
+    for (i = 0; i < BUTTER_ORDER; ++i) {
+        butt[i] = dstM[i];
+    }
+    MatrixMultiply(1, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac + BUTTER_ORDER * (BUTTER_ORDER + 1), butt);
+    return dstM[0];
+}
+
+
+static int16_t LastRigRollPos=0;
+static int16_t LastRigPitchPos=0;
+static int16_t LastRigYawPos=0;
+static int16_t RigRollLoop=0;
+
+void UpdateRigPosAndRate(void) {
+        int16_t CurRigRollPos;
+        int16_t CurRigPitchPos;
+        int16_t CurRigYawPos;
+//        int32_t diff;
+
+        CurRigRollPos = 0;
+        CurRigPitchPos = 0;
+        CurRigYawPos = 0;
+//
+//        diff = CurRigRollPos-LastRigRollPos;
+//        if (diff < 256+RigRollRate && diff > -256+RigRollRate)
+//        {
+//            diff = (-CurRigRollPos+RigRollLoop*120)-(RigRollPos);
+//            /* Find the right loop index if there is a jump. */
+//            if (diff > 683)
+//            {
+//                --RigRollLoop;
+//                diff = (-CurRigRollPos+RigRollLoop*120)-(RollDataOut);
+//            }
+//            else if (diff < -60)
+//            {
+//                ++circle_cnt;
+//                diff = (-RollData+circle_cnt*120)-(RollDataOut);
+//            }
+//            RollDataOut += diff;
+//            /* I would not like to output this odd value.
+//             * So I select to save it in the bank.
+//             * And I hope the opposite value comming soon.
+//             */
+///*
+//            if (diff > 5+LastRollDataFilterDiff)
+//            {
+//                RollDataOutSaved += diff;
+//            }
+//            else if (diff < -5+LastRollDataFilterDiff)
+//            {
+//                RollDataOutSaved += diff;
+//            }
+//*/
+//        }
+//        else
+//        {
+//            RollDataOut += 0.7*LastRollDataFilterDiff;
+//        }
+//
+
+    
+}
+
 #endif
 
 #endif /* USE_ADC1 */

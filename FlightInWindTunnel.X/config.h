@@ -27,8 +27,8 @@
  */
 
 #define GNDBOARD 0
-#define AC_MODEL 0
-#define AEROCOMP 1
+#define AC_MODEL 1
+#define AEROCOMP 0
 #define STARTKITBOARD 0
 
 // IP=192.169.191.255
@@ -83,6 +83,9 @@
 #define USE_EKF   0
 #define USE_TESTBOARD 0
 #define ENCNUM (3)
+#define BATTCELLADCNUM (3)
+#define SERVOPOSADCNUM (6)
+#define SEVERONUM (6)
 
 #elif AEROCOMP
 #define USE_UART1 1
@@ -96,6 +99,9 @@
 #define USE_SPIS  0
 #define USE_EKF   0
 #define ENCNUM (4)
+#define BATTCELLADCNUM (3)
+#define SERVOPOSADCNUM (4)
+#define SEVERONUM (4)
 
 #elif GNDBOARD
 #define USE_UART1 0
@@ -111,6 +117,10 @@
 #define USE_LEDEXTBOARD 1
 #define NOT_USE_EXTOSC 0
 #define ENCNUM (0)
+#define RIGPOSADCNUM (4)
+#define BATTCELLADCNUM (0)
+#define SERVOPOSADCNUM (0)
+#define SEVERONUM (0)
 
 #elif STARTKITBOARD
 #define USE_UART1 0
@@ -161,19 +171,6 @@
  */
 #define TASK_NAME_MAX (8)
 #define MAX_NUM_TASKS (8)
-
-#if GNDBOARD
-#define RIGPOSADCNUM (4)
-#else
-#define BATTCELLADCNUM (3)
-#if AC_MODEL
-#define SERVOPOSADCNUM (6)
-#define SEVERONUM (6)
-#elif AEROCOMP
-#define SERVOPOSADCNUM (4)
-#define SEVERONUM (4)
-#endif
-#endif
 
 #define MSG_DILIMITER (0x9E) //0x80+0x1E(RS)
 #define MSG_ESC (0x9B) //0x80+0x1B(ESC)

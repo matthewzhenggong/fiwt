@@ -44,9 +44,14 @@ extern "C" {
      */
     extern unsigned int ServoPos[SERVOPOSADCNUM];
 #elif GNDBOARD
-    /** Rig ADC Value
-     */
+    /** Rig ADC Value */
     extern unsigned int RigPos[RIGPOSADCNUM];
+    extern int32_t RigRollPos;
+    extern int16_t RigPitchPos;
+    extern int16_t RigYawPos;
+    extern int16_t RigRollRate;
+    extern int16_t RigPitchRate;
+    extern int16_t RigYawRate;
 #endif
 
     /** Analog Input Time Stamp
@@ -62,6 +67,10 @@ extern "C" {
 #if AEROCOMP
     extern uint16_t EncPos[ENCNUM];
     void UpdateServoPosFromEnc(void);
+#endif
+
+#if GNDBOARD
+    void UpdateRigPosAndRate(void);
 #endif
 
 #ifdef	__cplusplus
