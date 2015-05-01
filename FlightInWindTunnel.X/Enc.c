@@ -22,6 +22,7 @@
 #include "Enc.h"
 
 #if USE_ENC
+#include <stdbool.h>
 
 #define ENC_CLOCK	LATHbits.LATH0
 #define ENC1_DATA	PORTHbits.RH2
@@ -59,67 +60,80 @@ void EncInit(void) {
 
 void EncUpdate(void) {
     int i;
+    uint32_t timestamp0, timestamp1, timestamp;
     /* Declare local variables */
     unsigned int EncBit_CNT;
-    unsigned int sample[ENCNUM];
     unsigned int  CurEncPos[ENCNUM];
+    bool phase_sync;
 
+    phase_sync = true;
+    //trigger for start
+    ENC_CLOCK = 0;
+    timestamp0 = getMicroseconds();
+    timestamp1 = timestamp0+5;
+
+    //work
     /* Initialize local variables */
-
     for (i = 0; i < ENCNUM; ++i) {
         CurEncPos[i] = 0;
     }
-    
-    // pull down for start
-    ENC_CLOCK = 0;
-    asm ("repeat #313;"); Nop();
+    //wait
+    timestamp = getMicroseconds();
+    if (timestamp>=timestamp1) {
+       phase_sync = false;
+    }
+    while (timestamp<timestamp1) {
+        timestamp = getMicroseconds();
+    }
 
     /* Read 13-bit resolution Digital Encoders */
-    /* 454.5 kHz Clock, Synchro-Serial Interface reading */
+    /* Synchro-Serial Interface reading */
     for (EncBit_CNT = 0; EncBit_CNT < 13; ++EncBit_CNT) {
-        // Set ENC_CLOCK to a logical high state
-        ENC_CLOCK = 1;
-        
-        // Shift EncPos contents 1-bit to the left, to get correct bit alignment
-        for (i = 0; i < ENCNUM; ++i) {
-            CurEncPos[i] <<= 1;
-            sample[i] = 0;
-        }
-        asm ("repeat #125;"); Nop();
+        // Trigger ENC_CLOCK to a logical high state
+        ENC_CLOCK = 1;        
+        timestamp1 += 5;
 
-        //first sample
-        for (i = 0; i < ENCNUM; ++i) {
-            if (*(enc_data[i].port) & enc_data[i].mask)
-                ++sample[i];
-        }
-
-        // Set ENC_CLOCK to a logical low state
-        ENC_CLOCK = 0;
-
-        //second sample
-        //asm ("repeat #4;"); Nop();
-        for (i = 0; i < ENCNUM; ++i) {
-            if (*(enc_data[i].port) & enc_data[i].mask)
-                ++sample[i];
-        }
-        //third sample
-        //asm ("repeat #3;"); Nop();
-        for (i = 0; i < ENCNUM; ++i) {
-            if (*(enc_data[i].port) & enc_data[i].mask)
-                ++sample[i];
-        }
-
+        //work
         // Read Encoder data
         for (i = 0; i < ENCNUM; ++i) {
-            if (sample[i] > 0b1)
+                CurEncPos[i] <<= 0b1;
+        }
+        //wait
+        timestamp = getMicroseconds();
+        if (timestamp>=timestamp1) {
+           phase_sync = false;
+        }
+        while (timestamp<timestamp1) {
+            timestamp = getMicroseconds();
+        }
+
+        // Trigger ENC_CLOCK to a logical low state
+        ENC_CLOCK = 0;
+        timestamp1 += 5;
+
+        //work
+        // Read Encoder data
+        for (i = 0; i < ENCNUM; ++i) {
+            if (*(enc_data[i].port) & enc_data[i].mask)
                 CurEncPos[i] |= 0b1;
+        }
+
+        //wait
+        timestamp = getMicroseconds();
+        if (timestamp>=timestamp1) {
+           phase_sync = false;
+        }
+        while (timestamp<timestamp1) {
+            timestamp = getMicroseconds();
         }
     }
 
     //End. Set ENC_CLOCK to a logical high state
     ENC_CLOCK = 1;
-    for (i = 0; i < ENCNUM; ++i) {
-            EncPos[i] = CurEncPos[i];
+    if (phase_sync) {
+        for (i = 0; i < ENCNUM; ++i) {
+                EncPos[i] = CurEncPos[i];
+        }
     }
 }
 
