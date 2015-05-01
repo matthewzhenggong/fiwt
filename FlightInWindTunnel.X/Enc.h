@@ -26,6 +26,7 @@
 #if USE_ENC
 
 #include "clock.h"
+#include <stdint.h>
 
 #if AC_MODEL
 #define ENCNUM (3)
@@ -39,7 +40,7 @@
 extern "C" {
 #endif
 
-    extern unsigned int EncPos[ENCNUM];
+    extern uint16_t EncPos[ENCNUM];
 
     /**
      * Start Encodes
