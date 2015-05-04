@@ -33,6 +33,7 @@
       <itemPath>msg_gnd.h</itemPath>
       <itemPath>XBee.h</itemPath>
       <itemPath>remoteSenTask.h</itemPath>
+      <itemPath>msg_comm.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"

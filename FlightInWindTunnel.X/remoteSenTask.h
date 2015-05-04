@@ -32,20 +32,20 @@
 extern "C" {
 #endif
 
+    extern float windtunnel_wind_speed; // m/s
+    extern float windtunnel_dynamic_pressure; // pa
+
     typedef struct {
         struct pt PT;
         XBee_p xbee;
         ZBTxRequest_t tx_req;
         ZBRxResponse_t rx_rsp;
-        msgParam_p msg;
-
-        unsigned int rx_cnt;
         unsigned int cnt;
     } remoteSenParam_t, *remoteSenParam_p;
 
     PT_THREAD(remoteSenLoop)(TaskHandle_p task);
 
-    void remoteSenInit(remoteSenParam_p parameters, msgParam_p msg, XBee_p s2);
+    void remoteSenInit(remoteSenParam_p parameters, XBee_p s2);
 
 
 #ifdef	__cplusplus

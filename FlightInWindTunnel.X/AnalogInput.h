@@ -49,9 +49,9 @@ extern "C" {
     extern int32_t RigRollPos;
     extern int16_t RigPitchPos;
     extern int16_t RigYawPos;
-    extern int16_t RigRollRate;
-    extern int16_t RigPitchRate;
-    extern int16_t RigYawRate;
+//    extern int16_t RigRollRate;
+//    extern int16_t RigPitchRate;
+//    extern int16_t RigYawRate;
 #endif
 
     /** Analog Input Time Stamp
@@ -70,7 +70,7 @@ extern "C" {
 #endif
 
 #if GNDBOARD
-    void UpdateRigPosAndRate(void);
+    void UpdateRigPos(void);
 #endif
 
 #ifdef	__cplusplus

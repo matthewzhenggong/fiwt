@@ -41,7 +41,9 @@ char idleLoop(TaskHandle_p task) {
     sec = (getMicroseconds()>>20);
     
 #if USE_IMU
-    IMURead2DMA();
+    if (microsec_ticks < 960) {
+        IMURead2DMA();
+    }
 #endif
     if (parameters->secticks == sec)
     {
@@ -57,10 +59,6 @@ char idleLoop(TaskHandle_p task) {
         mLED_2_Off();
         mLED_3_Off();
         mLED_4_Off();
-        //mLED_5_Off();
-        //mLED_6_Off();
-        //mLED_7_Off();
-        //mLED_8_Off();
 #endif
         return 1;
     }

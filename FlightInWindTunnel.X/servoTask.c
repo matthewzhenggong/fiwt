@@ -24,6 +24,7 @@
 
 #include "servoTask.h"
 #include "Servo.h"
+#include "msg_acm.h"
 
 
 void servoInit(servoParam_p parameters) {
@@ -38,6 +39,7 @@ void servoInit(servoParam_p parameters) {
     }
     parameters->GenerateInput_Flag = 0u;
     parameters->InputType = 0u;
+    parameters->time_token = 0u;
 }
 
 PT_THREAD(servoLoop)(TaskHandle_p task) {
@@ -265,6 +267,7 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                 MotorSet(i, 0);
             }
         }
+        sendDataPack(parameters->time_token);
         PT_YIELD(pt);
     }
 

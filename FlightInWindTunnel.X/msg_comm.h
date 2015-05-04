@@ -1,5 +1,5 @@
 /*
- * File:   servoTask.h
+ * File:   msg_acm.h
  * Author: Zheng GONG(matthewzhenggong@gmail.com)
  *
  * This file is part of FIWT.
@@ -18,42 +18,24 @@
  * License along with this library.
  */
 
-#ifndef SERVOTASK_H
-#define	SERVOTASK_H
+#ifndef MSG_COMM_H
+#define	MSG_COMM_H
 
-#include "task.h"
-#include "pt.h"
-#include "clock.h"
+#include "msg.h"
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    typedef struct {
-        struct pt PT;
+    extern  int16_t ntp_offset;
+    extern  int16_t ntp_delay;
 
-        uint16_t ServoRef[SEVERONUM];
-        uint16_t Servo_PrevRef[SEVERONUM];
-        uint8_t InputType;
-        uint8_t Srv2Move;
-        uint16_t StartTime;
-        uint16_t TimeDelta;
-        uint8_t NofCycles;
-        uint16_t MaxValue[6];
-        uint16_t MinValue[6];
-        uint8_t Sign[6];
-        unsigned int cnt;
-        int GenerateInput_Flag;
-        uint32_t time_token;
-    } servoParam_t, *servoParam_p;
-
-    void servoInit(servoParam_p parameters);
-
-    PT_THREAD(servoLoop)(TaskHandle_p task);
+    void msgRegistNTP(msgParam_p);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* SERVOTASK_H */
+#endif	/* MSG_COMM_H */
+
 

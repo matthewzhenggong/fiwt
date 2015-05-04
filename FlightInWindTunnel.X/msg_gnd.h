@@ -37,23 +37,16 @@
 extern "C" {
 #endif
 
-    void msgInit(msgParam_p parameters, XBee_p);
+    typedef struct msgParamGND{
+        TaskHandle_p rsen_Task;
+        TaskHandle_p msg_Task;
+        TaskHandle_p sen_Task;
+    }msgParamGND_t, *msgParamGND_p;
 
-    size_t updateRigPack(uint8_t head[]);
+    void msgRegistGND(msgParam_p, msgParamGND_p);
 
-    size_t updateCommPack(TaskHandle_p task, uint8_t head[]);
-
-    uint8_t * push_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length);
-    
-    uint8_t * push_timestamp(uint8_t *spis_pkg_buff, const uint8_t *timestamp, size_t length);
-
-    uint8_t * pull_payload(uint8_t *spis_pkg_buff, const uint8_t *buff, size_t length);
-
-    size_t updatePingPack(PM_p pm, uint8_t *head);
-
-    size_t updatePingPack2(PM_p pm, uint8_t *head);
-
-
+    bool sendRigPack(void);
+    bool sendSpeedPack(void);
 
 #ifdef	__cplusplus
 }

@@ -38,17 +38,16 @@
 extern "C" {
 #endif
 
-    void msgInit(msgParam_p parameters, XBee_p, TaskHandle_p, TaskHandle_p);
+    typedef struct msgParamACM{
+        TaskHandle_p sen_Task;
+        TaskHandle_p servo_Task;
+        TaskHandle_p msg_Task;
+        servoParam_p serov_param;
+    }msgParamACM_t, *msgParamACM_p;
 
-    size_t updateBattPack(uint8_t head[]);
+    void msgRegistACM(msgParam_p, msgParamACM_p);
 
-    size_t updateCommPack(TaskHandle_p sen_Task, TaskHandle_p serov_Task,
-            TaskHandle_p task, uint8_t head[]);
-
-    size_t updateSensorPack(uint8_t head[]);
-
-    void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]);
-
+    bool sendDataPack(void);
 
 #ifdef	__cplusplus
 }

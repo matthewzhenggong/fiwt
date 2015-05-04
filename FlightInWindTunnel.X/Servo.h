@@ -25,6 +25,7 @@
 
 #if USE_PWM && USE_ADC1
 
+#include <stdint.h>
 #include <dsp.h>
 
 #ifdef	__cplusplus
@@ -50,9 +51,9 @@ extern "C" {
         signed int SERVO_DIFF_LMT;
         signed int  PrevPosition;
         signed int  PrevRate;
-        signed int  Reference;
+        int16_t  Reference;
         fractional butt[3];
-        signed int Ctrl;
+        int16_t Ctrl;
         unsigned int tick;
     };
     typedef struct Servo Servo_t;

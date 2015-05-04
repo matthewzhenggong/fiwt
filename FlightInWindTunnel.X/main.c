@@ -27,7 +27,6 @@
 #if AC_MODEL || AEROCOMP
 #include "msg_acm.h"
 #include "servoTask.h"
-#include "senTask.h"
 
 #elif GNDBOARD
 #include "msg_gnd.h"
@@ -37,6 +36,8 @@
 #elif STARTKITBOARD
 #include "IMU.h"
 #endif
+#include "msg_comm.h"
+#include "senTask.h"
 
 #include "idle.h"
 #include "task.h"
@@ -50,11 +51,12 @@
 
 #if AC_MODEL || AEROCOMP
 servoParam_t servo;
-TaskHandle_p servoTask;
 senParam_t sen;
-TaskHandle_p senTask;
+msgParamACM_t msgACM;
 #elif GNDBOARD
+senParam_t sen;
 remoteSenParam_t remoteSen;
+msgParamGND_t msgGND;
 #endif
 msgParam_t msg;
 
@@ -85,18 +87,25 @@ int main(void) {
     /* Add Task */
 #if AC_MODEL || AEROCOMP
     servoInit(&servo);
-    servoTask = TaskCreate(servoLoop, "SVO", (void *) &servo, TASK_PERIOD, 0, 20);
+    msgACM.servo_Task = TaskCreate(servoLoop, "SVO", (void *) &servo, TASK_PERIOD, 0, 20);
 
     senInit(&sen);
-    senTask = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
+    msgACM.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
 
-    msgInit(&msg, &Xbee1, senTask, servoTask);
-    TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
+    msgInit(&msg, &Xbee1);
+    msgACM.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
+    msgACM.serov_param = &servo;
+    msgRegistNTP(&msg);
+    msgRegistACM(&msg, &msgACM);
 #elif GNDBOARD
+    senInit(&sen);
+    msgGND.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
+    remoteSenInit(&remoteSen, &Xbee3);
+    msgGND.rsen_Task = TaskCreate(remoteSenLoop, "MANIMET", (void *) &remoteSen, 100, 0, 10);
     msgInit(&msg, &Xbee2);
-    TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 10);
-    remoteSenInit(&remoteSen, &msg, &Xbee3);
-    TaskCreate(remoteSenLoop, "WS", (void *) &remoteSen, 100, 0, 10);
+    msgGND.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
+    msgRegistNTP(&msg);
+    msgRegistGND(&msg, &msgGND);
 #elif STARTKITBOARD
     while (1) {
         asm ("repeat #4000;");

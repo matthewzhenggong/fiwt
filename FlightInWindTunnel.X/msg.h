@@ -30,77 +30,87 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#if GNDBOARD
-#define SPI_PKG_MAXLEN 86
-#endif
+//#if GNDBOARD
+//#define SPI_PKG_MAXLEN 86
+//#endif
+
+#define MSG_MAX_PROCESS_FUNCS (8)
+#define MSG_MAX_PUSH_FUNCS (8)
+#define MSG_NAME_MAX_LEN (8)
+#define MSG_ID_POS (4)
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    typedef struct NTP {
-        int32_t offset;
-        int16_t delay;
-        int stage;
-        uint32_t TimeStampR0;
-        uint32_t TimeStampL0;
-        uint32_t TimeStampL1;
-        uint32_t TimeStampR2;
-        uint32_t TimeStampR3;
-        uint32_t TimeStampL4;
-        uint32_t TimeStampLP;
-        uint32_t TimeStampRP;
-    } NTP_t, *NTP_p;
+    struct ProcessMessageHandle;
+    typedef struct ProcessMessageHandle* ProcessMessageHandle_p;
+    typedef bool (*ProcessMessageHandleFunc_p)(ProcessMessageHandle_p, const uint8_t *msg, size_t msg_len);
+    typedef struct ProcessMessageHandle {
+        char name[MSG_NAME_MAX_LEN];
+        uint8_t msg_id;
+        void * parameters;
+        uint32_t remote_gen_timestamp;
+        uint32_t remote_tx_timestamp;
+        uint32_t rx_timestamp;
+        uint16_t rx_cnt;
+        uint16_t rx_port;
+        uint16_t remote_tx_port;
+        ProcessMessageHandleFunc_p func;
+    } ProcessMessageHandle_t;
 
-    typedef struct PM {
-        int32_t offset;
-        int16_t delay;
-        uint8_t target;
-        int stage;
-        uint32_t TimeStampL1;
-        uint32_t TimeStampR2;
-        uint32_t TimeStampR3;
-        uint32_t TimeStampL4;
-    } PM_t, *PM_p;
+    struct PushMessageHandle;
+    typedef struct PushMessageHandle* PushMessageHandle_p;
+    typedef size_t (*PushMessageHandleFunc_p)(PushMessageHandle_p, uint8_t *head, size_t max_len);
+    typedef struct PushMessageHandle {
+        char name[MSG_NAME_MAX_LEN];
+        void * parameters;
+        unsigned int tx_cnt;
+        unsigned int peroid;
+        unsigned int offset;
+        uint16_t target;
+        uint32_t timestamp;
+        PushMessageHandleFunc_p func;
+    } PushMessageHandle_t;
 
     typedef struct {
         struct pt PT;
         XBee_p xbee;
-        TxIPv4Request_t tx_req;
+
+        uint32_t rx_timestamp;
+        uint32_t remote_tx_timestamp;
         RxIPv4Response_t rx_rsp;
-        unsigned int rx_cnt;
+        ProcessMessageHandle_t process_handle_list[MSG_MAX_PROCESS_FUNCS];
+        size_t process_handle_list_num;
+        uint8_t process_map[256];
+
         unsigned int cnt;
+        unsigned int bad_rx_pkg_cnt;
+        unsigned int bad_tx_pkg_cnt;
 
-        //time sync
-        NTP_t ntp;
+        TxIPv4Request_t tx_req;
+        uint8_t msg_buff[MSG_TX_BUFF_LEN];
+        uint8_t * msg_head[DEST_MAX_NUM+1];
+        uint8_t * msg_tail[DEST_MAX_NUM+1];
+        size_t msg_len[DEST_MAX_NUM];
+        uint16_t msg_port[DEST_MAX_NUM];
 
-        //send general message
-        uint8_t msg_buff[256];
-        uint8_t msg_len;
-
-#if AC_MODEL || AEROCOMP
-        TaskHandle_p serov_Task;
-        TaskHandle_p sen_Task;
-        TaskHandle_p recv_Task;
-#elif GNDBOARD
-        uint8_t spis_pkg_buff[SPI_PKG_MAXLEN];
-        PM_t pm;
-#endif
+        PushMessageHandle_t push_handle_list[MSG_MAX_PUSH_FUNCS];
+        size_t push_handle_list_num;
+        uint8_t push_buff[MSG_TX_BUFF_LEN];
     } msgParam_t, *msgParam_p;
+
+    bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t msg_len);
+
+    bool registerProcessMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN], uint8_t id, ProcessMessageHandleFunc_p func, void * parameters);
+
+    bool registerPushMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN],
+            PushMessageHandleFunc_p func, void * parameters, uint16_t target,
+            unsigned int circle, unsigned int offset);
 
     PT_THREAD(msgLoop)(TaskHandle_p task);
 
-    uint8_t* EscapeByte(uint8_t* pack, uint8_t b);
-
-    size_t updateNTPPack(NTP_p ntp, uint8_t *head);
-
-    size_t updateNTPPack3(NTP_p ntp, uint8_t *head);
-
-    size_t updateNTPPack11(NTP_p ntp, uint8_t *head);
-
-    void reset_clock(NTP_p ntp, int apply);
-
-    void msgInitComm(msgParam_p parameters, XBee_p s6);
+    void msgInit(msgParam_p parameters, XBee_p s6);
 
 
 #ifdef	__cplusplus

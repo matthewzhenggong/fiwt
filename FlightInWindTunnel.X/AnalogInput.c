@@ -31,9 +31,9 @@ unsigned int RigPos[RIGPOSADCNUM];
 int32_t RigRollPos=0;
 int16_t RigPitchPos=0;
 int16_t RigYawPos=0;
-int16_t RigRollRate=0;
-int16_t RigPitchRate=0;
-int16_t RigYawRate=0;
+//int16_t RigRollRate=0;
+//int16_t RigPitchRate=0;
+//int16_t RigYawRate=0;
 #else
 uint8_t BattCell[BATTCELLADCNUM];
 #if AC_MODEL
@@ -109,88 +109,117 @@ void UpdateServoPosFromEnc(void) {
 //        LastEncPos[i] = CurEncPos[i];
 //    }
 }
-//#elif GNDBOARD
-#elif 0
+#elif GNDBOARD
 
-/** two-order butterwolf filter 10Hz */
-#define BUTTER_ORDER (2)
-//    0.6012  -0.2536 0.3586
-//    0.2536   0.9598 0.0568
-//    0.08966  0.6929 0.02008
-// x 2^15 =
-static fractional _butter_mat_frac[] = { \
-     19700, -8310, 11752,
-      8310, 31452,  1861,
-      2938, 22705,   658,
-};
+//// two-order butterwolf filter 10Hz
+//#define BUTTER_ORDER (2)
+////    0.6012  -0.2536 0.3586
+////    0.2536   0.9598 0.0568
+////    0.08966  0.6929 0.02008
+//// x 2^15 =
+//static fractional _butter_mat_frac[] = {
+//     19700, -8310, 11752,
+//      8310, 31452,  1861,
+//      2938, 22705,   658,
+//};
+//
+//static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER + 1]) {
+//    fractional dstM[BUTTER_ORDER];
+//    int i;
+//
+//    butt[BUTTER_ORDER] = input;
+//    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac, butt);
+//    for (i = 0; i < BUTTER_ORDER; ++i) {
+//        butt[i] = dstM[i];
+//    }
+//    MatrixMultiply(1, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac + BUTTER_ORDER * (BUTTER_ORDER + 1), butt);
+//    return dstM[0];
+//}
 
-static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER + 1]) {
-    fractional dstM[BUTTER_ORDER];
-    int i;
-
-    butt[BUTTER_ORDER] = input;
-    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac, butt);
-    for (i = 0; i < BUTTER_ORDER; ++i) {
-        butt[i] = dstM[i];
-    }
-    MatrixMultiply(1, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac + BUTTER_ORDER * (BUTTER_ORDER + 1), butt);
-    return dstM[0];
-}
-
-
-static int16_t LastRigRollPos=0;
+//static int32_t RigRollPosFiltered=0;
+//static int16_t RigPitchPosFiltered=0;
+//static int16_t RigYawPosFiltered=0;
+static int32_t LastRigRollPos=0;
 static int16_t LastRigPitchPos=0;
 static int16_t LastRigYawPos=0;
-static int16_t RigRollLoop=0;
+//static int16_t LastRigRollPosFiltered=0;
+//static int16_t LastRigPitchPosFiltered=0;
+//static int16_t LastRigYawPosFiltered=0;
+static int RigRollLoop=0;
+static int RigPitchLoop=0;
+static int RigYawLoop=0;
+//static fractional buttRigRoll[BUTTER_ORDER + 1];
+//static fractional buttRigPitch[BUTTER_ORDER + 1];
+//static fractional buttRigYaw[BUTTER_ORDER + 1];
 
-void UpdateRigPosAndRate(void) {
+int32_t updateAngle32(int16_t CurRigRollPos, int *RigRollLoop, int32_t RigRollPos) {
+    int32_t diff;
+    diff = (CurRigRollPos+(*RigRollLoop)*3873)-(RigRollPos);
+    /* Find the right loop index if there is a jump. */
+    if (diff > 1936)
+    {
+        --(*RigRollLoop);
+        diff = (CurRigRollPos+(*RigRollLoop)*3873)-(RigRollPos);
+    }
+    else if (diff < -1936)
+    {
+        ++(*RigRollLoop);
+        diff = (CurRigRollPos+(*RigRollLoop)*3873)-(RigRollPos);
+    }
+    return RigRollPos + diff;
+}
+
+void UpdateRigPos(void) {
+    int16_t diff;
         int16_t CurRigRollPos;
         int16_t CurRigPitchPos;
         int16_t CurRigYawPos;
-//        int32_t diff;
 
-        CurRigRollPos = 0;
-        CurRigPitchPos = 0;
-        CurRigYawPos = 0;
-//
-//        diff = CurRigRollPos-LastRigRollPos;
-//        if (diff < 256+RigRollRate && diff > -256+RigRollRate)
-//        {
-//            diff = (-CurRigRollPos+RigRollLoop*120)-(RigRollPos);
-//            /* Find the right loop index if there is a jump. */
-//            if (diff > 683)
-//            {
-//                --RigRollLoop;
-//                diff = (-CurRigRollPos+RigRollLoop*120)-(RollDataOut);
-//            }
-//            else if (diff < -60)
-//            {
-//                ++circle_cnt;
-//                diff = (-RollData+circle_cnt*120)-(RollDataOut);
-//            }
-//            RollDataOut += diff;
-//            /* I would not like to output this odd value.
-//             * So I select to save it in the bank.
-//             * And I hope the opposite value comming soon.
-//             */
-///*
-//            if (diff > 5+LastRollDataFilterDiff)
-//            {
-//                RollDataOutSaved += diff;
-//            }
-//            else if (diff < -5+LastRollDataFilterDiff)
-//            {
-//                RollDataOutSaved += diff;
-//            }
-//*/
-//        }
+        CurRigRollPos = -(RigPos[0]-2220);
+        CurRigPitchPos = (RigPos[3]-3669);
+        CurRigYawPos = (RigPos[2]-2657);
+
+        diff = CurRigRollPos-LastRigRollPos;
+        if (diff < 256 && diff > -256)
+        {
+            RigRollPos = updateAngle32(CurRigRollPos, &RigRollLoop, RigRollPos);
+        }
 //        else
 //        {
-//            RollDataOut += 0.7*LastRollDataFilterDiff;
+//            RigRollPos += RigRollRate;
 //        }
-//
+//        RigRollPosFiltered = _butter_update(RigRollPos, buttRigRoll);
+//        RigRollRate = RigRollPosFiltered - LastRigRollPos;
+//        LastRigRollPosFiltered = RigRollPosFiltered;
+        LastRigRollPos = CurRigRollPos;
 
-    
+        diff = CurRigPitchPos-LastRigPitchPos;
+        if (diff < 256 && diff > -256)
+        {
+            RigPitchPos = updateAngle32(CurRigPitchPos, &RigPitchLoop, RigPitchPos);
+        }
+//        else
+//        {
+//            RigPitchPos += RigPitchRate;
+//        }
+//        RigPitchPosFiltered = _butter_update(RigPitchPos, buttRigPitch);
+//        RigPitchRate = RigPitchPosFiltered - LastRigPitchPos;
+//        LastRigPitchPosFiltered = RigPitchPosFiltered;
+        LastRigPitchPos = CurRigPitchPos;
+
+        diff = CurRigYawPos-LastRigYawPos;
+        if (diff < 256 && diff > -256)
+        {
+            RigYawPos = updateAngle32(CurRigYawPos, &RigYawLoop, RigYawPos);
+        }
+//        else
+//        {
+//            RigYawPos += RigYawRate;
+//        }
+//        RigYawPosFiltered = _butter_update(RigYawPos, buttRigYaw);
+//        RigYawRate = RigYawPosFiltered - LastRigYawPos;
+//        LastRigYawPosFiltered = RigYawPosFiltered;
+        LastRigYawPos = CurRigYawPos;
 }
 
 #endif

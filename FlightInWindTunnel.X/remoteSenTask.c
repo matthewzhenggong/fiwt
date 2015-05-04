@@ -23,12 +23,127 @@
 #if GNDBOARD
 
 #include "remoteSenTask.h"
+#include "msg_gnd.h"
 
 #include "LedExtBoard.h"
 #include "clock.h"
 #include <string.h>
+#include <stdlib.h>
 
-void remoteSenInit(remoteSenParam_p parameters, msgParam_p msg, XBee_p s2) {
+float windtunnel_wind_speed = 0; // m/s
+float windtunnel_dynamic_pressure = 0; // pa
+
+static uint8_t Velocity_head[] = "Velocity\",";
+static uint8_t DP_head[] = "D.P.\",";
+
+static char vel_buff[32];
+static int flag, idx;
+
+static bool process_data(uint8_t *msg, size_t msg_len) {
+    size_t i;
+    uint8_t c;
+    bool rslt;
+
+    rslt = false;
+    for (i = 0; i < msg_len; ++i) {
+        c = *(msg++);
+        switch (flag) {
+            case 0:
+                if (c == Velocity_head[0]) {
+                    flag = 10;
+                    idx = 1;
+                } else if (c == DP_head[0]) {
+                    flag = 20;
+                    idx = 1;
+                }
+                break;
+            case 10:
+                if (c == Velocity_head[idx++]) {
+                    if (idx == 10) {
+                        flag = 11;
+                        idx = 0;
+                    }
+                } else {
+                    flag = 0;
+                }
+                break;
+            case 11:
+                switch (c) {
+                    case ',':
+                        vel_buff[idx] = '\0';
+                        windtunnel_wind_speed = (float) atof(vel_buff);
+                        flag = 0;
+                        break;
+                    case ' ':
+                    case '\t':
+                        break;
+                    case '+':
+                    case '-':
+                    case '.':
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                        vel_buff[idx++] = c;
+                        break;
+                    default :
+                        flag = 0;
+                }
+                break;
+            case 20:
+                if (c == Velocity_head[idx++]) {
+                    if (idx == 6) {
+                        flag = 21;
+                        idx = 0;
+                    }
+                } else {
+                    flag = 0;
+                }
+                break;
+            case 21:
+                switch (c) {
+                    case ',':
+                        vel_buff[idx] = '\0';
+                        windtunnel_dynamic_pressure = (float) atof(vel_buff);
+                        flag = 0;
+                        break;
+                    case ' ':
+                    case '\t':
+                        break;
+                    case '+':
+                    case '-':
+                    case '.':
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                        vel_buff[idx++] = c;
+                        break;
+                    default :
+                        flag = 0;
+                }
+                break;
+            default:
+                flag = 0;
+
+        }
+    }
+    return rslt;
+}
+
+void remoteSenInit(remoteSenParam_p parameters, XBee_p s2) {
     struct pt *pt;
 
     pt = &(parameters->PT);
@@ -42,17 +157,16 @@ void remoteSenInit(remoteSenParam_p parameters, msgParam_p msg, XBee_p s2) {
     parameters->tx_req._payloadPtr[0] = 'T';
 
     parameters->cnt = 0u;
-    parameters->rx_cnt = 0u;
-    parameters->msg = msg;
+
+    windtunnel_wind_speed = 0; // m/s
+    windtunnel_dynamic_pressure = 0; // pa
+    flag = 0;
 }
 
 PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
     int packin;
     remoteSenParam_p parameters;
     struct pt *pt;
-    uint32_t TimeStamp;
-    uint8_t *pack;
-    int i;
 
     parameters = (remoteSenParam_p) (task->parameters);
     pt = &(parameters->PT);
@@ -68,27 +182,17 @@ PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
             switch (packin) {
                 case ZB_RX_RESPONSE:
                     if (XBeeZBRxResponse(parameters->xbee, &parameters->rx_rsp)) {
-                        ++parameters->rx_cnt;
-                        TimeStamp = getMicroseconds();
-                        pack = parameters->msg->msg_buff;
-                        pack = EscapeByte(pack, 'T');
-                        pack = EscapeByte(pack, TimeStamp >>24);
-                        pack = EscapeByte(pack, TimeStamp >>16);
-                        pack = EscapeByte(pack, TimeStamp >> 8);
-                        pack = EscapeByte(pack, TimeStamp & 0xff);
-                        for (i=0; i<parameters->rx_rsp._payloadLength; ++i ) {
-                            pack = EscapeByte(pack, parameters->rx_rsp._payloadPtr[i]);
-                        }
-                        parameters->msg->msg_len = pack - parameters->msg->msg_buff;
+                        if (process_data(parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength)) {
+                            sendSpeedPack();
 #if USE_LEDEXTBOARD
-                        mLED_2_Toggle();
+                            mLED_2_Toggle();
 #endif
+                        }
                     }
                     break;
             }
             packin = XBeeReadPacket(parameters->xbee);
         }
-
         ++parameters->cnt;
         if ((parameters->cnt & 0x7) == 0) {
             XBeeZBTxRequest(parameters->xbee, &parameters->tx_req, 0u);

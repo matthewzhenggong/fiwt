@@ -27,107 +27,56 @@
 #include "IMU.h"
 #include "Servo.h"
 #include "msg_code.h"
+#include "msg_comm.h"
 
-void msgInit(msgParam_p parameters, XBee_p s6, TaskHandle_p senTask, TaskHandle_p servoTask) {
-    msgInitComm(parameters, s6);
-
-    parameters->sen_Task = senTask;
-    parameters->serov_Task = servoTask;
-}
-
-size_t updateBattPack(uint8_t head[]) {
+size_t updateCommPack(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) {
     uint8_t *pack;
+    msgParamACM_p p;
     int i;
+    p = (msgParamACM_p)(msg_h->parameters);
     pack = head;
+    if (max_len < 1+6+4) {
+        return 0;
+    }
 #if AEROCOMP
-    pack = EscapeByte(pack, CODE_AEROCOMP_BAT_LEV);
+    *(pack++) = CODE_AEROCOMP_STATS;
 #else
-    pack = EscapeByte(pack, CODE_AC_MODEL_BAT_LEV);
+    *(pack++) = CODE_AC_MODEL_STATS;
 #endif
+    *(pack++) = ntp_delay >> 8;
+    *(pack++) = ntp_delay & 0xFF;
+    *(pack++) = ntp_offset >> 8;
+    *(pack++) = ntp_offset & 0xFF;
     for (i = 0; i < BATTCELLADCNUM; ++i) {
-        pack = EscapeByte(pack, BattCell[i]);
+        *(pack++) = BattCell[i];
     }
-    pack = EscapeByte(pack, ADC_TimeStamp >>24);
-    pack = EscapeByte(pack, ADC_TimeStamp >>16);
-    pack = EscapeByte(pack, ADC_TimeStamp >> 8);
-    pack = EscapeByte(pack, ADC_TimeStamp & 0xFF);
+    *(pack++) = p->sen_Task->load_max >> 8;
+    *(pack++) = p->sen_Task->load_max & 0xFF;
+    *(pack++) = p->servo_Task->load_max >> 8;
+    *(pack++) = p->servo_Task->load_max & 0xFF;
+    *(pack++) = p->msg_Task->load_max >> 8;
+    *(pack++) = p->msg_Task->load_max & 0xFF;
+
     return pack - head;
 }
 
-size_t updateCommPack(TaskHandle_p sen_Task, TaskHandle_p serov_Task,
-        TaskHandle_p task, uint8_t head[]) {
-    uint8_t *pack;
-    pack = head;
-#if AEROCOMP
-    pack = EscapeByte(pack, CODE_AEROCOMP_COM_STATS);
-#else
-    pack = EscapeByte(pack, CODE_AC_MODEL_COM_STATS);
-#endif
-    pack = EscapeByte(pack, sen_Task->load_max >> 8);
-    pack = EscapeByte(pack, sen_Task->load_max & 0xFF);
-    pack = EscapeByte(pack, serov_Task->load_max >> 8);
-    pack = EscapeByte(pack, serov_Task->load_max & 0xFF);
-    pack = EscapeByte(pack, task->load_max >> 8);
-    pack = EscapeByte(pack, task->load_max & 0xFF);
 
-    pack = EscapeByte(pack, ADC_TimeStamp >>24);
-    pack = EscapeByte(pack, ADC_TimeStamp >>16);
-    pack = EscapeByte(pack, ADC_TimeStamp >> 8);
-    pack = EscapeByte(pack, ADC_TimeStamp & 0xFF);
-    return pack - head;
-}
-
-size_t updateSensorPack(uint8_t head[]) {
-    uint8_t *pack;
+bool servoProcA5Cmd(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t msg_len) {
     int i;
-    pack = head;
-#if AEROCOMP
-    pack = EscapeByte(pack, CODE_AEROCOMP_SERVO_POS);
-#else
-    pack = EscapeByte(pack, CODE_AC_MODEL_SERVO_POS);
-#endif
-    for (i = 0; i < SERVOPOSADCNUM; ++i) {
-        pack = EscapeByte(pack, ServoPos[i] >> 8);
-        pack = EscapeByte(pack, ServoPos[i] & 0xFF);
+    msgParamACM_p p;
+    servoParam_p parameters;
+    p = (msgParamACM_p)(msg_h->parameters);
+    parameters = p->serov_param;
+
+    if (cmd[0] != 0xA5 && cmd[0] != 0xA6) {
+        return false;
     }
-    for (i = 0; i < ENCNUM; ++i) {
-        pack = EscapeByte(pack, EncPos[i] >> 8);
-        pack = EscapeByte(pack, EncPos[i] & 0xFF);
-    }
-#if USE_IMU
-    pack = EscapeByte(pack, IMU_XGyro >> 8);
-    pack = EscapeByte(pack, IMU_XGyro & 0xFF);
-    pack = EscapeByte(pack, IMU_YGyro >> 8);
-    pack = EscapeByte(pack, IMU_YGyro & 0xFF);
-    pack = EscapeByte(pack, IMU_ZGyro >> 8);
-    pack = EscapeByte(pack, IMU_ZGyro & 0xFF);
-    pack = EscapeByte(pack, IMU_XAccl >> 8);
-    pack = EscapeByte(pack, IMU_XAccl & 0xFF);
-    pack = EscapeByte(pack, IMU_YAccl >> 8);
-    pack = EscapeByte(pack, IMU_YAccl & 0xFF);
-    pack = EscapeByte(pack, IMU_ZAccl >> 8);
-    pack = EscapeByte(pack, IMU_ZAccl & 0xFF);
-#endif
-    pack = EscapeByte(pack, ADC_TimeStamp >>24);
-    pack = EscapeByte(pack, ADC_TimeStamp >>16);
-    pack = EscapeByte(pack, ADC_TimeStamp >> 8);
-    pack = EscapeByte(pack, ADC_TimeStamp & 0xFF);
-    for (i = 0; i < SEVERONUM; ++i) {
-        pack = EscapeByte(pack, Servos[i].Ctrl >> 8);
-        pack = EscapeByte(pack, Servos[i].Ctrl & 0xFF);
-    }
+    parameters->time_token = ((uint32_t)cmd[1]<<24)+((uint32_t)cmd[2]<<16)+((uint32_t)cmd[3]<<8)+(uint32_t)cmd[4];
 
-    return pack - head;
-}
-
-
-void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
-    int i;
-
-    switch (cmd[1]) {
+    switch (cmd[5]) {
         case 1:
             for (i = 0; i < SEVERONUM; ++i) {
-                parameters->Servo_PrevRef[i] = parameters->ServoRef[i] = ((cmd[2 + i * 2] << 8) | cmd[2 + i * 2 + 1]);
+                parameters->Servo_PrevRef[i] = parameters->ServoRef[i] = ((cmd[6 + i * 2] << 8) | cmd[6 + i * 2 + 1]);
             }
             parameters->InputType = 0;
             parameters->StartTime = 100;
@@ -143,34 +92,109 @@ void servoProcA5Cmd(servoParam_p parameters, const uint8_t cmd[]) {
         case 7:
             goto yyyy;
         case 5:
-            parameters->TimeDelta = ((uint32_t) ((cmd[5] << 8) | cmd[6]))*8UL / TASK_PERIOD;
+            parameters->TimeDelta = ((uint32_t) ((cmd[9] << 8) | cmd[10]))*8UL / TASK_PERIOD;
             goto xxxx;
         case 8:
         case 9:
-            parameters->TimeDelta = ((uint32_t) ((cmd[5] << 8) | cmd[6]))*4UL / TASK_PERIOD;
+            parameters->TimeDelta = ((uint32_t) ((cmd[9] << 8) | cmd[10]))*4UL / TASK_PERIOD;
             goto xxxx;
 yyyy:
-            parameters->TimeDelta = ((cmd[5] << 8) | cmd[6]) / TASK_PERIOD;
+            parameters->TimeDelta = ((cmd[9] << 8) | cmd[10]) / TASK_PERIOD;
 xxxx:
-            parameters->InputType = cmd[1] - 1u;
-            parameters->Srv2Move = cmd[2];
-            parameters->StartTime = ((cmd[3] << 8) | cmd[4]) / TASK_PERIOD;
-            parameters->NofCycles = cmd[7];
+            parameters->InputType = cmd[5] - 1u;
+            parameters->Srv2Move = cmd[6];
+            parameters->StartTime = ((cmd[7] << 8) | cmd[8]) / TASK_PERIOD;
+            parameters->NofCycles = cmd[11];
             for (i = 0; i < 6; ++i) {
-                parameters->MaxValue[i] = (cmd[8 + i] << 1);
+                parameters->MaxValue[i] = (cmd[12 + i] << 1);
             }
             for (i = 0; i < 6; ++i) {
-                parameters->MinValue[i] = (cmd[14 + i] << 1);
+                parameters->MinValue[i] = (cmd[18 + i] << 1);
             }
             for (i = 0; i < 6; ++i) {
-                parameters->Sign[i] = cmd[20 + i];
+                parameters->Sign[i] = cmd[24 + i];
             }
             parameters->GenerateInput_Flag = 1;
             parameters->cnt = 0u;
             break;
         case 6:
             break;
+        default :
+            return false;
+            break;
     }
+    return true;
 }
+
+static msgParam_p _msg;
+uint16_t _sen_data_target;
+
+void msgRegistACM(msgParam_p msg, msgParamACM_p param) {
+    _msg = msg;
+    _sen_data_target = TargetAP;
+
+    registerPushMessageHandle(msg, "COMM", &updateCommPack, param,
+            MSG_DEST_PORT, 1000, 508);
+#if AC_MODEL
+    registerProcessMessageHandle(msg, "CMDA5", CODE_AC_MODEL_SERV_CMD, servoProcA5Cmd, param);
+#else
+    registerProcessMessageHandle(msg, "CMDA6", CODE_AEROCOMP_SERV_CMD, servoProcA5Cmd, param);
+#endif
+}
+
+bool sendDataPack(uint32_t T1) {
+    uint8_t head[1+SERVOPOSADCNUM*2+ENCNUM*2+6*2+4+SEVERONUM*2];
+    uint8_t *pack;
+    int i;
+
+    pack = head;
+#if AEROCOMP
+    *(pack++) = CODE_AEROCOMP_SERVO_POS;
+#else
+    *(pack++) = CODE_AC_MODEL_SERVO_POS;
+#endif
+    for (i = 0; i < SERVOPOSADCNUM; ++i) {
+        *(pack++) = ServoPos[i] >> 8;
+        *(pack++) = ServoPos[i] & 0xFF;
+    }
+    for (i = 0; i < ENCNUM; ++i) {
+        *(pack++) = EncPos[i] >> 8;
+        *(pack++) = EncPos[i] & 0xFF;
+    }
+#if USE_IMU
+    *(pack++) = IMU_XGyro >> 8;
+    *(pack++) = IMU_XGyro & 0xFF;
+    *(pack++) = IMU_YGyro >> 8;
+    *(pack++) = IMU_YGyro & 0xFF;
+    *(pack++) = IMU_ZGyro >> 8;
+    *(pack++) = IMU_ZGyro & 0xFF;
+    *(pack++) = IMU_XAccl >> 8;
+    *(pack++) = IMU_XAccl & 0xFF;
+    *(pack++) = IMU_YAccl >> 8;
+    *(pack++) = IMU_YAccl & 0xFF;
+    *(pack++) = IMU_ZAccl >> 8;
+    *(pack++) = IMU_ZAccl & 0xFF;
+#endif
+    *(pack++) = ADC_TimeStamp >>24;
+    *(pack++) = ADC_TimeStamp >>16;
+    *(pack++) = ADC_TimeStamp >> 8;
+    *(pack++) = ADC_TimeStamp & 0xFF;
+    for (i = 0; i < SEVERONUM; ++i) {
+        *(pack++) = Servos[i].Ctrl >> 8;
+        *(pack++) = Servos[i].Ctrl & 0xFF;
+    }
+    for (i = 0; i < SEVERONUM; ++i) {
+        *(pack++) = Servos[i].Reference >> 8;
+        *(pack++) = Servos[i].Reference & 0xFF;
+    }
+
+    *(pack++) = (T1 >> 24);
+    *(pack++) = (T1 >> 16);
+    *(pack++) = (T1 >> 8);
+    *(pack++) = (T1 & 0xff);
+
+    return pushMessage(_msg, _sen_data_target, head, pack - head);
+}
+
 
 #endif /*AC_MODEL || AEROCOMP*/

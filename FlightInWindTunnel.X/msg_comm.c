@@ -19,128 +19,94 @@
  */
 
 #include "msg.h"
+#include "msg_code.h"
 #include "clock.h"
 
-uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
-    if (b == MSG_DILIMITER || b == MSG_ESC) {
-        *(pack++) = MSG_ESC;
-        *(pack++) = b^0x20;
-    } else {
-        *(pack++) = b;
+int16_t ntp_offset;
+int16_t ntp_delay;
+
+static uint16_t ntp_token;
+
+size_t requestNTP(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) {
+    uint8_t *pack;
+    pack = head;
+
+    *(pack++) = CODE_NTP_REQUEST;
+    ntp_token = microsec_ticks;
+    *(pack++) = ntp_token >> 8;
+    *(pack++) = ntp_token & 0xff;
+    return pack - head;
+}
+
+bool processNTPreq(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t max_len) {
+    uint32_t T1,T2;
+    uint8_t head[8];
+    uint8_t *pack;
+    if (cmd[0] == CODE_NTP_REQUEST) {
+        pack = head;
+        *(pack++) = CODE_NTP_RESPONSE;
+        *(pack++) = cmd[1];
+        *(pack++) = cmd[2];
+        T1 = msg_h->remote_tx_timestamp;
+        *(pack++) = (T1 >> 24);
+        *(pack++) = (T1 >> 16);
+        *(pack++) = (T1 >> 8);
+        *(pack++) = (T1 & 0xff);
+        T2 = msg_h->rx_timestamp;
+        *(pack++) = (T2 >> 24);
+        *(pack++) = (T2 >> 16);
+        *(pack++) = (T2 >> 8);
+        *(pack++) = (T2 & 0xff);
+        return pushMessage((msgParam_p)msg_h->parameters, msg_h->remote_tx_port, head, 8);
     }
-    return pack;
+    return false;
 }
 
+bool processNTPrsp(ProcessMessageHandle_p msg_h, const uint8_t *msg_ptr, size_t msg_len) {
+    uint32_t T1,T2,T3,T4;
+    int32_t offset;
+    int32_t delay;
+    uint32_t T;
 
-size_t updateNTPPack(NTP_p ntp, uint8_t *head) {
-    uint8_t *pack;
-    ntp->stage++;
-    pack = head;
-    pack = EscapeByte(pack, 'S');
-    pack = EscapeByte(pack, '\x01');
-    pack = EscapeByte(pack, ntp->TimeStampL0 >>24);
-    pack = EscapeByte(pack, ntp->TimeStampL0 >>16);
-    pack = EscapeByte(pack, ntp->TimeStampL0 >> 8);
-    pack = EscapeByte(pack, ntp->TimeStampL0 & 0xff);
-    ntp->TimeStampL1 = getMicroseconds();
-    pack = EscapeByte(pack, ntp->TimeStampL1 >>24);
-    pack = EscapeByte(pack, ntp->TimeStampL1 >>16);
-    pack = EscapeByte(pack, ntp->TimeStampL1 >> 8);
-    pack = EscapeByte(pack, ntp->TimeStampL1 & 0xff);
-    return pack - head;
-}
+    if (msg_ptr[0] == CODE_NTP_RESPONSE && msg_ptr[1] == (ntp_token >> 8) && msg_ptr[2] == (ntp_token & 0xFF)) {
+        T4 = msg_h->rx_timestamp;
+        T3 = msg_h->remote_tx_timestamp;
+        T1 = ((uint32_t)msg_ptr[3]<<24)+((uint32_t)msg_ptr[4]<<16)+((uint32_t)msg_ptr[5]<<8)+(uint32_t)msg_ptr[6];
+        T2 = ((uint32_t)msg_ptr[7]<<24)+((uint32_t)msg_ptr[8]<<16)+((uint32_t)msg_ptr[9]<<8)+(uint32_t)msg_ptr[10];
 
-size_t updateNTPPack3(NTP_p ntp, uint8_t *head) {
-    uint8_t *pack;
-    ntp->stage = 0u;
-    pack = head;
-    pack = EscapeByte(pack, 'S');
-    pack = EscapeByte(pack, '\x03');
-    pack = EscapeByte(pack, ntp->TimeStampL4 >>24);
-    pack = EscapeByte(pack, ntp->TimeStampL4 >>16);
-    pack = EscapeByte(pack, ntp->TimeStampL4 >> 8);
-    pack = EscapeByte(pack, ntp->TimeStampL4 & 0xff);
-    pack = EscapeByte(pack, ntp->delay >> 8);
-    pack = EscapeByte(pack, ntp->delay & 0xff);
-    pack = EscapeByte(pack, ntp->offset >> 24);
-    pack = EscapeByte(pack, ntp->offset >> 16);
-    pack = EscapeByte(pack, ntp->offset >> 8);
-    pack = EscapeByte(pack, ntp->offset & 0xff);
-    ntp->TimeStampL1 = getMicroseconds();
-    pack = EscapeByte(pack, ntp->TimeStampL1 >>24);
-    pack = EscapeByte(pack, ntp->TimeStampL1 >>16);
-    pack = EscapeByte(pack, ntp->TimeStampL1 >> 8);
-    pack = EscapeByte(pack, ntp->TimeStampL1 & 0xff);
-
-    return pack - head;
-}
-
-size_t updateNTPPack11(NTP_p ntp, uint8_t *head) {
-    uint8_t *pack;
-    uint32_t ts;
-    ntp->stage = 0u;
-    pack = head;
-    pack = EscapeByte(pack, 'S');
-    pack = EscapeByte(pack, '\x12');
-    pack = EscapeByte(pack, ntp->TimeStampLP >>24);
-    pack = EscapeByte(pack, ntp->TimeStampLP >>16);
-    pack = EscapeByte(pack, ntp->TimeStampLP >> 8);
-    pack = EscapeByte(pack, ntp->TimeStampLP & 0xff);
-    ts = getMicroseconds();
-    pack = EscapeByte(pack, ts >>24);
-    pack = EscapeByte(pack, ts >>16);
-    pack = EscapeByte(pack, ts >> 8);
-    pack = EscapeByte(pack, ts & 0xff);
-    return pack - head;
-}
-
-void reset_clock(NTP_p ntp, int apply) {
-    int32_t T;
-    int32_t T1, T2, T3, T4;
-    if (apply == 2) {
-        ntp->offset = ntp->TimeStampRP - ntp->TimeStampLP;
-        ntp->offset += 3000; //TODO
-        if (ntp->offset < 5000 && ntp->offset > -5000) {
-            ntp->offset >>= 2;
+        delay = (T4-T1) - (T3-T2);
+        offset = ((T2-T1) + (T3-T4))/2;
+        if (offset < 4000 && offset > -4000) {
+            offset >>= 2;
         }
         T = getMicroseconds();
-        T += ntp->offset;
+        T += offset;
         setMicroseconds(T);
-    } else {
-        T1 = ntp->TimeStampL1;
-        T2 = ntp->TimeStampR2;
-        T3 = ntp->TimeStampR3;
-        T4 = ntp->TimeStampL4;
-        ntp->delay = (T4-T1) - (T3-T2);
-        ntp->offset = ((T2-T1) + (T3-T4))/2;
-        if (ntp->offset < 5000 && ntp->offset > -5000) {
-            ntp->offset >>= 2;
+        if (delay > 0x7FFF) {
+            ntp_delay = 0x7FFF;
+        } else if (delay < -0x7FFF) {
+            ntp_delay = -0x7FFF;
         }
-        T = getMicroseconds();
-        T += ntp->offset;
-        if (apply) {
-            setMicroseconds(T);
+        if (offset > 0x7FFF) {
+            ntp_offset = 0x7FFF;
+        } else if (offset < -0x7FFF) {
+            ntp_offset = -0x7FFF;
         }
+        return true;
     }
+    return false;
 }
 
-void msgInitComm(msgParam_p parameters, XBee_p s6) {
-    struct pt *pt;
-
-    pt = &(parameters->PT);
-    PT_INIT(pt);
-    parameters->xbee = s6;
-    parameters->tx_req._des_addr_msw = MSG_DEST_ADDR_MSW;
-    parameters->tx_req._des_addr_lsw = MSG_DEST_ADDR_LSW;
-    parameters->tx_req._des_port = MSG_DEST_PORT;
-    parameters->tx_req._src_port = MSG_SRC_PORT;
-    parameters->tx_req._protocol = 0u;
-    parameters->tx_req._option = 0u;
-    parameters->tx_req._payloadLength = 1u;
-    parameters->tx_req._payloadPtr[0] = 'P';
-
-    parameters->cnt = 0u;
-    parameters->rx_cnt = 0u;
-    parameters->ntp.stage = 0u;
-    parameters->msg_len = 0u;
+void msgRegistNTP(msgParam_p msg) {
+#if AC_MODEL || AEROCOMP
+    registerPushMessageHandle(msg, "NTPREQ", &requestNTP, msg,
+            TargetGND, 1000, 108);
+#else
+    registerPushMessageHandle(msg, "NTPREQ", &requestNTP, msg,
+            TargetAP, 1000, 108);
+#endif
+    registerProcessMessageHandle(msg, "NTPREQ", CODE_NTP_REQUEST, processNTPreq, msg);
+    registerProcessMessageHandle(msg, "NTPRSP", CODE_NTP_RESPONSE, processNTPrsp, msg);
 }
+
+

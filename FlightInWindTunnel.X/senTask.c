@@ -20,14 +20,14 @@
 
 #include "config.h"
 
-#if AC_MODEL || AEROCOMP
-
 #include "senTask.h"
+#if GNDBOARD
+#include "msg_gnd.h"
+#endif
 
 #include "AnalogInput.h"
 #include "Enc.h"
 #include "IMU.h"
-
 
 void senInit(senParam_p parameters) {
     struct pt *pt;
@@ -65,6 +65,9 @@ PT_THREAD(senLoop)(TaskHandle_p task) {
 #endif
 #if AEROCOMP
         UpdateServoPosFromEnc();
+#elif GNDBOARD
+        UpdateRigPos();
+        sendRigPack();
 #endif /*AEROCOMP*/
         PT_YIELD(pt);
     }
@@ -73,5 +76,3 @@ PT_THREAD(senLoop)(TaskHandle_p task) {
      pointer to a struct pt. */
     PT_END(pt);
 }
-
-#endif /*AC_MODEL or AEROCOMP*/

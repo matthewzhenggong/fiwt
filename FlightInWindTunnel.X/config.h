@@ -36,27 +36,50 @@
 #define MSG_DEST_ADDR_LSW (0xbfff)
 #define MSG_DEST_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\xff"
 
-#define MSG_DEST_AP_PORT 0x2000
+#define MSG_SRC_AP_PORT 0x2000
+#define MSG_SRC_ACM_PORT 0x2267
+#define MSG_SRC_CMP_PORT 0x2677
+#define MSG_SRC_GND_PORT 0x2616
+
+#define DEST_MAX_NUM (3)
+#define MSG_TX_BUFF_LEN (600)
+#define MSG_DEST_PORT MSG_SRC_AP_PORT
 
 #if AC_MODEL || AEROCOMP
 #define TASK_PERIOD (4u) // 250Hz
 #define XBEE1_ATAP 2
-#define MSG_DEST_PORT 0x2616
-#if AC_MODEL
-#define MSG_SRC_PORT 0x2267
-#elif AEROCOMP
-#define MSG_SRC_PORT 0x2677
-#endif
 #define ENC_HALF_PEROID (3)
+
+#if AC_MODEL
+#define MSG_SRC_PORT MSG_SRC_ACM_PORT
+#define MSG_DEST2_PORT MSG_SRC_GND_PORT
+#define MSG_DEST3_PORT MSG_SRC_CMP_PORT
+typedef enum TargetIdx {
+    TargetAP=0,
+    TargetGND, TargetCMP
+} TargetIdx_t;
+
+#elif AEROCOMP
+#define MSG_SRC_PORT MSG_SRC_CMP_PORT
+#define MSG_DEST2_PORT MSG_SRC_GND_PORT
+#define MSG_DEST3_PORT MSG_SRC_ACM_PORT
+typedef enum TargetIdx {
+    TargetAP=0,
+    TargetGND, TargetACM
+} TargetIdx_t;
+#endif
 
 #elif GNDBOARD
 #define TASK_PERIOD (1u) // 1000Hz
 #define XBEE2_ATAP 2
 #define XBEE3_ATAP 2
-#define MSG_DEST_PORT 0x2000
-#define MSG_DEST_ACM_PORT 0x2267
-#define MSG_DEST_CMP_PORT 0x2677
-#define MSG_SRC_PORT 0x2616
+#define MSG_SRC_PORT MSG_SRC_GND_PORT
+#define MSG_DEST2_PORT MSG_SRC_CMP_PORT
+#define MSG_DEST3_PORT MSG_SRC_ACM_PORT
+typedef enum TargetIdx {
+    TargetAP=0,
+    TargetCMP, TargetACM
+} TargetIdx_t;
 
 #endif
 
@@ -113,7 +136,7 @@
 #define USE_PWM   0
 #define USE_ENC   0
 #define USE_IMU   0
-#define USE_SPIS  1
+#define USE_SPIS  0
 #define USE_EKF   0
 #define USE_LEDEXTBOARD 1
 #define NOT_USE_EXTOSC 0

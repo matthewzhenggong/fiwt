@@ -18,186 +18,92 @@
  * License along with this library.
  */
 
-#include "config.h"
-
-#if AC_MODEL || AEROCOMP
-#include "msg_acm.h"
-#elif GNDBOARD
-#include "msg_gnd.h"
-#include "SPIS.h"
-#endif
-
-#include "msg_code.h"
+#include "msg.h"
 #include "LedExtBoard.h"
 
 #include "clock.h"
 #include <string.h>
 
-void process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
-    NTP_p ntp;
-#if GNDBOARD
-    PM_p pm;
-    uint8_t * spis_pkg_buff;
-
-    spis_pkg_buff = parameters->spis_pkg_buff;
-#endif
-    switch (msg_ptr[0]) {
-        case 'S':
-            switch (msg_ptr[1]) {
-                case 0u :
-                case 5u :
-                    ntp = &(parameters->ntp);
-                    ntp->TimeStampL0 = getMicroseconds();
-                    ntp->TimeStampR0 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
-                    ntp->stage = msg_ptr[1]+1u;
-                    break;
-                case 2u :
-                    ntp = &(parameters->ntp);
-                    ntp->TimeStampL4 = getMicroseconds();
-                    ntp->TimeStampR2 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
-                    ntp->TimeStampR3 = ((uint32_t)msg_ptr[6]<<24)+((uint32_t)msg_ptr[7]<<16)+((uint32_t)msg_ptr[8]<<8)+(uint32_t)msg_ptr[9];
-                    if (ntp->stage == 2u) {
-                        reset_clock(ntp, 1);
-                        parameters->cnt = 0;
-                    } else {
-                        reset_clock(ntp, 0);
-                    }
-                    ntp->stage++;
-                    break;
-                case 0x11 :
-                    ntp = &(parameters->ntp);
-                    ntp->TimeStampLP = getMicroseconds();
-                    ntp->TimeStampRP = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
-                    ntp->stage = 0x11u;
-                    break;
-#if GNDBOARD
-                case 0x12 :
-                    pm  = &parameters->pm;
-                    pm->TimeStampL4 = getMicroseconds();
-                    pm->TimeStampR2 = ((uint32_t)msg_ptr[2]<<24)+((uint32_t)msg_ptr[3]<<16)+((uint32_t)msg_ptr[4]<<8)+(uint32_t)msg_ptr[5];
-                    pm->TimeStampR3 = ((uint32_t)msg_ptr[6]<<24)+((uint32_t)msg_ptr[7]<<16)+((uint32_t)msg_ptr[8]<<8)+(uint32_t)msg_ptr[9];
-                    pm->stage = 2u;
-                    break;
-#endif
-            }
-            break;
-        case 'P':
-            if (msg_ptr[1] == 0 && msg_len <= 256) {
-#if AC_MODEL
-                msg_ptr[1] = 2;
-#elif AEROCOMP
-                msg_ptr[1] = 3;
-#elif GNDBOARD
-                msg_ptr[1] = 1;
-#endif
-                memcpy(parameters->msg_buff+parameters->msg_len, msg_ptr, msg_len);
-                parameters->msg_len += msg_len;
-            }
-            break;
-#if AC_MODEL || AEROCOMP
-        case CODE_AC_MODEL_NEW_SERV_CMD:
-        case CODE_AEROCOMP_NEW_SERV_CMD:
-            servoProcA5Cmd((servoParam_p) (parameters->serov_Task->parameters), msg_ptr);
-            break;
-#elif GNDBOARD
-        case CODE_AC_MODEL_SERVO_POS:
-            /* self.pack22 = struct.Struct(">B6H3H6HI6h") */
-            /* 1+12+6+12+4+12 = 47 */
-            // DATA_ID == CODE_AC_MODEL_SERVO_POS
-            *(spis_pkg_buff++) = CODE_AC_MODEL_SERVO_POS;
-            //2-13	Data		SERVOx_H, SERVOx_L
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 12);
-            //14-16	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 31, 4);
-            // DATA_ID ==  CODE_AC_MODEL_ENCOD_POS
-            *(spis_pkg_buff++) = CODE_AC_MODEL_ENCOD_POS;
-            //2- 7	Data		DIGENCx_H, DIGENCx_L
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 13, 6);
-            //8-10	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 31, 4);
-            //DATA_ID ==	CODE_AC_MODEL_IMU_DATA
-            *(spis_pkg_buff++) = CODE_AC_MODEL_IMU_DATA;
-            //2-21		Data    GxH,GxL,GyH,GyL...
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 19, 12);
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            *(spis_pkg_buff++) = 0;
-            //22-24	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 31, 4);
-            if (parameters->cnt % 10 == 1) {//TODO
-                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-                mLED_4_Toggle();
-            }
-            break;
-        case CODE_AEROCOMP_SERVO_POS:
-            /* self.pack33 = struct.Struct(">B4H4HI4h") */
-            /* 1+8+8+4+8 = 29 */
-            //DATA_ID == 	CODE_AC_MODEL_SERVO_POS
-            *(spis_pkg_buff++) = CODE_AEROCOMP_SERVO_POS;
-            //2- 9	Data		SERVOx_H, SERVOx_L
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 8);
-            //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 17, 4);
-            // DATA_ID ==  CODE_AEROCOMP_ENCOD_POS
-            *(spis_pkg_buff++) = CODE_AEROCOMP_ENCOD_POS;
-            //2-9	Data		DIGENCx_H, DIGENCx_L
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 9, 8);
-            //10-12	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 17, 4);
-            if (parameters->cnt % 10 == 3) {//TODO
-                SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            }
-            break;
-        case CODE_AC_MODEL_BAT_LEV:
-            /*self.pack88 = struct.Struct(">B3BI")*/
-            /* 1+3+4 */
-            //DATA_ID == 	CODE_AC_MODEL_BAT_LEV
-            *(spis_pkg_buff++) = CODE_AC_MODEL_BAT_LEV;
-            //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 3);
-            //5- 7	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 4, 4);
-            SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            break;
-        case CODE_AEROCOMP_BAT_LEV:
-            /*self.pack88 = struct.Struct(">B3HI")*/
-            /* 1+3+4 */
-            //DATA_ID == 	CODE_AEROCOMP_BAT_LEV
-            *(spis_pkg_buff++) = CODE_AEROCOMP_BAT_LEV;
-            //2- 4	Data		BATT_C1, BATT_C2, BATT_C3
-            spis_pkg_buff = push_payload(spis_pkg_buff, msg_ptr + 1, 3);
-            //5- 7	Time Stamp	TimeStampH, TimeStampM, TimeStampL
-            spis_pkg_buff = push_timestamp(spis_pkg_buff, msg_ptr + 4, 4);
-            SPIS_push(parameters->spis_pkg_buff, spis_pkg_buff - parameters->spis_pkg_buff);
-            break;
-        case CODE_AC_MODEL_COM_STATS:
-            break;
-        case CODE_AEROCOMP_COM_STATS:
-            break;
-#endif
-        default:
-            break;
+static uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
+    if (b == MSG_DILIMITER || b == MSG_ESC) {
+        *(pack++) = MSG_ESC;
+        *(pack++) = b^0x20;
+    } else {
+        *(pack++) = b;
     }
+    return pack;
 }
 
-void process_packages(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
+/*
+ * msg_ptr :
+ * 0 - TS MSB remote gen-timestamp
+ * 1 - TS
+ * 2 - TS
+ * 3 - TS LSB
+ * 4 - PKG ID
+ * 5 - Ctx first byte
+ * ...
+ * n - Ctx last byte
+ */
+static bool process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
+    uint8_t id;
+    ProcessMessageHandle_p h;
+    uint32_t ts;
+
+    id = msg_ptr[MSG_ID_POS];
+    id = parameters->process_map[id];
+    if (id < parameters->process_handle_list_num) {
+        h = parameters->process_handle_list + id;
+        h->rx_timestamp = parameters->rx_timestamp;
+        ++(h->rx_cnt);
+        h->remote_tx_timestamp = parameters->remote_tx_timestamp;
+        ts = ((uint32_t)*(msg_ptr++) << 24);
+        ts += ((uint32_t)*(msg_ptr++) << 16);
+        ts += ((uint32_t)*(msg_ptr++) << 8);
+        ts += (uint32_t)*(msg_ptr++);
+        h->remote_gen_timestamp = ts;
+        h->rx_port = parameters->rx_rsp._port;
+        h->remote_tx_port = parameters->rx_rsp._src_port;
+        return h->func(h, msg_ptr, msg_len - MSG_ID_POS);
+    }
+    return false;
+}
+
+/*
+ * msg_ptr :
+ * 0 - MSG_DILIMITER
+ * 1 - TS MSB remote gen-timestamp
+ * 2 - TS
+ * 3 - TS
+ * 4 - TS LSB
+ * 5 - PKG ID
+ * 6 - Ctx first byte
+ * ...
+ * n - Ctx last byte
+ * n+1 - TS MSB remote send-timestamp
+ * n+2 - TS
+ * n+3 - TS
+ * n+4 - TS LSB
+ */
+static bool process_packages(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
     uint8_t *head;
     uint8_t *end;
     uint8_t *msg_tail;
+    uint32_t ts;
+    bool rslt;
 
-    head = end = NULL;
     msg_tail = msg_ptr + msg_len;
-    while (msg_ptr < msg_tail) {
+    ts = (uint32_t) *(--msg_tail);
+    ts += ((uint32_t) *(--msg_tail) << 8);
+    ts += ((uint32_t) *(--msg_tail) << 16);
+    ts += ((uint32_t)*(--msg_tail) << 24);
+    parameters->remote_tx_timestamp = ts;
+    rslt = true;
+    head = end = NULL;
+    while (msg_ptr <= msg_tail) {
         if (*msg_ptr == MSG_DILIMITER) {
             if (head) {
-                process_message(parameters, head + 1u, end - head);
+                rslt = rslt && process_message(parameters, head + 1u, end - head);
             }
             head = end = msg_ptr;
         } else if (*msg_ptr == MSG_ESC && head) {
@@ -208,157 +114,188 @@ void process_packages(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
         ++msg_ptr;
     }
     msg_len = end - head;
-    if (msg_len > 1u) {
-        process_message(parameters, head + 1u, msg_len);
+    if (msg_len > MSG_ID_POS + 1) {
+        rslt = rslt && process_message(parameters, head + 1u, msg_len);
     }
+    return rslt;
 }
 
-static bool prepare_tx_data(TaskHandle_p task, msgParam_p parameters, size_t *_payloadLength, uint8_t *_payloadPtr, size_t max_payloadLength) {
-    size_t pack_length;
-#if GNDBOARD
+bool registerProcessMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN], uint8_t id, ProcessMessageHandleFunc_p func, void * parameters) {
+    size_t s;
+    ProcessMessageHandle_p h;
+
+    if (msg->process_handle_list_num < MSG_MAX_PROCESS_FUNCS) {
+        s = msg->process_handle_list_num;
+        h = msg->process_handle_list + s;
+        strncpy(h->name, name, MSG_NAME_MAX_LEN);
+        h->msg_id = id;
+        h->func = func;
+        h->parameters = parameters;
+        h->rx_cnt = 0;
+
+        msg->process_map[id] = s;
+        ++msg->process_handle_list_num;
+        return true;
+    }
+    return false;
+}
+
+bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t msg_len) {
+    uint8_t * pack;
+    uint8_t * pack_tail;
+    size_t i;
     uint32_t ts;
-    uint8_t *ptr;
-#endif
-    *_payloadLength = 0;
+    int target;
 
-    switch (parameters->ntp.stage) {
-        case 1u:
-        case 6u:
-            *(_payloadPtr++) = MSG_DILIMITER;
-            parameters->tx_req._des_port = MSG_DEST_AP_PORT;
-            pack_length = updateNTPPack(&parameters->ntp, _payloadPtr);
-            _payloadPtr += pack_length;
-            *_payloadLength += 1 + pack_length;
-            return true;
-        case 3u:
-        case 8u:
-            *(_payloadPtr++) = MSG_DILIMITER;
-            parameters->tx_req._des_port = MSG_DEST_AP_PORT;
-            pack_length = updateNTPPack3(&parameters->ntp, _payloadPtr);
-            _payloadPtr += pack_length;
-            *_payloadLength += 1 + pack_length;
-            return true;
-        case 0x11:
-            *(_payloadPtr++) = MSG_DILIMITER;
-            pack_length = updateNTPPack11(&parameters->ntp, _payloadPtr);
-            _payloadPtr += pack_length;
-            *_payloadLength += 1 + pack_length;
-            reset_clock(&parameters->ntp, 2);
-    }
+    ts = getMicroseconds();
 
-#if AC_MODEL || AEROCOMP
-    if ((parameters->cnt & 3) == 1) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateSensorPack(_payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1+pack_length;
-    }
-#if AC_MODEL
-    if ((parameters->cnt & 0xFFF) == 0x3E9 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateBattPack(_payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1+pack_length;
-    } else if ((parameters->cnt & 0xFFF) == 0x7E9 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateCommPack(parameters->sen_Task,
-                    parameters->serov_Task, task, _payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1+pack_length;
-    }
-#else
-    if ((parameters->cnt & 0xFFF) == 0xBE9 && (*_payloadLength+1u+BATTPACKLEN) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateBattPack(_payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1+pack_length;
-    } else if ((parameters->cnt & 0xFFF) == 0xFE9 && (*_payloadLength+1u+COMMPACKLEN) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateCommPack(parameters->sen_Task,
-                    parameters->serov_Task, task, _payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1+pack_length;
-    }
-#endif
-
-#elif GNDBOARD
-    if (SPIRX_RX_PCKT_PTR) {
-        switch (SPIRX_RX_PCKT_PTR->RF_DATA[0]) {
-            case CODE_AC_MODEL_NEW_SERV_CMD:
-                parameters->tx_req._des_port = MSG_DEST_ACM_PORT;
+    if (des_port < DEST_MAX_NUM) {
+        target = des_port;
+    } else {
+        i = 0;
+        for (target=0; target < DEST_MAX_NUM; ++target) {
+            if (parameters->msg_port[target] == des_port) {
+                i = 1;
                 break;
-            case CODE_AEROCOMP_NEW_SERV_CMD:
-                parameters->tx_req._des_port = MSG_DEST_CMP_PORT;
-                break;
+            }
         }
-        pack_length = pull_payload(_payloadPtr, SPIRX_RX_PCKT_PTR->RF_DATA,
-                (SPIRX_RX_PCKT_PTR->PCKT_LENGTH_MSB << 8) + SPIRX_RX_PCKT_PTR->PCKT_LENGTH_LSB)
-                - _payloadPtr;
-        SPIRX_RX_PCKT_PTR = NULL; //clear for sent
-        _payloadPtr += pack_length;
-        ptr = _payloadPtr;
-        ts = getMicroseconds();
-        _payloadPtr = EscapeByte(_payloadPtr, ts >> 24);
-        _payloadPtr = EscapeByte(_payloadPtr, ts >> 16);
-        _payloadPtr = EscapeByte(_payloadPtr, ts >> 8);
-        _payloadPtr = EscapeByte(_payloadPtr, ts & 0xff);
-        *_payloadLength += pack_length+(_payloadPtr-ptr);
-        return true;
+        if (!i) {
+            ++parameters->bad_tx_pkg_cnt;
+            return false;
+        }
     }
-    if ((parameters->cnt & 0x1FFF) == 0x5DF) {
-        parameters->tx_req._des_port = MSG_DEST_ACM_PORT;
-        *(_payloadPtr++) = MSG_DILIMITER;
-        parameters->pm.target = 'A';
-        pack_length = updatePingPack(&parameters->pm, _payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1 + pack_length;
-        return true;
-    } else if ((parameters->cnt & 0x1FFF) == 0x9C7) {
-        parameters->tx_req._des_port = MSG_DEST_CMP_PORT;
-        *(_payloadPtr++) = MSG_DILIMITER;
-        parameters->pm.target = 'C';
-        pack_length = updatePingPack(&parameters->pm, _payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1 + pack_length;
-        return true;
-    }
-    if ((parameters->cnt & 3) == 1) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateRigPack(_payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1+pack_length;
-    }
-    if ((parameters->cnt & 0xFFF) == 0x1F3 && (*_payloadLength + 1u + COMMPACKLEN) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updateCommPack(task, _payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1 + pack_length;
-    }
-    if (parameters->pm.stage == 2u && (*_payloadLength + 1u + PINPACK2LEN) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = updatePingPack2(&parameters->pm, _payloadPtr);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1 + pack_length;
-    }
-#endif
 
-    if (parameters->msg_len > 0u && (*_payloadLength + 1u + parameters->msg_len) < max_payloadLength) {
-        *(_payloadPtr++) = MSG_DILIMITER;
-        pack_length = parameters->msg_len;
-        parameters->msg_len = 0;
-        memcpy(_payloadPtr, parameters->msg_buff, pack_length);
-        _payloadPtr += pack_length;
-        *_payloadLength += 1 + pack_length;
+    pack = parameters->msg_tail[target];
+    pack_tail = parameters->msg_head[target + 1] - 1u;
+    if (pack_tail - pack < 10 + msg_len) {
+        ++parameters->bad_tx_pkg_cnt;
+        return false;
     }
-    
+    //HEAD
+    *(pack++) = MSG_DILIMITER;
+    //GEN_TIME_STAMP
+    pack = EscapeByte(pack, ts >> 24);
+    pack = EscapeByte(pack, ts >> 16);
+    pack = EscapeByte(pack, ts >> 8);
+    pack = EscapeByte(pack, ts & 0xff);
+    //BODY
+    for (i = 0; i < msg_len && pack < pack_tail; ++i) {
+        pack = EscapeByte(pack, *(msg++));
+    }
+    if (i < msg_len) {
+        ++parameters->bad_tx_pkg_cnt;
+        return false;
+    }
 
-    return (*_payloadLength > 2u);
+    parameters->msg_tail[target] = pack;
+    return true;
+}
+
+bool registerPushMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN],
+        PushMessageHandleFunc_p func, void * parameters,
+        uint16_t des_port, unsigned int circle, unsigned int offset) {
+    PushMessageHandle_p h;
+    uint16_t target;
+    int flag;
+    if (des_port < DEST_MAX_NUM) {
+        target = des_port;
+    } else {
+        flag = 0;
+        for (target=0; target < DEST_MAX_NUM; ++target) {
+            if (msg->msg_port[target] == des_port) {
+                flag = 1;
+                break;
+            }
+        }
+        if (!flag) {
+            return false;
+        }
+    }
+
+    if (msg->push_handle_list_num < MSG_MAX_PUSH_FUNCS) {
+        h = msg->push_handle_list + msg->push_handle_list_num;
+        strncpy(h->name, name, MSG_NAME_MAX_LEN);
+        h->func = func;
+        h->parameters = parameters;
+        h->peroid = circle;
+        h->offset = offset + 1;
+        h->target = target;
+        h->tx_cnt = 0;
+
+        ++msg->push_handle_list_num;
+        return true;
+    }
+    return false;
+}
+
+void msgInit(msgParam_p parameters, XBee_p s6) {
+    struct pt * pt;
+    int i;
+
+    pt = &(parameters->PT);
+    PT_INIT(pt);
+    parameters->xbee = s6;
+    parameters->tx_req._des_addr_msw = MSG_DEST_ADDR_MSW;
+    parameters->tx_req._des_addr_lsw = MSG_DEST_ADDR_LSW;
+    parameters->tx_req._des_port = MSG_DEST_PORT;
+    parameters->tx_req._src_port = MSG_SRC_PORT;
+    parameters->tx_req._protocol = 0u;
+    parameters->tx_req._option = 0u;
+    parameters->tx_req._payloadLength = 1u;
+    parameters->tx_req._payloadPtr[0] = 'P';
+
+    parameters->cnt = 0u;
+    parameters->bad_rx_pkg_cnt = 0u;
+    parameters->bad_tx_pkg_cnt = 0u;
+
+    parameters->msg_tail[0] = parameters->msg_head[0] = parameters->msg_buff + 0;
+    parameters->msg_port[0] = MSG_DEST_PORT;
+
+    parameters->msg_tail[1] = parameters->msg_head[1] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 200);
+    parameters->msg_port[1] = MSG_DEST2_PORT;
+
+    parameters->msg_tail[2] = parameters->msg_head[1] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 100);
+    parameters->msg_port[2] = MSG_DEST3_PORT;
+
+    /*Last Empty Item used as stop-bit */
+    parameters->msg_tail[3] = parameters->msg_head[3] = parameters->msg_buff + MSG_TX_BUFF_LEN;
+    parameters->msg_port[3] = 0;
+
+    parameters->msg_len[0] = parameters->msg_head[1] - parameters->msg_head[0];
+    parameters->msg_len[1] = parameters->msg_head[2] - parameters->msg_head[1];
+    parameters->msg_len[2] = parameters->msg_head[3] - parameters->msg_head[2];
+
+    for (i = 0; i < MSG_MAX_PROCESS_FUNCS; ++i) {
+        parameters->process_handle_list[i].msg_id = 0xFF;
+        parameters->process_handle_list[i].rx_cnt = 0;
+        parameters->process_handle_list[i].parameters = NULL;
+        parameters->process_handle_list[i].func = NULL;
+    }
+    parameters->process_handle_list_num = 0;
+    for (i = 0; i < 256; ++i) {
+        parameters->process_map[i] = 0xFF;
+    }
+
+    for (i = 0; i < MSG_MAX_PUSH_FUNCS; ++i) {
+        parameters->push_handle_list[i].parameters = NULL;
+        parameters->push_handle_list[i].tx_cnt = 0;
+        parameters->push_handle_list[i].target = 0;
+        parameters->push_handle_list[i].peroid = 0;
+        parameters->push_handle_list[i].func = NULL;
+    }
+    parameters->push_handle_list_num = 0;
+
 }
 
 PT_THREAD(msgLoop)(TaskHandle_p task) {
     int packin;
     msgParam_p parameters;
     struct pt *pt;
+    uint32_t ts;
+    uint8_t *pack;
+    int i;
+    PushMessageHandle_p pmh;
+    size_t s;
 
     parameters = (msgParam_p) (task->parameters);
     pt = &(parameters->PT);
@@ -369,36 +306,63 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
 
     /* We loop forever here. */
     while (1) {
+        parameters->rx_timestamp = getMicroseconds();
         packin = XBeeReadPacket(parameters->xbee);
         while (packin > 0) {
             switch (packin) {
                 case RX_IPV4_RESPONSE:
                     if (XBeeRxIPv4Response(parameters->xbee, &parameters->rx_rsp)) {
-                        ++parameters->rx_cnt;
-                        process_packages(parameters, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
+#if USE_LEDEXTBOARD
+                        mLED_2_Toggle();
+#endif
+                        if (!process_packages(parameters, parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength)) {
+                            ++parameters->bad_rx_pkg_cnt;
+                        }
                     }
                     break;
             }
             packin = XBeeReadPacket(parameters->xbee);
         }
 
+        for (i = 0; i < parameters->push_handle_list_num; ++i) {
+            pmh = parameters->push_handle_list + i;
+            if (--pmh->offset == 0u) {
+                pmh->offset = pmh->peroid;
+                s = pmh->func(pmh, parameters->push_buff, parameters->msg_len[pmh->target]);
+                if (s > 0) {
+                    pushMessage(parameters, pmh->target, parameters->push_buff, s);
+                    ++pmh->tx_cnt;
+                }
+            }
+        }
         ++parameters->cnt;
-        if (prepare_tx_data(task, parameters, &parameters->tx_req._payloadLength, parameters->tx_req._payloadPtr, MAX_S6_PAYLOAD_DATA_SIZE)) {
-            XBeeTxIPv4Request(parameters->xbee, &parameters->tx_req, 0u);
-            // Reset to send to MSG_DEST_PORT
+        for (i = 0; i < DEST_MAX_NUM; ++i) {
+            if (parameters->msg_tail[i] != parameters->msg_head[i]) {
+                parameters->tx_req._des_port = parameters->msg_port[i];
+                packin = parameters->msg_tail[i] - parameters->msg_head[i];
+                memcpy(parameters->tx_req._payloadPtr, parameters->msg_head[i], packin);
+                parameters->msg_tail[i] = parameters->msg_head[i];
+                pack = parameters->tx_req._payloadPtr + packin;
+                ts = getMicroseconds();
+                pack = EscapeByte(pack, ts >> 24);
+                pack = EscapeByte(pack, ts >> 16);
+                pack = EscapeByte(pack, ts >> 8);
+                pack = EscapeByte(pack, ts & 0xff);
+                parameters->tx_req._payloadLength = pack - parameters->tx_req._payloadPtr;
+                XBeeTxIPv4Request(parameters->xbee, &parameters->tx_req, 0u);
+                // Reset to send to MSG_DEST_PORT
 #if USE_LEDEXTBOARD
-            mLED_3_Toggle();
+                mLED_3_Toggle();
 #endif
-            if (parameters->tx_req._des_port != MSG_DEST_PORT) {
-                parameters->tx_req._des_port = MSG_DEST_PORT;
+                break;
             }
         }
 
         // clock adjust
-        if (parameters->cnt %10 == 0) {
-                offset_us += 1u;
+        if (parameters->cnt % 10 == 0) {
+            offset_us += 1u;
         } else if (parameters->cnt % 289 == 0) {
-                offset_us -= 1u;
+            offset_us -= 1u;
         }
 
         PT_YIELD(pt);
