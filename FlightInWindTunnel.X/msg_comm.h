@@ -38,4 +38,3 @@ extern "C" {
 
 #endif	/* MSG_COMM_H */
 
-

@@ -47,7 +47,7 @@ extern "C" {
 
     void msgRegistACM(msgParam_p, msgParamACM_p);
 
-    bool sendDataPack(void);
+    bool sendDataPack(uint32_t time_token);
 
 #ifdef	__cplusplus
 }
