@@ -84,9 +84,9 @@ class ExpData(object):
         self.ACM_roll = 0
         self.ACM_yaw = 0
 
-        self.ACM_pitch0 = 4990
-        self.ACM_roll0 = 236
-        self.ACM_yaw0 = 8101
+        self.ACM_pitch0 = 236
+        self.ACM_roll0 = 4964
+        self.ACM_yaw0 = 0
 
         self.ACMScale = 180/4096.0
         self.CMPScale = 180/4096.0
@@ -131,8 +131,8 @@ class ExpData(object):
         self.ACM_servo5 = (ServoPos5-self.ACM_servo5_0)*self.ACMScale
         self.ACM_servo6 = (ServoPos6-self.ACM_servo6_0)*self.ACMScale
         self.ACM_roll = (EncPos1 - self.ACM_roll0)*self.RigScale
-        self.ACM_pitch = (EncPos1 - self.ACM_pitch0)*self.RigScale
-        self.ACM_yaw = (EncPos1 - self.ACM_yaw0)*self.RigScale
+        self.ACM_pitch = (EncPos2 - self.ACM_pitch0)*self.RigScale
+        self.ACM_yaw = (EncPos3 - self.ACM_yaw0)*self.RigScale
         self.GX = Get14bit(Gx)*0.05
         self.GY = Get14bit(Gy)*-0.05
         self.GZ = Get14bit(Gz)*-0.05
