@@ -60,7 +60,7 @@ void EncInit(void) {
 
 void EncUpdate(void) {
     int i;
-    uint32_t timestamp0, timestamp1, timestamp;
+    int32_t timestamp0, timestamp1, timestamp;
     /* Declare local variables */
     unsigned int EncBit_CNT;
     unsigned int  CurEncPos[ENCNUM];

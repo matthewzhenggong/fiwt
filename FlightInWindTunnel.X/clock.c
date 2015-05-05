@@ -86,15 +86,15 @@ __interrupt(no_auto_psv) void _T3Interrupt(void) {
     ++elapsed_hours;
 }
 
-uint32_t getMicroseconds() {
-    uint32_t lsw, msw;
+int32_t getMicroseconds() {
+    int32_t lsw, msw;
     lsw = TMR2;
     msw = TMR3HLD;
     return (msw<<16)+lsw+offset_us;
 }
 
-void setMicroseconds(uint32_t microseconds) {
-    uint32_t lsw, msw;
+void setMicroseconds(int32_t microseconds) {
+    int32_t lsw, msw;
     lsw = TMR2;
     msw = TMR3HLD;
     offset_us = microseconds - ((msw<<16)+lsw);

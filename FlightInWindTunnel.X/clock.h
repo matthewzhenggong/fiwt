@@ -51,9 +51,9 @@ extern "C" {
      */
     #define microsec_ticks (TMR1)
 
-    uint32_t getMicroseconds();
+    int32_t getMicroseconds();
     
-    void setMicroseconds(uint32_t microseconds);
+    void setMicroseconds(int32_t microseconds);
 
     /**
      * Reset this global clock.
