@@ -34,12 +34,10 @@
  */
 
 __near unsigned int volatile elapsed_ticks = 0;
-unsigned int volatile elapsed_hours = 0;
 __near int32_t volatile offset_us = 0;
 
 void initClock(void) {
     elapsed_ticks = 0; /* clear software registers */
-    elapsed_hours = 0;
     offset_us = 0;
 
     T1CONbits.TON = 0; /* Disable Timer*/
@@ -61,8 +59,8 @@ void initClock(void) {
     PR1 = 999; /* set period1 register */
 
     /** Timer1 period for 1 ms */
-    PR3 = 0xD693; /* set period3 register, MSW */
-    PR2 = 0xA3FF; /* set period2 register, LSW */
+    PR3 = 0x7FFF; /* set period3 register, MSW */
+    PR2 = 0xFFFF; /* set period2 register, LSW */
 
     _T1IP = SCHEDULE_TIMER_PRIORITY_LEVEL; /* set priority level */
     _T1IF = 0; /* clear interrupt flag */
@@ -83,7 +81,6 @@ __interrupt(no_auto_psv) void _T1Interrupt(void) {
 
 __interrupt(no_auto_psv) void _T3Interrupt(void) {
     IFS0bits.T3IF = 0; /* clear interrupt flag */
-    ++elapsed_hours;
 }
 
 int32_t getMicroseconds() {

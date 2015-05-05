@@ -62,10 +62,9 @@ class XBeeNetwork(object):
         return self.socklist
 
     def send(self, pack, addr):
-        ts = int((time.clock() - self.parent.T0)*1e6)
+        ts = int((time.clock()-self.T0)*1e6)&0x7fffffff
         data = PayloadPackage.pack(pack,ts)
 
-        ts = int((time.clock() - self.parent.T0)*1e6)
         data = PayloadPackage.packs(ts,data)
         self.tx_socket.sendto(data, addr)
 

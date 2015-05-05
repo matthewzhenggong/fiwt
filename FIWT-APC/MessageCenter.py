@@ -84,7 +84,7 @@ class Worker(object):
         while self.main_thread_running:
             rlist,wlist,elist=select.select(self.socklist,[],[],0.2)
             if rlist:
-                recv_ts = int((time.clock()-self.T0)*1e6)
+                recv_ts = int((time.clock()-self.T0)*1e6)&0x7fffffff
                 self.xbee_network.read(rlist, recv_ts)
                 self.matlab_link.read(rlist, recv_ts)
         self.log.info('Work end.')
