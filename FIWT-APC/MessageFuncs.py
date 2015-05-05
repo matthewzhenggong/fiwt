@@ -40,6 +40,9 @@ def msg_start(self, cmd):
         self.socklist += self.matlab_link.getReadList()
         self.T0 = time.clock()
         self.ready = True
+        self.expData.xbee_network = self.xbee_network
+        self.expData.ACM_node = self.node_addr['ACM']
+        self.expData.CMP_node = self.node_addr['CMP']
 
 def msg_stop(self, cmd):
     self.main_thread_running = False

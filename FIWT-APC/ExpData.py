@@ -22,7 +22,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library.
 """
 
-import math
+import math, struct
 from Butter import Butter
 
 def Get14bit(val) :
@@ -118,6 +118,8 @@ class ExpData(object):
         self.ACM_pitch_butt = Butter()
         self.ACM_roll_butt = Butter()
         self.ACM_yaw_butt = Butter()
+
+        self.A5 = struct.Struct('>BfB6H')
 
     def updateRigPos(self, RigRollPos,RigPitchPos,RigYawPos, ts_ADC):
         self.RigRollRawPos = RigRollPos - self.RigRollPos0
@@ -277,5 +279,22 @@ class ExpData(object):
                 "CMP_mot3", "CMP_mot4"] \
                         + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
+    def sendCommand(self, time_token, da, de, dr, da_cmp, de_cmp, dr_cmp):
+        da = int(da/self.ACMScale)
+        de = int(de/self.ACMScale)
+        dr = int(dr/self.ACMScale)
 
+        da_cmp = int(da_cmp/self.CMPScale)
+        de_cmp = int(de_cmp/self.CMPScale)
+        dr_cmp = int(dr_cmp/self.CMPScale)
+        self.ACM_servo1_cmd = self.ACM_servo1_0 - da
+        self.ACM_servo2_cmd = self.ACM_servo2_0 - da
+        self.ACM_servo3_cmd = self.ACM_servo3_0 + dr
+        self.ACM_servo4_cmd = self.ACM_servo4_0 + dr
+        self.ACM_servo5_cmd = self.ACM_servo5_0 + de
+        self.ACM_servo6_cmd = self.ACM_servo6_0 - de
+        data = self.A5.pack(0xA5, time_token, 1, self.ACM_servo1_cmd,
+                self.ACM_servo2_cmd, self.ACM_servo3_cmd, self.ACM_servo4_cmd,
+                self.ACM_servo5_cmd,self.ACM_servo6_cmd)
+        self.xbee_network.send(data,self.ACM_node)
 

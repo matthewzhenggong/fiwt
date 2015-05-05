@@ -44,20 +44,30 @@ class MatlabLink(object):
         self.tx_udp.connect((self.host,remote_port+1))
         self.tx_udp.setblocking(0)
 
-        self.rx_pack = struct.Struct(">2d")
-        self.tx_pack = struct.Struct(">2d")
+        self.rx_pack = struct.Struct(">d3d3d")
+        self.tx_pack = struct.Struct(">19d")
 
     def getReadList(self):
         return self.socklist
 
     def read(self, rlist, recv_ts):
         if self.rx_udp in rlist:
-            (dat,address)=self.rx_udp.recvfrom(1000)
-            cmds = self.rx_pack.unpack(dat)
-            states = self.process(cmds)
-            self.tx_udp.sendall(self.tx_pack.pack(*states))
-
-    def process(self, cmd):
-
-        return [cmd[0], cmd[1]]
+            try:
+                (dat,address)=self.rx_udp.recvfrom(1000)
+                time_token, da, de, dr, da_cmp, de_cmp, dr_cmp \
+                        = self.rx_pack.unpack(dat)
+                self.expData.sendCommand(time_token, da, de, dr,
+                        da_cmp, de_cmp, dr_cmp)
+                exp = self.expData
+                data = self.tx_pack.pack(exp.ACM_CmdTime,
+                        exp.GX, exp.GY, exp.GZ, exp.AX, exp.AY,
+                        exp.AZ, exp.ACM_roll_filtered, exp.ACM_roll_rate,
+                        exp.ACM_pitch_filtered, exp.ACM_pitch_rate,
+                        exp.ACM_yaw_filtered, exp.ACM_yaw_rate,
+                        exp.RigRollPosFiltered, exp.RigRollPosRate,
+                        exp.RigPitchPosFiltered, exp.RigPitchPosRate,
+                        exp.RigYawPosFiltered, exp.RigYawPosRate)
+                self.tx_udp.sendall(data)
+            except:
+                pass
 
