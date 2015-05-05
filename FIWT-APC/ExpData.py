@@ -112,7 +112,8 @@ class ExpData(object):
     def getGNDhdr(self):
         return ["GND_ADC_TS", "RigRollRawPos", "RigRollPos",
                 "RigPitchRawPos", "RigPitchPos",
-                "RigYawRawPos", "RigYawPos", "Vel", "DP"]
+                "RigYawRawPos", "RigYawPos", "Vel", "DP",
+                "gen_ts", "sent_ts", "recv_ts", "port"]
 
     def getGNDdata(self):
         return [self.GND_ADC_TS, self.RigRollRawPos, self.RigRollPos,
@@ -170,7 +171,8 @@ class ExpData(object):
                 "ACM_svoref6", "ACM_servo6", "ACM_roll",
                 "ACM_pitch", "ACM_yaw", "GX", "GY", "GZ",
                 "AX", "AY", "AZ", "ACM_mot1", "ACM_mot2",
-                "ACM_mot3", "ACM_mot4", "ACM_mot5", "ACM_mot6"]
+                "ACM_mot3", "ACM_mot4", "ACM_mot5", "ACM_mot6",
+                "gen_ts", "sent_ts", "recv_ts", "port"]
 
 
     def updateCMP(self, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
@@ -203,7 +205,8 @@ class ExpData(object):
         return ["CMP_ADC_TS", "CMP_CmdTime", "CMP_svoref1", "CMP_servo1",
                 "CMP_svoref2", "CMP_servo2", "CMP_svoref3", "CMP_servo3",
                 "CMP_svoref4", "CMP_servo4",
-                "CMP_mot1", "CMP_mot2", "CMP_mot3", "CMP_mot4"]
+                "CMP_mot1", "CMP_mot2", "CMP_mot3", "CMP_mot4",
+                "gen_ts", "sent_ts", "recv_ts", "port"]
 
 
 
