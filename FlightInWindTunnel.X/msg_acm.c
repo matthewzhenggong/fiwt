@@ -143,7 +143,7 @@ void msgRegistACM(msgParam_p msg, msgParamACM_p param) {
 }
 
 bool sendDataPack(uint32_t T1) {
-    uint8_t head[1+SERVOPOSADCNUM*2+ENCNUM*2+6*2+4+SEVERONUM*2];
+    uint8_t head[1+SERVOPOSADCNUM*2+ENCNUM*2+6*2+4+SEVERONUM*4+4];
     uint8_t *pack;
     int i;
 
