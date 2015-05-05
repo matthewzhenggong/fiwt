@@ -23,6 +23,7 @@ License along with this library.
 """
 
 import math
+from Butter import Butter
 
 def Get14bit(val) :
     if val & 0x2000 :
@@ -40,6 +41,7 @@ class ExpData(object):
         self.RigYawPos0 = 0
         self.Vel = 0
         self.DP = 0
+        self.GND_ADC_TS = 0
 
         self.ACM_servo1 = 0
         self.ACM_servo2 = 0
@@ -90,17 +92,53 @@ class ExpData(object):
 
         self.ACMScale = 180/4096.0
         self.CMPScale = 180/4096.0
-        self.RigScale = 180/4096.0
+        self.EncScale = 180/4096.0
+        self.RigScale = 120/3873.0
+
+        self.RigRollPos = 0
+        self.RigPitchPos = 0
+        self.RigYawPos = 0
+
+        self.RigRollPosRate = 0
+        self.RigPitchPosRate = 0
+        self.RigYawPosRate = 0
+        self.RigRollPosFiltered = 0
+        self.RigPitchPosFiltered = 0
+        self.RigYawPosFiltered = 0
+        self.RigRollPosButt = Butter()
+        self.RigPitchPosButt = Butter()
+        self.RigYawPosButt = Butter()
+
+        self.ACM_pitch_rate = 0
+        self.ACM_roll_rate = 0
+        self.ACM_yaw_rate = 0
+        self.ACM_pitch_filtered = 0
+        self.ACM_roll_filtered = 0
+        self.ACM_yaw_filtered = 0
+        self.ACM_pitch_butt = Butter()
+        self.ACM_roll_butt = Butter()
+        self.ACM_yaw_butt = Butter()
 
     def updateRigPos(self, RigRollPos,RigPitchPos,RigYawPos, ts_ADC):
         self.RigRollRawPos = RigRollPos - self.RigRollPos0
         self.RigPitchRawPos = RigPitchPos - self.RigPitchPos0
         self.RigYawRawPos = RigYawPos - self.RigYawPos0
+        ts = self.GND_ADC_TS
         self.GND_ADC_TS = ts_ADC*1e-6
+        dt = self.GND_ADC_TS - ts
 
         self.RigRollPos = self.RigRollRawPos*self.RigScale
         self.RigPitchPos = self.RigPitchRawPos*self.RigScale
         self.RigYawPos = self.RigYawRawPos*self.RigScale
+        roll = self.RigRollPosButt.update(self.RigRollPos)
+        pitch = self.RigPitchPosButt.update(self.RigPitchPos)
+        yaw = self.RigYawPosButt.update(self.RigYawPos)
+        self.RigRollPosRate = (roll - self.RigRollPosFiltered)/dt
+        self.RigPitchPosRate = (pitch - self.RigPitchPosFiltered)/dt
+        self.RigYawPosRate = (yaw - self.RigYawPosFiltered)/dt
+        self.RigRollPosFiltered = roll
+        self.RigPitchPosFiltered = pitch
+        self.RigYawPosFiltered = yaw
 
     def updateMani(self, vel, dp):
         self.Vel = vel
@@ -111,14 +149,22 @@ class ExpData(object):
 
     def getGNDhdr(self):
         return ["GND_ADC_TS", "RigRollRawPos", "RigRollPos",
+                "RigRollPosFiltered", "RigRollPosRate",
                 "RigPitchRawPos", "RigPitchPos",
-                "RigYawRawPos", "RigYawPos", "Vel", "DP",
-                "gen_ts", "sent_ts", "recv_ts", "port"]
+                "RigPitchPosFiltered", "RigPitchPosRate",
+                "RigYawRawPos", "RigYawPos",
+                "RigYawPosFiltered", "RigYawPosRate",
+                "Vel", "DP"] \
+                        + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
     def getGNDdata(self):
         return [self.GND_ADC_TS, self.RigRollRawPos, self.RigRollPos,
+                self.RigRollPosFiltered, self.RigRollPosRate,
                 self.RigPitchRawPos, self.RigPitchPos,
-                self.RigYawRawPos, self.RigYawPos, self.Vel, self.DP]
+                self.RigPitchPosFiltered, self.RigPitchPosRate,
+                self.RigYawRawPos, self.RigYawPos,
+                self.RigYawPosFiltered, self.RigYawPosRate,
+                self.Vel, self.DP]
 
     def updateACM(self, ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5, \
             ServoPos6, EncPos1,EncPos2,EncPos3, Gx,Gy,Gz, Nx,Ny,Nz, ts_ADC, \
@@ -131,16 +177,18 @@ class ExpData(object):
         self.ACM_servo4 = (ServoPos4-self.ACM_servo4_0)*self.ACMScale
         self.ACM_servo5 = (ServoPos5-self.ACM_servo5_0)*self.ACMScale
         self.ACM_servo6 = (ServoPos6-self.ACM_servo6_0)*self.ACMScale
-        self.ACM_roll = (EncPos1 - self.ACM_roll0)*self.RigScale
-        self.ACM_pitch = (EncPos2 - self.ACM_pitch0)*self.RigScale
-        self.ACM_yaw = (EncPos3 - self.ACM_yaw0)*self.RigScale
+        self.ACM_roll = (EncPos1 - self.ACM_roll0)*self.EncScale
+        self.ACM_pitch = (EncPos2 - self.ACM_pitch0)*self.EncScale
+        self.ACM_yaw = (EncPos3 - self.ACM_yaw0)*self.EncScale
         self.GX = Get14bit(Gx)*0.05
         self.GY = Get14bit(Gy)*-0.05
         self.GZ = Get14bit(Gz)*-0.05
         self.AX = Get14bit(Nx)*-0.003333
         self.AY = Get14bit(Ny)*0.003333
         self.AZ = Get14bit(Nz)*0.003333
+        ts = self.ACM_ADC_TS
         self.ACM_ADC_TS = ts_ADC*1e-6
+        dt = self.ACM_ADC_TS - ts
         self.ACM_svoref1 = (ServoRef1-self.ACM_servo1_0)*self.ACMScale
         self.ACM_svoref2 = (ServoRef2-self.ACM_servo2_0)*self.ACMScale
         self.ACM_svoref3 = (ServoRef3-self.ACM_servo3_0)*self.ACMScale
@@ -155,24 +203,43 @@ class ExpData(object):
         self.ACM_mot6 = ServoCtrl6
         self.ACM_CmdTime = CmdTime
 
+
+        pitch = self.ACM_pitch_butt.update(self.ACM_pitch)
+        roll = self.ACM_roll_butt.update(self.ACM_roll)
+        yaw = self.ACM_yaw_butt.update(self.ACM_yaw)
+        self.ACM_pitch_rate = (pitch - self.ACM_pitch_filtered)/dt
+        self.ACM_roll_rate = (roll - self.ACM_roll_filtered)/dt
+        self.ACM_yaw_rate = (yaw - self.ACM_yaw_filtered)/dt
+        self.ACM_pitch_filtered = pitch
+        self.ACM_roll_filtered = roll
+        self.ACM_yaw_filtered = yaw
+
     def getACMdata(self):
-        return [self.ACM_ADC_TS, self.ACM_CmdTime, self.ACM_svoref1, self.ACM_servo1,
-                self.ACM_svoref2, self.ACM_servo2, self.ACM_svoref3, self.ACM_servo3,
-                self.ACM_svoref4, self.ACM_servo4, self.ACM_svoref5, self.ACM_servo5,
+        return [self.ACM_ADC_TS, self.ACM_CmdTime, self.ACM_svoref1,
+                self.ACM_servo1, self.ACM_svoref2, self.ACM_servo2,
+                self.ACM_svoref3, self.ACM_servo3, self.ACM_svoref4,
+                self.ACM_servo4, self.ACM_svoref5, self.ACM_servo5,
                 self.ACM_svoref6, self.ACM_servo6, self.ACM_roll,
-                self.ACM_pitch, self.ACM_yaw, self.GX, self.GY, self.GZ,
-                self.AX, self.AY, self.AZ, self.ACM_mot1, self.ACM_mot2,
-                self.ACM_mot3, self.ACM_mot4, self.ACM_mot5, self.ACM_mot6]
+                self.ACM_roll_filtered, self.ACM_roll_rate,
+                self.ACM_pitch, self.ACM_pitch_filtered, self.ACM_pitch_rate,
+                self.ACM_yaw, self.ACM_yaw_filtered, self.ACM_yaw_rate,
+                self.GX, self.GY, self.GZ, self.AX, self.AY, self.AZ,
+                self.ACM_mot1, self.ACM_mot2, self.ACM_mot3, self.ACM_mot4,
+                self.ACM_mot5, self.ACM_mot6]
 
     def getACMhdr(self):
-        return ["ACM_ADC_TS", "ACM_CmdTime", "ACM_svoref1", "ACM_servo1",
-                "ACM_svoref2", "ACM_servo2", "ACM_svoref3", "ACM_servo3",
-                "ACM_svoref4", "ACM_servo4", "ACM_svoref5", "ACM_servo5",
+        return ["ACM_ADC_TS", "ACM_CmdTime", "ACM_svoref1",
+                "ACM_servo1", "ACM_svoref2", "ACM_servo2",
+                "ACM_svoref3", "ACM_servo3", "ACM_svoref4",
+                "ACM_servo4", "ACM_svoref5", "ACM_servo5",
                 "ACM_svoref6", "ACM_servo6", "ACM_roll",
-                "ACM_pitch", "ACM_yaw", "GX", "GY", "GZ",
-                "AX", "AY", "AZ", "ACM_mot1", "ACM_mot2",
-                "ACM_mot3", "ACM_mot4", "ACM_mot5", "ACM_mot6",
-                "gen_ts", "sent_ts", "recv_ts", "port"]
+                "ACM_roll_filtered", "ACM_roll_rate",
+                "ACM_pitch", "ACM_pitch_filtered", "ACM_pitch_rate",
+                "ACM_yaw", "ACM_yaw_filtered", "ACM_yaw_rate",
+                "GX", "GY", "GZ", "AX", "AY", "AZ",
+                "ACM_mot1", "ACM_mot2", "ACM_mot3", "ACM_mot4",
+                "ACM_mot5", "ACM_mot6"] \
+                        + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
 
     def updateCMP(self, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
@@ -196,17 +263,19 @@ class ExpData(object):
         self.CMP_CmdTime = CmdTime
 
     def getCMPdata(self):
-        return [self.CMP_ADC_TS, self.CMP_CmdTime, self.CMP_svoref1, self.CMP_servo1,
-                self.CMP_svoref2, self.CMP_servo2, self.CMP_svoref3, self.CMP_servo3,
-                self.CMP_svoref4, self.CMP_servo4,
-                self.CMP_mot1, self.CMP_mot2, self.CMP_mot3, self.CMP_mot4]
+        return [self.CMP_ADC_TS, self.CMP_CmdTime, self.CMP_svoref1,
+                self.CMP_servo1, self.CMP_svoref2, self.CMP_servo2,
+                self.CMP_svoref3, self.CMP_servo3, self.CMP_svoref4,
+                self.CMP_servo4, self.CMP_mot1, self.CMP_mot2,
+                self.CMP_mot3, self.CMP_mot4]
 
     def getCMPhdr(self):
-        return ["CMP_ADC_TS", "CMP_CmdTime", "CMP_svoref1", "CMP_servo1",
-                "CMP_svoref2", "CMP_servo2", "CMP_svoref3", "CMP_servo3",
-                "CMP_svoref4", "CMP_servo4",
-                "CMP_mot1", "CMP_mot2", "CMP_mot3", "CMP_mot4",
-                "gen_ts", "sent_ts", "recv_ts", "port"]
+        return ["CMP_ADC_TS", "CMP_CmdTime", "CMP_svoref1",
+                "CMP_servo1", "CMP_svoref2", "CMP_servo2",
+                "CMP_svoref3", "CMP_servo3", "CMP_svoref4",
+                "CMP_servo4", "CMP_mot1", "CMP_mot2",
+                "CMP_mot3", "CMP_mot4"] \
+                        + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
 
 
