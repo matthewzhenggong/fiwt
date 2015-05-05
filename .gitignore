@@ -11,3 +11,4 @@ XbeeZBS2Test/log.txt
 *.7z
 *.zip
 *.pyc
+*.log
