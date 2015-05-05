@@ -88,6 +88,16 @@ def cmd_command(self, cmd):
     remote_host = cmd['target']
     self.log.info('TODO')
 
+def cmd_clear(self, cmd):
+    self.xbee_network.arrv_cnt = -1
+
+def cmd_A5(self, cmd):
+    target = cmd['target']
+    remote_host = self.node_addr[target]
+    data = cmd['data']
+    self.xbee_network.send(data,remote_host)
+    print 'sendA5 to', remote_host
+
 process_funcs = {'START':msg_start,
     'STOP':msg_stop,
     'REC_START':cmd_rec_start,
@@ -96,4 +106,6 @@ process_funcs = {'START':msg_start,
     'AT':cmd_at,
     'NTP':cmd_ntp,
     'CMD':cmd_command,
+    'CLEAR':cmd_clear,
+    'A5':cmd_A5,
     }

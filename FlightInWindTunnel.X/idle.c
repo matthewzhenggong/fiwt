@@ -42,7 +42,7 @@ char idleLoop(TaskHandle_p task) {
     
 #if USE_IMU
     if (microsec_ticks < 960) {
-        IMURead2DMA();
+        //IMURead2DMA();
     }
 #endif
     if (parameters->secticks == sec)

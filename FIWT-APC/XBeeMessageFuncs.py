@@ -47,6 +47,7 @@ CODE_NTP_RESPONSE = 0x02
 packCODE_NTP_REQUEST = struct.Struct('>BH')
 packCODE_NTP_RESPONSE = struct.Struct('>BH2I')
 
+cnt = [0,0]
 
 def process_CODE_NTP_REQUEST(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_Token = packCODE_NTP_REQUEST.unpack(rf_data)
@@ -67,8 +68,9 @@ def process_CODE_GNDBOARD_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_delay, NTP_offset, load_sen, load_rsen, load_msg = packCODE_GNDBOARD_STATS.unpack(
         rf_data)
     if Id == CODE_GNDBOARD_STATS:
-        self.log.info('GND states NTP{}/{} Load{}/{}/{}'.format(
-            NTP_delay, NTP_offset, load_sen, load_rsen, load_msg))
+        info = 'GND states NTP{}/{} Load{}/{}/{}'.format(
+            NTP_delay, NTP_offset, load_sen, load_rsen, load_msg)
+        self.msgc2guiQueue.put_nowait({'ID':'GND_STA', 'info':info})
 
 
 process_funcs[CODE_GNDBOARD_STATS] = process_CODE_GNDBOARD_STATS
@@ -108,8 +110,9 @@ def process_CODE_AEROCOMP_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AEROCOMP_STATS.unpack(
         rf_data)
     if Id == CODE_AEROCOMP_STATS:
-        self.log.info('CMP states NTP{}/{} B{}/{}/{} Load{}/{}/{}'.format(
-            NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg))
+        info = 'CMP states NTP{}/{} B{}/{}/{} Load{}/{}/{}'.format(
+            NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg)
+        self.msgc2guiQueue.put_nowait({'ID':'CMP_STA', 'info':info})
 
 
 process_funcs[CODE_AEROCOMP_STATS] = process_CODE_AEROCOMP_STATS
@@ -121,8 +124,9 @@ def process_CODE_AC_MODEL_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AC_MODEL_STATS.unpack(
         rf_data)
     if Id == CODE_AC_MODEL_STATS:
-        self.log.info('ACM states NTP{}/{} B{}/{}/{} Load{}/{}/{}'.format(
-            NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg))
+        info = 'ACM states NTP{}/{} B{}/{}/{} Load{}/{}/{}'.format(
+            NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg)
+        self.msgc2guiQueue.put_nowait({'ID':'ACM_STA', 'info':info})
 
 
 process_funcs[CODE_AC_MODEL_STATS] = process_CODE_AC_MODEL_STATS
@@ -142,6 +146,19 @@ def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
             ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
             ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
             CmdTime)
+        if cnt[0] > 12:
+            cnt[0] = 0
+            info = ('ACM rawdat S{:4d}/{:4d}/{:4d}/{:4d}/{:4d}/{:4d} '
+            'E{:4d}/{:4d}/{:4d} '
+            'GX{:6.1f} GY{:6.1f} GZ{:6.1f} '
+            'AX{:6.2f} AY{:6.2f} AZ{:6.2f} ').format(
+                ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6,
+                EncPos1,EncPos2,EncPos3,
+                Gx,Gy,Gz, Nx,Ny,Nz
+                )
+            self.msgc2guiQueue.put_nowait({'ID':'ACM_DAT', 'info':info})
+        else:
+            cnt[0] += 1
         self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 
@@ -150,18 +167,27 @@ process_funcs[CODE_AC_MODEL_SERVO_POS] = process_CODE_AC_MODEL_SERVO_POS
 packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HI4h4hf')
 
 def process_CODE_AEROCOMP_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
-    Id, ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6, \
-            EncPos1,EncPos2,EncPos3, Gx,Gy,Gz, Nx,Ny,Nz, ts_ADC, \
-            ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
-            ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
+    Id, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
+            EncPos1,EncPos2,EncPos3,EncPos4,ts_ADC, \
+            ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4, \
+            ServoRef1,ServoRef2,ServoRef3,ServoRef4, \
             CmdTime = packCODE_AEROCOMP_SERVO_POS.unpack(rf_data)
     if Id == CODE_AEROCOMP_SERVO_POS:
-        print 'CMP'
-        self.expData.updateCMP(ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5, \
-            ServoPos6, EncPos1,EncPos2,EncPos3, Gx,Gy,Gz, Nx,Ny,Nz, ts_ADC, \
-            ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
-            ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
+        self.expData.updateCMP(ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
+            EncPos1,EncPos2,EncPos3,EncPos4,ts_ADC, \
+            ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4, \
+            ServoRef1,ServoRef2,ServoRef3,ServoRef4, \
             CmdTime)
+        if cnt[1] > 12:
+            cnt[1] = 0
+            info = ('CMP rawdat S{:4d}/{:4d}/{:4d}/{:4d} '
+            'E{:4d}/{:4d}/{:4d}/{:4d} ').format(
+                ServoPos1,ServoPos2,ServoPos3,ServoPos4,
+                EncPos1,EncPos2,EncPos3,EncPos4,
+                )
+            self.msgc2guiQueue.put_nowait({'ID':'CMP_DAT', 'info':info})
+        else:
+            cnt[1] += 1
         self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 process_funcs[CODE_AEROCOMP_SERVO_POS] = process_CODE_AEROCOMP_SERVO_POS

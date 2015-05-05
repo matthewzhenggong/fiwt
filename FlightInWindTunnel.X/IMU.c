@@ -184,6 +184,7 @@ __near unsigned int volatile imu_reading = 0;
 __interrupt(no_auto_psv) void _INT4Interrupt(void) {
     if (imu_reading != 2) {
         imu_reading = 1;
+        IMURead2DMA();
     }
     _INT4IF = 0; /*  Clear INT Interrupt Flag */
 }

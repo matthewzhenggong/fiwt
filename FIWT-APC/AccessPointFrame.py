@@ -32,6 +32,12 @@ from wx.lib.newevent import NewEvent
 # New Event Declarations
 LogEvent, EVT_LOG = NewEvent()
 RxStaEvent, EVT_STAT = NewEvent()
+ACM_StaEvent, EVT_ACM_STAT = NewEvent()
+CMP_StaEvent, EVT_CMP_STAT = NewEvent()
+GND_StaEvent, EVT_GND_STAT = NewEvent()
+ACM_DatEvent, EVT_ACM_DAT = NewEvent()
+CMP_DatEvent, EVT_CMP_DAT = NewEvent()
+GND_DatEvent, EVT_GND_DAT = NewEvent()
 
 ALPHA_ONLY = 1
 DIGIT_ONLY = 2
@@ -286,16 +292,240 @@ Unused bits must be set to 0.  '''))
 
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
+        box = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.btnTM = wx.Button(panel, -1, "Servo Command", size=(100, -1))
+        self.btnTM.Enable(False)
+        box.Add(self.btnTM, 0, wx.ALIGN_CENTER, 5)
+        boxV = wx.BoxSizer(wx.VERTICAL)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.InputType = wx.Choice(panel, wx.ID_ANY,
+            choices=['Reset','Step','Doublet','3-2-1-1','Ramp',
+                'pitch rate','open loop','LinFreq Sweep','ExpFreq Sweep'])
+        self.InputType.SetSelection(0)
+        boxH.Add(self.InputType, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "StartTime"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.StartTime = wx.TextCtrl(panel, -1, "500",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        self.StartTime.SetToolTip(wx.ToolTip('milliseconds'))
+        boxH.Add(self.StartTime, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "TimeDelta"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.TimeDelta = wx.TextCtrl(panel, -1, "500",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        self.TimeDelta.SetToolTip(wx.ToolTip('milliseconds'))
+        boxH.Add(self.TimeDelta, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "NofCycles"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.NofCycles = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.NofCycles, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.Srv2Move1 = wx.CheckBox(panel, -1, "CH1")
+        boxH.Add(self.Srv2Move1, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.ServoRef1 = wx.TextCtrl(panel, -1, "1967",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.ServoRef1, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MaxValue1 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MaxValue1, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MinValue1 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MinValue1, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Sign"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.Sign1 = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.Sign1, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.Srv2Move2 = wx.CheckBox(panel, -1, "CH2")
+        boxH.Add(self.Srv2Move2, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.ServoRef2 = wx.TextCtrl(panel, -1, "2259",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.ServoRef2, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MaxValue2 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MaxValue2, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MinValue2 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MinValue2, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Sign"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.Sign2 = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.Sign2, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.Srv2Move3 = wx.CheckBox(panel, -1, "CH3")
+        boxH.Add(self.Srv2Move3, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.ServoRef3 = wx.TextCtrl(panel, -1, "2000",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.ServoRef3, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MaxValue3 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MaxValue3, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MinValue3 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MinValue3, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Sign"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.Sign3 = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.Sign3, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.Srv2Move4 = wx.CheckBox(panel, -1, "CH4")
+        boxH.Add(self.Srv2Move4, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.ServoRef4 = wx.TextCtrl(panel, -1, "1700",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.ServoRef4, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MaxValue4 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MaxValue4, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MinValue4 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MinValue4, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Sign"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.Sign4 = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.Sign4, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.Srv2Move5 = wx.CheckBox(panel, -1, "CH5")
+        boxH.Add(self.Srv2Move5, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.ServoRef5 = wx.TextCtrl(panel, -1, "1820",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.ServoRef5, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MaxValue5 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MaxValue5, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MinValue5 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MinValue5, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Sign"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.Sign5 = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.Sign5, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        boxH = wx.BoxSizer(wx.HORIZONTAL)
+        self.Srv2Move6 = wx.CheckBox(panel, -1, "CH6")
+        boxH.Add(self.Srv2Move6, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.ServoRef6 = wx.TextCtrl(panel, -1, "2067",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.ServoRef6, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MaxValue6 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MaxValue6, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.MinValue6 = wx.TextCtrl(panel, -1, "100",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.MinValue6, 0, wx.ALIGN_CENTER, 5)
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Sign"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        self.Sign6 = wx.TextCtrl(panel, -1, "1",
+                                   size=(50, -1),
+                                   validator=MyValidator(DIGIT_ONLY))
+        boxH.Add(self.Sign6, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
+
+        box.Add(boxV, 0, wx.ALIGN_CENTER, 5)
+
+        sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
         sub_panel = wx.Panel(panel, -1)
         sub_panel.SetDoubleBuffered(True)
         sub_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        box = wx.BoxSizer(wx.HORIZONTAL)
-
-        box = wx.BoxSizer(wx.HORIZONTAL)
         self.txtRXSta = wx.StaticText(sub_panel, wx.ID_ANY, "")
-        box.Add(self.txtRXSta, 1, wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 1)
-        sub_sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        sub_sizer.Add(self.txtRXSta, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        self.txtGNDSta = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtGNDSta, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        self.txtGNDDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtGNDDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        self.txtACMSta = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtACMSta, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        self.txtACMDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtACMDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
+        self.txtCMPSta = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtCMPSta, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+        self.txtCMPDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtCMPDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         sub_panel.SetSizer(sub_sizer)
         #sub_sizer.Fit(sub_panel)
@@ -337,7 +567,16 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseACM, self.rbACM)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseCMP, self.rbCMP)
         self.Bind(wx.EVT_RADIOBUTTON, self.OnChooseGND, self.rbGND)
+        self.Bind(wx.EVT_BUTTON, self.OnClr, self.btnClr)
+        self.Bind(wx.EVT_BUTTON, self.OnSaveLog, self.btnSaveLog)
         self.Bind(EVT_STAT, self.OnRXSta)
+        self.Bind(EVT_ACM_STAT, self.OnACMSta)
+        self.Bind(EVT_CMP_STAT, self.OnCMPSta)
+        self.Bind(EVT_GND_STAT, self.OnGNDSta)
+        self.Bind(EVT_ACM_DAT, self.OnACMDat)
+        self.Bind(EVT_CMP_DAT, self.OnCMPDat)
+        self.Bind(EVT_GND_DAT, self.OnGNDDat)
+        self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
 
 
         # Set some program flags
@@ -389,6 +628,18 @@ Unused bits must be set to 0.  '''))
                     'C{:0>5d}/T{:<.2f} {:03.0f}Pps/{:05.0f}bps'.format(
                         arrv_cnt, elapsed, arrv_cnt / elapsed,
                         arrv_bcnt * 10 / elapsed)))
+                elif output['ID'] == 'ACM_STA':
+                    wx.PostEvent(self, ACM_StaEvent(txt=output['info']))
+                elif output['ID'] == 'ACM_DAT':
+                    wx.PostEvent(self, ACM_DatEvent(txt=output['info']))
+                elif output['ID'] == 'CMP_STA':
+                    wx.PostEvent(self, CMP_StaEvent(txt=output['info']))
+                elif output['ID'] == 'CMP_DAT':
+                    wx.PostEvent(self, CMP_DatEvent(txt=output['info']))
+                elif output['ID'] == 'GND_STA':
+                    wx.PostEvent(self, GND_StaEvent(txt=output['info']))
+                elif output['ID'] == 'GND_DAT':
+                    wx.PostEvent(self, GND_DatEvent(txt=output['info']))
             except Queue.Empty:
                 pass
 
@@ -431,6 +682,7 @@ Unused bits must be set to 0.  '''))
         self.btnGNDsynct.Enable(True)
         self.btnRmtAT.Enable(True)
         self.btnTX.Enable(True)
+        self.btnTM.Enable(True)
 
     def OnRecALL(self, event) :
         if event.IsChecked():
@@ -471,4 +723,95 @@ Unused bits must be set to 0.  '''))
 
     def OnRXSta(self, event) :
         self.txtRXSta.SetLabel(event.txt)
+
+    def OnACMSta(self, event) :
+        self.txtACMSta.SetLabel(event.txt)
+
+    def OnCMPSta(self, event) :
+        self.txtCMPSta.SetLabel(event.txt)
+
+    def OnGNDSta(self, event) :
+        self.txtGNDSta.SetLabel(event.txt)
+
+    def OnACMDat(self, event) :
+        self.txtACMDat.SetLabel(event.txt)
+
+    def OnCMPDat(self, event) :
+        self.txtCMPDat.SetLabel(event.txt)
+
+    def OnGNDDat(self, event) :
+        self.txtGNDDat.SetLabel(event.txt)
+
+    def OnSaveLog(self, event):
+        dlg = wx.FileDialog(
+            self, message="Save log as ...", defaultDir=os.getcwd(),
+            defaultFile="log.txt", wildcard="Text file(*.txt)|*.txt",
+            style=wx.SAVE)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.log_txt.SaveFile(dlg.GetPath())
+
+    def OnClr(self, event):
+        self.log_txt.Clear()
+        self.txtRXSta.SetLabel('')
+        self.txtACMSta.SetLabel('')
+        self.txtCMPSta.SetLabel('')
+        self.txtGNDSta.SetLabel('')
+        self.txtACMDat.SetLabel('')
+        self.txtCMPDat.SetLabel('')
+        self.txtGNDDat.SetLabel('')
+
+        self.txtACMbat.SetLabel('')
+        self.txtCMPbat.SetLabel('')
+        self.txtGNDinfo.SetLabel('')
+
+        self.gui2msgcQueue.put({'ID': 'CLEAR'})
+
+    def OnTestMotor(self, event):
+        InputType = self.InputType.GetSelection()+1
+        if self.target == 'CMP' :
+            Id = 0xA6
+        else:
+            Id = 0xA5
+        if InputType == 1:
+            ServoRef = [int(self.ServoRef1.GetValue()),
+                        int(self.ServoRef2.GetValue()),
+                        int(self.ServoRef3.GetValue()),
+                        int(self.ServoRef4.GetValue()),
+                        int(self.ServoRef5.GetValue()),
+                        int(self.ServoRef6.GetValue()) ]
+            data = struct.pack('>BfB6H', Id, 0.0, InputType, *ServoRef)
+        else :
+            Srv2Move = (1 if self.Srv2Move1.GetValue() else 0) \
+                     | (2 if self.Srv2Move2.GetValue() else 0) \
+                     | (4 if self.Srv2Move3.GetValue() else 0) \
+                     | (8 if self.Srv2Move4.GetValue() else 0) \
+                     | (16 if self.Srv2Move5.GetValue() else 0) \
+                     | (32 if self.Srv2Move6.GetValue() else 0)
+            others = [ int(self.MaxValue1.GetValue()),
+                       int(self.MaxValue2.GetValue()),
+                       int(self.MaxValue3.GetValue()),
+                       int(self.MaxValue4.GetValue()),
+                       int(self.MaxValue5.GetValue()),
+                       int(self.MaxValue6.GetValue()),
+                       int(self.MinValue1.GetValue()),
+                       int(self.MinValue2.GetValue()),
+                       int(self.MinValue3.GetValue()),
+                       int(self.MinValue4.GetValue()),
+                       int(self.MinValue5.GetValue()),
+                       int(self.MinValue6.GetValue()),
+                       int(self.Sign1.GetValue()),
+                       int(self.Sign2.GetValue()),
+                       int(self.Sign3.GetValue()),
+                       int(self.Sign4.GetValue()),
+                       int(self.Sign5.GetValue()),
+                       int(self.Sign6.GetValue()),
+                     ]
+            starttime = int(self.StartTime.GetValue())
+            deltatime = int(self.TimeDelta.GetValue())
+            nofcyc = int(self.NofCycles.GetValue())
+            data = struct.pack('>Bf2B2HB6B6B6B', Id, 0.0, InputType, Srv2Move,
+                    starttime, deltatime, nofcyc, *others)
+        self.gui2msgcQueue.put({'ID': 'A5', 'target':self.target,
+            'data':data})
+
 

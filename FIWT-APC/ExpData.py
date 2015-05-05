@@ -50,3 +50,17 @@ class ExpData(object):
         self.Vel = vel
         self.DP = dp
 
+    def updateACM(self, ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5, \
+            ServoPos6, EncPos1,EncPos2,EncPos3, Gx,Gy,Gz, Nx,Ny,Nz, ts_ADC, \
+            ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
+            ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
+            CmdTime):
+        pass
+
+    def updateCMP(self, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
+            EncPos1,EncPos2,EncPos3,EncPos4,ts_ADC, \
+            ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4, \
+            ServoRef1,ServoRef2,ServoRef3,ServoRef4, \
+            CmdTime):
+        pass
+

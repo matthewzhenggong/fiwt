@@ -51,14 +51,14 @@ PT_THREAD(senLoop)(TaskHandle_p task) {
     /* We loop forever here. */
     while (1) {
 #if USE_IMU
-        IMURead2DMA();
+        //IMURead2DMA();
 #endif
 #if USE_ENC
         EncUpdate();
 #endif
 #if USE_IMU
         IMUUpdate();
-        IMURead2DMA();
+        //IMURead2DMA();
 #endif
 #if USE_ADC1
         UpdateAnalogInputs();

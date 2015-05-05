@@ -26,8 +26,8 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 1
-#define AC_MODEL 0
+#define GNDBOARD 0
+#define AC_MODEL 1
 #define AEROCOMP 0
 #define STARTKITBOARD 0
 
@@ -48,7 +48,7 @@
 #if AC_MODEL || AEROCOMP
 #define TASK_PERIOD (4u) // 250Hz
 #define XBEE1_ATAP 2
-#define ENC_HALF_PEROID (3)
+#define ENC_HALF_PEROID (5)
 
 #if AC_MODEL
 #define MSG_SRC_PORT MSG_SRC_ACM_PORT

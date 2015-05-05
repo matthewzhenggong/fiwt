@@ -39,9 +39,9 @@ class XBeeNetwork(object):
     def __init__(self, parent, hosts):
         self.parent = parent
         self.expData = parent.expData
+        self.msgc2guiQueue = parent.msgc2guiQueue
         self.log = parent.log
-        self.arrv_cnt = 0
-        self.arrv_bcnt = 0
+        self.arrv_cnt = -1
         host = hosts[0][0]
         self.socklist = []
         for i in hosts :
@@ -82,14 +82,17 @@ class XBeeNetwork(object):
                 self.process(data, recv_ts)
 
     def updateStatistics(self, bcnt):
-            elapsed = time.clock() - self.parent.T0
-            if elapsed <= 0:
+            if self.arrv_cnt < 0:
                 self.arrv_cnt = 0
                 self.arrv_bcnt = 0
+                self.ariv_T0 = time.clock()
+                self.last_elapsed = 0
             else:
                 self.arrv_cnt += 1
                 self.arrv_bcnt += bcnt
-                if (self.arrv_cnt % 500) == 0 :
+                elapsed = time.clock() - self.ariv_T0
+                if elapsed - self.last_elapsed > 1 :
+                    self.last_elapsed = elapsed
                     self.parent.msgc2guiQueue.put_nowait({'ID':'Statistics',
                             'arrv_cnt':self.arrv_cnt, 'arrv_bcnt':self.arrv_bcnt,
                             'elapsed':elapsed})
