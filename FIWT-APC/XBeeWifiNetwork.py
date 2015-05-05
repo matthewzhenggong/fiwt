@@ -62,15 +62,15 @@ class XBeeNetwork(object):
         return self.socklist
 
     def send(self, pack, addr):
-        ts = int((time.clock()-self.T0)*1e6)&0x7fffffff
+        ts = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
         data = PayloadPackage.pack(pack,ts)
 
         data = PayloadPackage.packs(ts,data)
         self.tx_socket.sendto(data, addr)
 
     def read(self, rlist, recv_ts):
-        rlist = self.socklist_set.intersection(rlist)
-        for rx in rlist:
+        rlist_ipv4 = self.socklist_set.intersection(rlist)
+        for rx in rlist_ipv4:
             (rf_data,address)=rx.recvfrom(1400)
             data = {'id':'rx', 'source_addr':address, 'rf_data':rf_data}
             self.process(data, recv_ts)
@@ -113,8 +113,6 @@ class XBeeNetwork(object):
                 s = data['status']
                 addr = data['source_addr']
                 parameter = data['parameter']
-                if self.frame_id != data['frame_id']:
-                    self.log.error("Remote ATResponse frame_id mismatch")
                 self.log.info('ATResponse:{} {}={} from {}'.format(
                     at_status[s], data['command'],
                     ':'.join('{:02x}'.format(ord(c)) for c in parameter),

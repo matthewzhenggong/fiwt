@@ -81,7 +81,7 @@ def cmd_at(self, cmd):
             '{:02x}'.format(ord(c)) for c in parameter) + ' to '
             + remote_host + ' with option {:02x}'.format(ord(options)))
     self.xbee_network.service.sendConfigCommand(remote_host,
-        command, parameter, frame_id=0, options=options)
+        command, parameter, frame_id=1, options=options)
 
 def cmd_ntp(self, cmd):
     remote_host = cmd['target']
