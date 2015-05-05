@@ -90,7 +90,7 @@ class ExpData(object):
 
         self.ACMScale = 180/4096.0
         self.CMPScale = 180/4096.0
-        self.RigScale = 360/4096.0
+        self.RigScale = 180/4096.0
 
     def updateRigPos(self, RigRollPos,RigPitchPos,RigYawPos, ts_ADC):
         self.RigRollRawPos = RigRollPos - self.RigRollPos0
