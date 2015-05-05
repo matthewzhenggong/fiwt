@@ -85,9 +85,10 @@ def process_CODE_GNDBOARD_ADCM_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
         rf_data)
     if Id == CODE_GNDBOARD_ADCM_READ:
         self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp)
-        if cnt[2] > 12:
+        if cnt[2] > 25:
             cnt[2] = 0
-            info = ('RIG rawdat {}/{}/{}').format( RigRollPos, RigPitchPos, RigYawPos)
+            info = ('RIG {:.3f} rawdat {}/{}/{}').format( ADC_TimeStamp*1e-6,
+                    RigRollPos, RigPitchPos, RigYawPos)
             self.msgc2guiQueue.put_nowait({'ID':'GND_DAT', 'info':info})
         else:
             cnt[2] += 1
@@ -152,16 +153,13 @@ def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
             ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
             ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
             CmdTime)
-        if cnt[0] > 12:
+        if cnt[0] > 25:
             cnt[0] = 0
-            info = ('ACM rawdat S{:4d}/{:4d}/{:4d}/{:4d}/{:4d}/{:4d} '
-            'E{:4d}/{:4d}/{:4d} '
-            'GX{:6d} GY{:6d} GZ{:6d} '
-            'AX{:6d} AY{:6d} AZ{:6d} ').format(
+            info = ('ACM {:.3f} rawdat S{:04d}/{:04d}/{:04d}/{:04d}/{:04d}/{:04d} '
+            'E{:04d}/{:04d}/{:04d} '
+            'GX{:05d} AY{:05d}').format(ts_ADC*1e-6,
                 ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6,
-                EncPos1,EncPos2,EncPos3,
-                Gx,Gy,Gz, Nx,Ny,Nz
-                )
+                EncPos1,EncPos2,EncPos3, Gx,Ny)
             self.msgc2guiQueue.put_nowait({'ID':'ACM_DAT', 'info':info})
         else:
             cnt[0] += 1
@@ -184,10 +182,10 @@ def process_CODE_AEROCOMP_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
             ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4, \
             ServoRef1,ServoRef2,ServoRef3,ServoRef4, \
             CmdTime)
-        if cnt[1] > 12:
+        if cnt[1] > 25:
             cnt[1] = 0
-            info = ('CMP rawdat S{:4d}/{:4d}/{:4d}/{:4d} '
-            'E{:4d}/{:4d}/{:4d}/{:4d} ').format(
+            info = ('CMP {:.3f} rawdat S{:04d}/{:04d}/{:04d}/{:04d} '
+            'E{:04d}/{:04d}/{:04d}/{:04d} ').format(ts_ADC*1e-6,
                 ServoPos1,ServoPos2,ServoPos3,ServoPos4,
                 EncPos1,EncPos2,EncPos3,EncPos4,
                 )
