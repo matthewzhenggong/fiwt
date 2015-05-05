@@ -157,7 +157,7 @@ class MyFrame(wx.Frame):
         AT_CMD = ['MY', 'MK', 'GW', 'SH', 'SL', 'DL', 'C0', 'ID', 'AH', 'MA',
                 'PL', 'BD', 'AI', 'WR', 'FR',]
         HOST_LIST = ["192.168.191.2", "192.168.191.3", "192.168.191.4"]
-        self.PORT_LIST = ["2616", "2267", "2677", "2000"]
+        self.PORT_LIST = ["9750", "8807", "9847", "8192"]
 
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -168,7 +168,7 @@ class MyFrame(wx.Frame):
         self.txtGNDhost = wx.ComboBox(panel, -1, parser.get('host','GND'),
                                           choices=HOST_LIST)
         box.Add(self.txtGNDhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtGNDport = wx.ComboBox(panel, -1, "2616",
+        self.txtGNDport = wx.ComboBox(panel, -1, "9750",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtGNDport, 0, wx.ALIGN_CENTER, 5)
         self.txtGNDinfo = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
@@ -189,7 +189,7 @@ class MyFrame(wx.Frame):
         self.txtACMhost = wx.ComboBox(panel, -1, parser.get('host','ACM'),
                                           choices=HOST_LIST)
         box.Add(self.txtACMhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtACMport = wx.ComboBox(panel, -1, "2267",
+        self.txtACMport = wx.ComboBox(panel, -1, "8807",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtACMport, 0, wx.ALIGN_CENTER, 5)
         self.txtACMbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
@@ -210,7 +210,7 @@ class MyFrame(wx.Frame):
         self.txtCMPhost = wx.ComboBox(panel, -1, parser.get('host','CMP'),
                                           choices=HOST_LIST)
         box.Add(self.txtCMPhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtCMPport = wx.ComboBox(panel, -1, "2677",
+        self.txtCMPport = wx.ComboBox(panel, -1, "9847",
                 choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
         box.Add(self.txtCMPport, 0, wx.ALIGN_CENTER, 5)
         self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
@@ -653,16 +653,11 @@ Unused bits must be set to 0.  '''))
             self.msg_process.join(0.5)
 
     def OnStart(self, event):
-        p = struct.Struct("!H")
         self.gui2msgcQueue.put({'ID': 'START',
-            'xbee_hosts': [(self.txtHost.GetValue(),
-                p.unpack(self.PORT_LIST[-1].decode('hex'))[0]),
-                (self.txtGNDhost.GetValue(),
-                    p.unpack(self.txtGNDport.GetValue().decode('hex'))[0]),
-                (self.txtACMhost.GetValue(),
-                    p.unpack(self.txtACMport.GetValue().decode('hex'))[0]),
-                (self.txtCMPhost.GetValue(),
-                    p.unpack(self.txtCMPport.GetValue().decode('hex'))[0])],
+            'xbee_hosts': [(self.txtHost.GetValue(), int(self.PORT_LIST[-1])),
+                (self.txtGNDhost.GetValue(), int(self.txtGNDport.GetValue())),
+                (self.txtACMhost.GetValue(), int(self.txtACMport.GetValue())),
+                (self.txtCMPhost.GetValue(), int(self.txtCMPport.GetValue()))],
             'matlab_ports': [int(self.txtMatlabRx.GetValue()),
                 int(self.txtMatlabTx.GetValue())],
                 })
