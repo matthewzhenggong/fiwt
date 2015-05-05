@@ -39,15 +39,20 @@ size_t requestNTP(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) {
 }
 
 bool processNTPreq(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t max_len) {
-    uint32_t T1,T2;
+    int32_t T1,T2,T3,offset;
     uint8_t head[8];
     uint8_t *pack;
     if (cmd[0] == CODE_NTP_REQUEST) {
+        T1 = msg_h->remote_tx_timestamp;
+        T3 = msg_h->remote_gen_timestamp;
+        offset = T1-T3;
+        if (offset > 1000 || offset < 0) {
+            return false;
+        }
         pack = head;
         *(pack++) = CODE_NTP_RESPONSE;
         *(pack++) = cmd[1];
         *(pack++) = cmd[2];
-        T1 = msg_h->remote_tx_timestamp;
         *(pack++) = (T1 >> 24);
         *(pack++) = (T1 >> 16);
         *(pack++) = (T1 >> 8);
@@ -63,16 +68,30 @@ bool processNTPreq(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t max_
 }
 
 bool processNTPrsp(ProcessMessageHandle_p msg_h, const uint8_t *msg_ptr, size_t msg_len) {
-    int32_t T1,T2,T3,T4;
+    int32_t T1,T2,T3,T4,T5;
     int32_t offset;
     int32_t delay;
     int32_t T;
 
     if (msg_ptr[0] == CODE_NTP_RESPONSE && msg_ptr[1] == (ntp_token >> 8) && msg_ptr[2] == (ntp_token & 0xFF)) {
-        T4 = msg_h->rx_timestamp;
         T3 = msg_h->remote_tx_timestamp;
-        T1 = ((uint32_t)msg_ptr[3]<<24)+((uint32_t)msg_ptr[4]<<16)+((uint32_t)msg_ptr[5]<<8)+(uint32_t)msg_ptr[6];
+        T5 = msg_h->remote_gen_timestamp;
+        offset = T3-T5;
+        if (offset > 1000 || offset < 0) {
+            return false;
+        }
         T2 = ((uint32_t)msg_ptr[7]<<24)+((uint32_t)msg_ptr[8]<<16)+((uint32_t)msg_ptr[9]<<8)+(uint32_t)msg_ptr[10];
+        offset = T5-T2;
+        if (offset > 1000 || offset < 0) {
+            return false;
+        }
+
+        T4 = msg_h->rx_timestamp;        
+        T1 = ((uint32_t)msg_ptr[3]<<24)+((uint32_t)msg_ptr[4]<<16)+((uint32_t)msg_ptr[5]<<8)+(uint32_t)msg_ptr[6];
+        offset = T4-T1;
+        if (offset > 5000 || offset < 0) {
+            return false;
+        }
 
         delay = (T4-T1) - (T3-T2);
         offset = (((T2-T1) + (T3-T4))/2);
