@@ -144,7 +144,7 @@ bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t 
     uint8_t * pack;
     uint8_t * pack_tail;
     size_t i;
-    uint32_t ts;
+    int32_t ts;
     int target;
 
     ts = getMicroseconds();
