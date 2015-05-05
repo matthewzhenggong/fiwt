@@ -28,6 +28,7 @@ import Queue, threading
 import logging
 
 from MessageFuncs import process_funcs
+from ExpData import ExpData
 
 class RedirectText(object):
     def __init__(self, msg_queue):
@@ -46,6 +47,8 @@ class Worker(object):
         self.msgc2guiQueue = msgc2guiQueue
         self.socklist = []
         self.fileALL = None
+        self.packHdr = struct.Struct(">B3I2H")
+        self.expData = ExpData()
 
         #logging
         self.log = logging.getLogger(__name__)
@@ -80,7 +83,7 @@ class Worker(object):
         while self.main_thread_running:
             rlist,wlist,elist=select.select(self.socklist,[],[],0.2)
             if rlist:
-                recv_ts = (time.clock()-self.T0)*1e6
+                recv_ts = int((time.clock()-self.T0)*1e6)
                 self.xbee_network.read(rlist, recv_ts)
                 self.matlab_link.read(rlist, recv_ts)
         self.log.info('Work end.')
@@ -89,6 +92,11 @@ class Worker(object):
             self.log.info('Stop Recording to {}.'.format(self.filename))
             self.fileALL = None
 
+    def save(self,rf_data, gen_ts, sent_ts, recv_ts, addr):
+        if self.fileALL:
+            head = self.packHdr.pack(0x7e, gen_ts, sent_ts, recv_ts, addr[1],len(rf_data))
+            self.fileALL.write(head)
+            self.fileALL.write(rf_data)
 
 def worker(gui2msgcQueue, msgc2guiQueue):
     """

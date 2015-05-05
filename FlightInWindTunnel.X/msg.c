@@ -254,7 +254,7 @@ void msgInit(msgParam_p parameters, XBee_p s6) {
     parameters->msg_tail[1] = parameters->msg_head[1] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 200);
     parameters->msg_port[1] = MSG_DEST2_PORT;
 
-    parameters->msg_tail[2] = parameters->msg_head[1] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 100);
+    parameters->msg_tail[2] = parameters->msg_head[2] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 100);
     parameters->msg_port[2] = MSG_DEST3_PORT;
 
     /*Last Empty Item used as stop-bit */

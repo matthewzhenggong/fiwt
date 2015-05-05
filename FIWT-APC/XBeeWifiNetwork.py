@@ -24,7 +24,7 @@ License along with this library.
 import socket, time, traceback
 import XBeeIPServices
 import PayloadPackage
-from MessageFuncs import process_funcs
+import XBeeMessageFuncs
 
 at_status = {
     0: 'OK',
@@ -38,6 +38,7 @@ at_status = {
 class XBeeNetwork(object):
     def __init__(self, parent, hosts):
         self.parent = parent
+        self.expData = parent.expData
         self.log = parent.log
         self.arrv_cnt = 0
         self.arrv_bcnt = 0
@@ -59,6 +60,14 @@ class XBeeNetwork(object):
 
     def getReadList(self):
         return self.socklist
+
+    def send(self, pack, addr):
+        ts = int((time.clock() - self.parent.T0)*1e6)
+        data = PayloadPackage.pack(pack,ts)
+
+        ts = int((time.clock() - self.parent.T0)*1e6)
+        data = PayloadPackage.packs(ts,data)
+        self.tx_socket.sendto(data, addr)
 
     def read(self, rlist, recv_ts):
         rlist = self.socklist_set.intersection(rlist)
@@ -83,7 +92,7 @@ class XBeeNetwork(object):
                 if (self.arrv_cnt % 500) == 0 :
                     self.parent.msgc2guiQueue.put_nowait({'ID':'Statistics',
                             'arrv_cnt':self.arrv_cnt, 'arrv_bcnt':self.arrv_bcnt,
-                            'elapsed':self.elapsed})
+                            'elapsed':elapsed})
 
     def process(self, data, recv_ts) :
         if data['id'] == 'rx':
@@ -93,7 +102,7 @@ class XBeeNetwork(object):
               self.updateStatistics(len(data_group))
               rf_data_group,sent_ts = PayloadPackage.unpack(data_group)
               for gen_ts,rf_data in rf_data_group :
-                process_funcs[rf_data[0]](self, rf_data, gen_ts, sent_ts, recv_ts, addr)
+                XBeeMessageFuncs.process_funcs[ord(rf_data[0])](self, rf_data, gen_ts, sent_ts, recv_ts, addr)
             except:
                 self.log.error(repr(data))
                 self.log.error(traceback.format_exc())

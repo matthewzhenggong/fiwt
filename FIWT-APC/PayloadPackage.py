@@ -1,5 +1,26 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Payload Packet pack/unpack functions in Python
+----------------------------------------
+
+Author: Zheng GONG(matthewzhenggong@gmail.com)
+
+This file is part of FIWT.
+
+FIWT is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3.0 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library.
+"""
 
 import struct
 
@@ -26,12 +47,16 @@ def unpack(data) :
         return None
 
 def pack(data, timestamp) :
-    data1 = TS.pack(timestamp)+data
+    data = TS.pack(timestamp)+data
     return "".join([MSG_DILIMITER]+[byte if byte not in ESCAPE_BYTES
         else MSG_ESC+chr(0x20^ord(byte)) for byte in data])
 
-def packs(*data_list) :
-    return "".join([pack(data) for data in data_list])
+def packs(timestamp,*data_list) :
+    ts = TS.pack(timestamp)
+    ts = [byte if byte not in ESCAPE_BYTES else MSG_ESC+chr(0x20^ord(byte))
+            for byte in ts]
+    ts = "".join(ts)
+    return "".join(data_list)+ts
 
 if __name__ == '__main__' :
     data = '\x9E"\x9B\x00\x00\x04I\x00\x00\x00\x00\x00\x00\x1f\xff\x1f\xff\x1f\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\x90\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'

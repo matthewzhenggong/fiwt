@@ -32,7 +32,7 @@ size_t requestNTP(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) {
     pack = head;
 
     *(pack++) = CODE_NTP_REQUEST;
-    ntp_token = microsec_ticks;
+    ntp_token = (microsec_ticks)^(MSG_SRC_PORT);
     *(pack++) = ntp_token >> 8;
     *(pack++) = ntp_token & 0xff;
     return pack - head;
@@ -63,10 +63,10 @@ bool processNTPreq(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t max_
 }
 
 bool processNTPrsp(ProcessMessageHandle_p msg_h, const uint8_t *msg_ptr, size_t msg_len) {
-    uint32_t T1,T2,T3,T4;
+    int32_t T1,T2,T3,T4;
     int32_t offset;
     int32_t delay;
-    uint32_t T;
+    int32_t T;
 
     if (msg_ptr[0] == CODE_NTP_RESPONSE && msg_ptr[1] == (ntp_token >> 8) && msg_ptr[2] == (ntp_token & 0xFF)) {
         T4 = msg_h->rx_timestamp;
@@ -75,23 +75,15 @@ bool processNTPrsp(ProcessMessageHandle_p msg_h, const uint8_t *msg_ptr, size_t 
         T2 = ((uint32_t)msg_ptr[7]<<24)+((uint32_t)msg_ptr[8]<<16)+((uint32_t)msg_ptr[9]<<8)+(uint32_t)msg_ptr[10];
 
         delay = (T4-T1) - (T3-T2);
-        offset = ((T2-T1) + (T3-T4))/2;
+        offset = (((T2-T1) + (T3-T4))/2);
         if (offset < 4000 && offset > -4000) {
             offset >>= 2;
         }
         T = getMicroseconds();
         T += offset;
         setMicroseconds(T);
-        if (delay > 0x7FFF) {
-            ntp_delay = 0x7FFF;
-        } else if (delay < -0x7FFF) {
-            ntp_delay = -0x7FFF;
-        }
-        if (offset > 0x7FFF) {
-            ntp_offset = 0x7FFF;
-        } else if (offset < -0x7FFF) {
-            ntp_offset = -0x7FFF;
-        }
+        ntp_delay = delay;
+        ntp_offset = offset;
         return true;
     }
     return false;
@@ -100,7 +92,7 @@ bool processNTPrsp(ProcessMessageHandle_p msg_h, const uint8_t *msg_ptr, size_t 
 void msgRegistNTP(msgParam_p msg) {
 #if AC_MODEL || AEROCOMP
     registerPushMessageHandle(msg, "NTPREQ", &requestNTP, msg,
-            TargetGND, 1000, 108);
+            TargetAP, 1000, 108);
 #else
     registerPushMessageHandle(msg, "NTPREQ", &requestNTP, msg,
             TargetAP, 1000, 108);

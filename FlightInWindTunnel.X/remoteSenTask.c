@@ -97,7 +97,7 @@ static bool process_data(uint8_t *msg, size_t msg_len) {
                 }
                 break;
             case 20:
-                if (c == Velocity_head[idx++]) {
+                if (c == DP_head[idx++]) {
                     if (idx == 6) {
                         flag = 21;
                         idx = 0;
@@ -112,6 +112,7 @@ static bool process_data(uint8_t *msg, size_t msg_len) {
                         vel_buff[idx] = '\0';
                         windtunnel_dynamic_pressure = (float) atof(vel_buff);
                         flag = 0;
+                        rslt = true;
                         break;
                     case ' ':
                     case '\t':
@@ -194,7 +195,7 @@ PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
             packin = XBeeReadPacket(parameters->xbee);
         }
         ++parameters->cnt;
-        if ((parameters->cnt & 0x7) == 0) {
+        if ((parameters->cnt & 0xF) == 0) {
             XBeeZBTxRequest(parameters->xbee, &parameters->tx_req, 0u);
         }
 

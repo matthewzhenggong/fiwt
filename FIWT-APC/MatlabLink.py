@@ -28,6 +28,7 @@ import struct
 class MatlabLink(object):
     def __init__(self, parent, ports):
         self.parent = parent
+        self.expData = parent.expData
         self.log = parent.log
         self.host = '127.0.0.1'
         local_port = ports[0]

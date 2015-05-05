@@ -47,8 +47,8 @@ static size_t updateCommPack(PushMessageHandle_p msg_h, uint8_t *head, size_t ma
     *(pack++) = ntp_offset >> 8;
     *(pack++) = ntp_offset & 0xFF;
 
-    *(pack++) = p->rsen_Task->load_max >> 8;
-    *(pack++) = p->rsen_Task->load_max & 0xFF;
+    *(pack++) = p->sen_Task->load_max >> 8;
+    *(pack++) = p->sen_Task->load_max & 0xFF;
     *(pack++) = p->rsen_Task->load_max >> 8;
     *(pack++) = p->rsen_Task->load_max & 0xFF;
     *(pack++) = p->msg_Task->load_max >> 8;
@@ -110,7 +110,7 @@ bool sendSpeedPack(void) {
     uint8_t *float_addr;
 
     pack = head;
-    *(pack++) = CODE_GNDBOARD_ADCM_READ;
+    *(pack++) = CODE_GNDBOARD_MANI_READ;
 
     float_addr = (uint8_t *)&windtunnel_wind_speed;
     *(pack++) = *(float_addr+3);
