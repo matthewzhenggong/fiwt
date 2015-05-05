@@ -46,6 +46,7 @@ class Worker(object):
         self.gui2msgcQueue = gui2msgcQueue
         self.msgc2guiQueue = msgc2guiQueue
         self.socklist = []
+        self.writing = False
         self.fileALL = None
         self.packHdr = struct.Struct(">B3I2H")
         self.expData = ExpData()
@@ -95,8 +96,10 @@ class Worker(object):
     def save(self,rf_data, gen_ts, sent_ts, recv_ts, addr):
         if self.fileALL:
             head = self.packHdr.pack(0x7e, gen_ts, sent_ts, recv_ts, addr[1],len(rf_data))
+            self.writing = True
             self.fileALL.write(head)
             self.fileALL.write(rf_data)
+            self.writing = False
 
 def worker(gui2msgcQueue, msgc2guiQueue):
     """

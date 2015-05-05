@@ -52,9 +52,12 @@ def cmd_rec_start(self, cmd):
 
 def cmd_rec_stop(self, cmd):
     if self.fileALL:
-        self.fileALL.close()
-        self.log.info('Stop Recording to {}.'.format(self.filename))
+        while self.writing :
+            pass
+        a = self.fileALL
         self.fileALL = None
+        a.close()
+        self.log.info('Stop Recording to {}.'.format(self.filename))
 
 def cmd_set_base_time(self, cmd):
     self.T0 = time.clock()

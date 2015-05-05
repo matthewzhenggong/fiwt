@@ -47,7 +47,7 @@ CODE_NTP_RESPONSE = 0x02
 packCODE_NTP_REQUEST = struct.Struct('>BH')
 packCODE_NTP_RESPONSE = struct.Struct('>BH2I')
 
-cnt = [0,0]
+cnt = [0,0,0]
 
 def process_CODE_NTP_REQUEST(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_Token = packCODE_NTP_REQUEST.unpack(rf_data)
@@ -84,6 +84,12 @@ def process_CODE_GNDBOARD_ADCM_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
         rf_data)
     if Id == CODE_GNDBOARD_ADCM_READ:
         self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp)
+        if cnt[2] > 12:
+            cnt[2] = 0
+            info = ('RIG rawdat {}/{}/{}').format( RigRollPos, RigPitchPos, RigYawPos)
+            self.msgc2guiQueue.put_nowait({'ID':'GND_DAT', 'info':info})
+        else:
+            cnt[2] += 1
         self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 
@@ -140,7 +146,6 @@ def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
             ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
             CmdTime = packCODE_AC_MODEL_SERVO_POS.unpack(rf_data)
     if Id == CODE_AC_MODEL_SERVO_POS:
-        print 'ACM'
         self.expData.updateACM(ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5, \
             ServoPos6, EncPos1,EncPos2,EncPos3, Gx,Gy,Gz, Nx,Ny,Nz, ts_ADC, \
             ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
