@@ -83,7 +83,7 @@ def process_CODE_GNDBOARD_ADCM_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
     Id, RigPos1, RigPos2, RigPos3, RigPos4, RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp = packCODE_GNDBOARD_ADCM_READ.unpack(
         rf_data)
     if Id == CODE_GNDBOARD_ADCM_READ:
-        self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos)
+        self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp)
         self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 
@@ -150,8 +150,8 @@ def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
             cnt[0] = 0
             info = ('ACM rawdat S{:4d}/{:4d}/{:4d}/{:4d}/{:4d}/{:4d} '
             'E{:4d}/{:4d}/{:4d} '
-            'GX{:6.1f} GY{:6.1f} GZ{:6.1f} '
-            'AX{:6.2f} AY{:6.2f} AZ{:6.2f} ').format(
+            'GX{:6d} GY{:6d} GZ{:6d} '
+            'AX{:6d} AY{:6d} AZ{:6d} ').format(
                 ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6,
                 EncPos1,EncPos2,EncPos3,
                 Gx,Gy,Gz, Nx,Ny,Nz

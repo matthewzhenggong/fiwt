@@ -186,7 +186,7 @@ PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
                         if (process_data(parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength)) {
                             sendSpeedPack();
 #if USE_LEDEXTBOARD
-                            mLED_2_Toggle();
+                            mLED_4_Toggle();
 #endif
                         }
                     }
