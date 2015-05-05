@@ -28,6 +28,7 @@ import Queue
 from ConfigParser import SafeConfigParser
 
 from wx.lib.newevent import NewEvent
+from dynamic_chart import HistChart
 
 # New Event Declarations
 LogEvent, EVT_LOG = NewEvent()
@@ -38,11 +39,14 @@ GND_StaEvent, EVT_GND_STAT = NewEvent()
 ACM_DatEvent, EVT_ACM_DAT = NewEvent()
 CMP_DatEvent, EVT_CMP_DAT = NewEvent()
 GND_DatEvent, EVT_GND_DAT = NewEvent()
+EXP_DatEvent, EVT_EXP_DAT = NewEvent()
 
 ALPHA_ONLY = 1
 DIGIT_ONLY = 2
 HEX_ONLY = 3
 
+def _(ori_string):
+    return ori_string
 
 class MyValidator(wx.PyValidator):
     def __init__(self, flag=None, pyVar=None):
@@ -131,7 +135,9 @@ class MyFrame(wx.Frame):
         wx.Frame.__init__(self, parent, id, title, wx.Point(0, 0),
                           wx.Size(650, 800))
 
-        panel = wx.Panel(self, -1)
+        notebook = wx.Notebook(self,-1,style=wx.BK_DEFAULT)
+
+        panel = wx.Panel(notebook, -1)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -554,6 +560,17 @@ Unused bits must be set to 0.  '''))
 
         panel.SetSizer(sizer)
         sizer.Fit(panel)
+        notebook.AddPage(panel, _("&Basic"))
+
+        panel = wx.Panel(notebook, -1)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.hpanel = HistChart(panel)
+        sizer.Add(self.hpanel, 1, wx.ALL|wx.EXPAND, 1)
+        panel.SetSizer(sizer)
+        sizer.Fit(panel)
+        notebook.AddPage(panel, _("&Graphs"))
+
+
 
         # bind events to functions
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -576,6 +593,7 @@ Unused bits must be set to 0.  '''))
         self.Bind(EVT_ACM_DAT, self.OnACMDat)
         self.Bind(EVT_CMP_DAT, self.OnCMPDat)
         self.Bind(EVT_GND_DAT, self.OnGNDDat)
+        self.Bind(EVT_EXP_DAT, self.OnExpDat)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
 
 
@@ -640,6 +658,8 @@ Unused bits must be set to 0.  '''))
                     wx.PostEvent(self, GND_StaEvent(txt=output['info']))
                 elif output['ID'] == 'GND_DAT':
                     wx.PostEvent(self, GND_DatEvent(txt=output['info']))
+                elif output['ID'] == 'ExpData':
+                    wx.PostEvent(self, EXP_DatEvent(states=output['states']))
             except Queue.Empty:
                 pass
 
@@ -736,6 +756,14 @@ Unused bits must be set to 0.  '''))
 
     def OnGNDDat(self, event) :
         self.txtGNDDat.SetLabel(event.txt)
+
+    def OnExpDat(self, event) :
+        states = event.states
+        ht = self.hpanel
+        ht.data_t.append(states[0])
+        ht.data_y.append(states[1])
+        ht.data_y2.append(states[2])
+        ht.draw_plot()
 
     def OnSaveLog(self, event):
         dlg = wx.FileDialog(

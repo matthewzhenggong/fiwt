@@ -49,7 +49,7 @@ class Worker(object):
         self.writing = False
         self.fileALL = None
         self.packHdr = struct.Struct(">B3I2H")
-        self.expData = ExpData()
+        self.expData = ExpData(msgc2guiQueue)
 
         #logging
         self.log = logging.getLogger(__name__)

@@ -32,7 +32,7 @@ def Get14bit(val) :
         return val & 0x1FFF
 
 class ExpData(object):
-    def __init__(self):
+    def __init__(self, msgc2guiQueue):
         self.RigRollRawPos = 0
         self.RigRollPos0 = 0
         self.RigPitchRawPos = 0
@@ -42,6 +42,7 @@ class ExpData(object):
         self.Vel = 0
         self.DP = 0
         self.GND_ADC_TS = 0
+        self.msgc2guiQueue = msgc2guiQueue
 
         self.ACM_servo1 = 0
         self.ACM_servo2 = 0
@@ -120,6 +121,7 @@ class ExpData(object):
         self.ACM_yaw_butt = Butter()
 
         self.A5 = struct.Struct('>BfB6H')
+        self.last_update_ts = 0
 
     def updateRigPos(self, RigRollPos,RigPitchPos,RigYawPos, ts_ADC):
         self.RigRollRawPos = RigRollPos - self.RigRollPos0
@@ -141,6 +143,8 @@ class ExpData(object):
         self.RigRollPosFiltered = roll
         self.RigPitchPosFiltered = pitch
         self.RigYawPosFiltered = yaw
+
+        self.update2GUI(ts_ADC)
 
     def updateMani(self, vel, dp):
         self.Vel = vel
@@ -216,6 +220,8 @@ class ExpData(object):
         self.ACM_roll_filtered = roll
         self.ACM_yaw_filtered = yaw
 
+        self.update2GUI(ts_ADC)
+
     def getACMdata(self):
         return [self.ACM_ADC_TS, self.ACM_CmdTime, self.ACM_svoref1,
                 self.ACM_servo1, self.ACM_svoref2, self.ACM_servo2,
@@ -264,6 +270,8 @@ class ExpData(object):
         self.CMP_mot4 = ServoCtrl4
         self.CMP_CmdTime = CmdTime
 
+        self.update2GUI(ts_ADC)
+
     def getCMPdata(self):
         return [self.CMP_ADC_TS, self.CMP_CmdTime, self.CMP_svoref1,
                 self.CMP_servo1, self.CMP_svoref2, self.CMP_servo2,
@@ -287,6 +295,7 @@ class ExpData(object):
         da_cmp = int(da_cmp/self.CMPScale)
         de_cmp = int(de_cmp/self.CMPScale)
         dr_cmp = int(dr_cmp/self.CMPScale)
+
         self.ACM_servo1_cmd = self.ACM_servo1_0 - da
         self.ACM_servo2_cmd = self.ACM_servo2_0 - da
         self.ACM_servo3_cmd = self.ACM_servo3_0 + dr
@@ -297,4 +306,27 @@ class ExpData(object):
                 self.ACM_servo2_cmd, self.ACM_servo3_cmd, self.ACM_servo4_cmd,
                 self.ACM_servo5_cmd,self.ACM_servo6_cmd)
         self.xbee_network.send(data,self.ACM_node)
+
+        self.CMP_servo1_cmd = self.CMP_servo1_0 + da_cmp +de_cmp
+        self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp +dr_cmp
+        self.CMP_servo3_cmd = self.CMP_servo3_0 + da_cmp -de_cmp
+        self.CMP_servo4_cmd = self.CMP_servo4_0 + da_cmp -dr_cmp
+
+        data = self.A5.pack(0xA6, time_token, 1, self.CMP_servo1_cmd,
+                self.CMP_servo2_cmd, self.CMP_servo3_cmd, self.CMP_servo4_cmd,
+                2000,2000)
+        self.xbee_network.send(data,self.CMP_node)
+
+    def update2GUI(self, ts_ADC):
+        if ts_ADC - self.last_update_ts > 20000:
+            self.last_update_ts = ts_ADC
+            self.msgc2guiQueue.put_nowait({'ID':'ExpData',
+                'states':[self.ACM_ADC_TS,
+                        self.GX, self.GY, self.GZ, self.AX, self.AY,
+                        self.AZ, self.ACM_roll_filtered, self.ACM_roll_rate,
+                        self.ACM_pitch_filtered, self.ACM_pitch_rate,
+                        self.ACM_yaw_filtered, self.ACM_yaw_rate,
+                        self.RigRollPosFiltered, self.RigRollPosRate,
+                        self.RigPitchPosFiltered, self.RigPitchPosRate,
+                        self.RigYawPosFiltered, self.RigYawPosRate])
 
