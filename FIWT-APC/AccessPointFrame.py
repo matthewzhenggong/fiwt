@@ -28,7 +28,6 @@ import Queue
 from ConfigParser import SafeConfigParser
 
 from wx.lib.newevent import NewEvent
-from dynamic_chart import HistChart
 
 # New Event Declarations
 LogEvent, EVT_LOG = NewEvent()
@@ -120,13 +119,16 @@ class MyFrame(wx.Frame):
     Main Frame class.
     """
 
-    def __init__(self, parent, id, title, msg_process, gui2msgcQueue, msgc2guiQueue):
+    def __init__(self, parent, id, title, process, gui2msgcQueue,
+            msgc2guiQueue, gui2drawerQueue):
         """
         Initialise the Frame.
         """
-        self.msg_process = msg_process
+        self.msg_process = process[0]
+        self.graph_process = process[1]
         self.gui2msgcQueue = gui2msgcQueue
         self.msgc2guiQueue = msgc2guiQueue
+        self.gui2drawerQueue = gui2drawerQueue
 
         parser = SafeConfigParser()
         parser.read('config.ini')
@@ -532,12 +534,12 @@ Unused bits must be set to 0.  '''))
         self.txtCMPDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
         sub_sizer.Add(self.txtCMPDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
+        self.txtExpDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        sub_sizer.Add(self.txtExpDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
+
         sub_panel.SetSizer(sub_sizer)
         #sub_sizer.Fit(sub_panel)
         sizer.Add(sub_panel, 0, wx.ALL | wx.EXPAND, 1)
-
-        self.hpanel = HistChart(panel)
-        sizer.Add(self.hpanel, 1, wx.ALL|wx.EXPAND, 1)
 
         self.log_txt = wx.TextCtrl(
             panel, -1, "",
@@ -629,6 +631,7 @@ Unused bits must be set to 0.  '''))
                 output = self.msgc2guiQueue.get(block=True,timeout=0.2)
                 if output['ID'] == 'ExpData':
                     wx.PostEvent(self, EXP_DatEvent(states=output['states']))
+                    self.gui2drawerQueue.put_nowait(output)
                 elif output['ID'] == 'info':
                     self.log.info(':'.join(['MSGC:',output['content']]))
                 elif output['ID'] == 'Statistics':
@@ -662,6 +665,11 @@ Unused bits must be set to 0.  '''))
         while self.msg_process.is_alive():
             self.gui2msgcQueue.put_nowait({'ID': 'STOP'})
             self.msg_process.join(0.5)
+
+        if self.graph_process.is_alive():
+            self.graph_process.terminate()
+            self.gui2drawerQueue.put_nowait({'ID': 'STOP'})
+            self.graph_process.join(0.5)
 
     def OnStart(self, event):
         self.gui2msgcQueue.put({'ID': 'START',
@@ -752,14 +760,8 @@ Unused bits must be set to 0.  '''))
         self.txtGNDDat.SetLabel(event.txt)
 
     def OnExpDat(self, event) :
-        states = event.states
-        ht = self.hpanel
-        ht.data_t.append(states[0])
-        ht.data_y.append(states[13])
-        ht.data_y2.append(states[14])
-        ht.data_y3.append(states[15])
-        ht.data_y4.append(states[16])
-        ht.draw_plot()
+        txt = 'RigRoll{13:.2f} RigRollRate{14:.2f}'.format(*event.states)
+        self.txtExpDat.SetLabel(txt)
 
     def OnSaveLog(self, event):
         dlg = wx.FileDialog(

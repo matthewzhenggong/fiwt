@@ -26,7 +26,7 @@ import wx
 from multiprocessing import Process, Queue, freeze_support
 from AccessPointFrame import MyFrame
 from MessageCenter import worker
-
+from DynamicGraph import drawer
 
 class MyApp(wx.App):
     """
@@ -38,23 +38,26 @@ class MyApp(wx.App):
                  filename=None,
                  useBestVisual=False,
                  clearSigInt=True,
-                 msg_process=None,
+                 process=None,
+                 gui2drawerQueue=None,
                  gui2msgcQueue=None,
                  msgc2guiQueue=None):
         """
         Initialise the App.
         """
-        self.msg_process = msg_process
+        self.process = process
         self.gui2msgcQueue = gui2msgcQueue
         self.msgc2guiQueue = msgc2guiQueue
+        self.gui2drawerQueue=gui2drawerQueue
         wx.App.__init__(self, redirect, filename, useBestVisual, clearSigInt)
 
     def OnInit(self):
         """
         Initialise the App with a Frame.
         """
-        self.frame = MyFrame(None, -1, 'AccessPointCenter', self.msg_process,
-                             self.gui2msgcQueue, self.msgc2guiQueue)
+        self.frame = MyFrame(None, -1, 'AccessPointCenter', self.process,
+                             self.gui2msgcQueue, self.msgc2guiQueue,
+                             self.gui2drawerQueue)
         self.frame.Show(True)
         return True
 
@@ -66,15 +69,20 @@ if __name__ == '__main__':
     # Create the queues
     gui2msgcQueue = Queue()
     msgc2guiQueue = Queue()
+    gui2drawerQueue = Queue()
 
     # Create the worker process
     msg_process = Process(target=worker, args=(gui2msgcQueue, msgc2guiQueue))
     msg_process.start()
 
+    graph_process = Process(target=drawer, args=(gui2drawerQueue,))
+    graph_process.start()
+
     # Create the app
     app = MyApp(redirect=True,
                 filename='AccessPointCenter.stderr.log',
-                msg_process=msg_process,
+                process=[msg_process, graph_process],
+                gui2drawerQueue=gui2drawerQueue,
                 gui2msgcQueue=gui2msgcQueue,
                 msgc2guiQueue=msgc2guiQueue)
     app.MainLoop()
