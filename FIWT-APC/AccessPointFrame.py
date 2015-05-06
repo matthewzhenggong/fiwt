@@ -135,9 +135,7 @@ class MyFrame(wx.Frame):
         wx.Frame.__init__(self, parent, id, title, wx.Point(0, 0),
                           wx.Size(650, 800))
 
-        notebook = wx.Notebook(self,-1,style=wx.BK_DEFAULT)
-
-        panel = wx.Panel(notebook, -1)
+        panel = wx.Panel(self, -1)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -153,7 +151,8 @@ class MyFrame(wx.Frame):
         self.btnGNDsynct = wx.Button(panel, -1, "Sync Time")
         self.btnGNDsynct.Enable(False)
         box.Add(self.btnGNDsynct, 0, wx.ALIGN_CENTER, 5)
-        self.txtRecName = wx.TextCtrl(panel, -1, parser.get('rec','prefix'), )
+        self.txtRecName = wx.TextCtrl(panel, -1, parser.get('rec','prefix'),
+                validator=MyValidator(DIGIT_ONLY))
         box.Add(self.txtRecName, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
         self.btnALLrec = wx.ToggleButton(panel, -1, "REC")
         self.btnALLrec.Enable(False)
@@ -425,7 +424,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move4, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef4 = wx.TextCtrl(panel, -1, "1700",
+        self.ServoRef4 = wx.TextCtrl(panel, -1, "2200",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef4, 0, wx.ALIGN_CENTER, 5)
@@ -483,7 +482,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move6, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef6 = wx.TextCtrl(panel, -1, "2067",
+        self.ServoRef6 = wx.TextCtrl(panel, -1, "2210",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef6, 0, wx.ALIGN_CENTER, 5)
@@ -537,6 +536,9 @@ Unused bits must be set to 0.  '''))
         #sub_sizer.Fit(sub_panel)
         sizer.Add(sub_panel, 0, wx.ALL | wx.EXPAND, 1)
 
+        self.hpanel = HistChart(panel)
+        sizer.Add(self.hpanel, 1, wx.ALL|wx.EXPAND, 1)
+
         self.log_txt = wx.TextCtrl(
             panel, -1, "",
             size=(300, 300),
@@ -560,17 +562,6 @@ Unused bits must be set to 0.  '''))
 
         panel.SetSizer(sizer)
         sizer.Fit(panel)
-        notebook.AddPage(panel, _("&Basic"))
-
-        panel = wx.Panel(notebook, -1)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self.hpanel = HistChart(panel)
-        sizer.Add(self.hpanel, 1, wx.ALL|wx.EXPAND, 1)
-        panel.SetSizer(sizer)
-        sizer.Fit(panel)
-        notebook.AddPage(panel, _("&Graphs"))
-
-
 
         # bind events to functions
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -636,7 +627,9 @@ Unused bits must be set to 0.  '''))
         while self.keepgoing:
             try:
                 output = self.msgc2guiQueue.get(block=True,timeout=0.2)
-                if output['ID'] == 'info':
+                if output['ID'] == 'ExpData':
+                    wx.PostEvent(self, EXP_DatEvent(states=output['states']))
+                elif output['ID'] == 'info':
                     self.log.info(':'.join(['MSGC:',output['content']]))
                 elif output['ID'] == 'Statistics':
                     arrv_cnt = output['arrv_cnt']
@@ -658,8 +651,6 @@ Unused bits must be set to 0.  '''))
                     wx.PostEvent(self, GND_StaEvent(txt=output['info']))
                 elif output['ID'] == 'GND_DAT':
                     wx.PostEvent(self, GND_DatEvent(txt=output['info']))
-                elif output['ID'] == 'ExpData':
-                    wx.PostEvent(self, EXP_DatEvent(states=output['states']))
             except Queue.Empty:
                 pass
 
@@ -701,8 +692,11 @@ Unused bits must be set to 0.  '''))
 
     def OnRecALL(self, event) :
         if event.IsChecked():
-            filename = time.strftime('{}%Y%m%d%H%M%S.dat'.format(self.txtRecName.GetValue()))
-            self.gui2msgcQueue.put({'ID': 'REC_START', 'filename': filename})
+            filename = time.strftime(
+                    'FIWT_Exp{:03d}_%Y%m%d%H%M%S.dat'.format(
+                        int(self.txtRecName.GetValue()[:3])))
+            self.gui2msgcQueue.put({'ID': 'REC_START',
+                'filename': filename})
         else:
             self.gui2msgcQueue.put({'ID': 'REC_STOP'})
 
@@ -761,8 +755,10 @@ Unused bits must be set to 0.  '''))
         states = event.states
         ht = self.hpanel
         ht.data_t.append(states[0])
-        ht.data_y.append(states[1])
-        ht.data_y2.append(states[2])
+        ht.data_y.append(states[13])
+        ht.data_y2.append(states[14])
+        ht.data_y3.append(states[15])
+        ht.data_y4.append(states[16])
         ht.draw_plot()
 
     def OnSaveLog(self, event):

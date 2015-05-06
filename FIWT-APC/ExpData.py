@@ -318,15 +318,27 @@ class ExpData(object):
         self.xbee_network.send(data,self.CMP_node)
 
     def update2GUI(self, ts_ADC):
-        if ts_ADC - self.last_update_ts > 20000:
+        deltaT = ts_ADC - self.last_update_ts
+        if deltaT > 50000 or deltaT < 0:
             self.last_update_ts = ts_ADC
             self.msgc2guiQueue.put_nowait({'ID':'ExpData',
-                'states':[self.ACM_ADC_TS,
+                'states':[self.GND_ADC_TS,
                         self.GX, self.GY, self.GZ, self.AX, self.AY,
                         self.AZ, self.ACM_roll_filtered, self.ACM_roll_rate,
                         self.ACM_pitch_filtered, self.ACM_pitch_rate,
                         self.ACM_yaw_filtered, self.ACM_yaw_rate,
                         self.RigRollPosFiltered, self.RigRollPosRate,
                         self.RigPitchPosFiltered, self.RigPitchPosRate,
-                        self.RigYawPosFiltered, self.RigYawPosRate])
+                        self.RigYawPosFiltered, self.RigYawPosRate,
+                        self.ACM_svoref1, self.ACM_servo1,
+                        self.ACM_svoref2, self.ACM_servo2,
+                        self.ACM_svoref3, self.ACM_servo3,
+                        self.ACM_svoref4, self.ACM_servo4,
+                        self.ACM_svoref5, self.ACM_servo5,
+                        self.ACM_svoref6, self.ACM_servo6,
+                        self.CMP_servo1, self.CMP_svoref1,
+                        self.CMP_servo2, self.CMP_svoref2,
+                        self.CMP_servo3, self.CMP_svoref3,
+                        self.CMP_servo4, self.CMP_svoref4,
+                        ]})
 
