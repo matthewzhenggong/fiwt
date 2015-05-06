@@ -28,7 +28,7 @@ packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HI4h4hf')
 
 class fileParser(object):
     def __init__(self):
-        self.expData = ExpData.ExpData()
+        self.expData = ExpData.ExpData(None)
         self.packHdr = struct.Struct(">B3I2H")
 
         self.head22 = np.array(self.expData.getACMhdr(), dtype=np.object)

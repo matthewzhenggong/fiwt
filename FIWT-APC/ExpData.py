@@ -52,6 +52,15 @@ class ExpData(object):
         self.ACM_servo6 = 0
 
         self.CMP_servo1 = 0
+        self.CMP_svoref1 = 0
+        self.CMP_servo2 = 0
+        self.CMP_svoref2 = 0
+        self.CMP_servo3 = 0
+        self.CMP_svoref3 = 0
+        self.CMP_servo4 = 0
+        self.CMP_svoref4 = 0
+
+        self.CMP_servo1 = 0
         self.CMP_servo2 = 0
         self.CMP_servo3 = 0
         self.CMP_servo4 = 0
@@ -318,6 +327,8 @@ class ExpData(object):
         self.xbee_network.send(data,self.CMP_node)
 
     def update2GUI(self, ts_ADC):
+        if not self.msgc2guiQueue:
+            return
         deltaT = ts_ADC - self.last_update_ts
         if deltaT > 50000 or deltaT < 0:
             self.last_update_ts = ts_ADC
@@ -330,7 +341,7 @@ class ExpData(object):
                         self.RigRollPosFiltered, self.RigRollPosRate,
                         self.RigPitchPosFiltered, self.RigPitchPosRate,
                         self.RigYawPosFiltered, self.RigYawPosRate,
-                        self.ACM_svoref1, self.ACM_servo1,
+                        self.ACM_svoref1, self.ACM_servo1, #19 20
                         self.ACM_svoref2, self.ACM_servo2,
                         self.ACM_svoref3, self.ACM_servo3,
                         self.ACM_svoref4, self.ACM_servo4,
