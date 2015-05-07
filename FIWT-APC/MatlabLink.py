@@ -45,7 +45,7 @@ class MatlabLink(object):
         self.tx_udp.setblocking(0)
 
         self.rx_pack = struct.Struct(">d3d3d")
-        self.tx_pack = struct.Struct(">19d")
+        self.tx_pack = struct.Struct(">20d")
 
     def getReadList(self):
         return self.socklist
@@ -66,7 +66,8 @@ class MatlabLink(object):
                         exp.ACM_yaw_filtered, exp.ACM_yaw_rate,
                         exp.RigRollPosFiltered, exp.RigRollPosRate,
                         exp.RigPitchPosFiltered, exp.RigPitchPosRate,
-                        exp.RigYawPosFiltered, exp.RigYawPosRate)
+                        exp.RigYawPosFiltered, exp.RigYawPosRate
+                        exp.Vel)
                 self.tx_udp.sendall(data)
             except:
                 pass
