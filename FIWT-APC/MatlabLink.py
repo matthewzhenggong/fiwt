@@ -66,7 +66,7 @@ class MatlabLink(object):
                         exp.ACM_yaw_filtered, exp.ACM_yaw_rate,
                         exp.RigRollPosFiltered, exp.RigRollPosRate,
                         exp.RigPitchPosFiltered, exp.RigPitchPosRate,
-                        exp.RigYawPosFiltered, exp.RigYawPosRate
+                        exp.RigYawPosFiltered, exp.RigYawPosRate,
                         exp.Vel)
                 self.tx_udp.sendall(data)
             except:

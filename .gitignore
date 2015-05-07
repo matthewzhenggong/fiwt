@@ -12,3 +12,6 @@ XbeeZBS2Test/log.txt
 *.zip
 *.pyc
 *.log
+
+workspace/
+
