@@ -90,7 +90,7 @@ int main(void) {
     msgACM.servo_Task = TaskCreate(servoLoop, "SVO", (void *) &servo, TASK_PERIOD, 0, 20);
 
     senInit(&sen);
-    msgACM.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, 1, 0, 30);
+    msgACM.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
 
     msgInit(&msg, &Xbee1);
     msgACM.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
