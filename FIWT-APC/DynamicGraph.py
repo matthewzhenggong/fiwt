@@ -99,6 +99,7 @@ class MyApp(wx.App):
         return True
 
 def drawer(gui2drawerQueue):
+    return
     """
     Worker process to draw data
     """
