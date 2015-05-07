@@ -184,6 +184,7 @@ __near unsigned int volatile imu_reading = 0;
 __interrupt(no_auto_psv) void _INT4Interrupt(void) {
     if (imu_reading != 2) {
         imu_reading = 1;
+        IMURead2DMA();
     }
     _INT4IF = 0; /*  Clear INT Interrupt Flag */
 }
@@ -264,7 +265,7 @@ void IMURead2DMA(void) {
         // Initialize IMU Burst Read
         SPI1BUF = 0x3E00;
         // Wait for transmission to finish
-        while (!SPI1STATbits.SPITBF);
+        while (!SPI1STATbits.SPIRBF);
 
         imu_reading = true;
         DMA8CONbits.CHEN = 1; /* Enable DMA channel */
