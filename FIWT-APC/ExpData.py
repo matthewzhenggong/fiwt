@@ -104,6 +104,7 @@ class ExpData(object):
         self.CMPScale = 180/4096.0
         self.EncScale = 180/4096.0
         self.RigScale = 120/3873.0
+        self.RigScaleYZ = 360/4095.0
 
         self.RigRollPos = 0
         self.RigPitchPos = 0
@@ -141,8 +142,8 @@ class ExpData(object):
         dt = self.GND_ADC_TS - ts
 
         self.RigRollPos = self.RigRollRawPos*self.RigScale
-        self.RigPitchPos = self.RigPitchRawPos*self.RigScale
-        self.RigYawPos = self.RigYawRawPos*self.RigScale
+        self.RigPitchPos = self.RigPitchRawPos*self.RigScaleYZ
+        self.RigYawPos = self.RigYawRawPos*self.RigScaleYZ
         roll = self.RigRollPosButt.update(self.RigRollPos)
         pitch = self.RigPitchPosButt.update(self.RigPitchPos)
         yaw = self.RigYawPosButt.update(self.RigYawPos)
@@ -317,9 +318,9 @@ class ExpData(object):
         self.xbee_network.send(data,self.ACM_node)
 
         self.CMP_servo1_cmd = self.CMP_servo1_0 + da_cmp +de_cmp
-        self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp +dr_cmp
+        self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp -dr_cmp
         self.CMP_servo3_cmd = self.CMP_servo3_0 + da_cmp -de_cmp
-        self.CMP_servo4_cmd = self.CMP_servo4_0 + da_cmp -dr_cmp
+        self.CMP_servo4_cmd = self.CMP_servo4_0 + da_cmp +dr_cmp
 
         data = self.A5.pack(0xA6, time_token, 1, self.CMP_servo1_cmd,
                 self.CMP_servo2_cmd, self.CMP_servo3_cmd, self.CMP_servo4_cmd,
@@ -347,9 +348,10 @@ class ExpData(object):
                         self.ACM_svoref4, self.ACM_servo4,
                         self.ACM_svoref5, self.ACM_servo5,
                         self.ACM_svoref6, self.ACM_servo6,
-                        self.CMP_servo1, self.CMP_svoref1,
+                        self.CMP_servo1, self.CMP_svoref1, #31 32
                         self.CMP_servo2, self.CMP_svoref2,
                         self.CMP_servo3, self.CMP_svoref3,
                         self.CMP_servo4, self.CMP_svoref4,
+                        self.Vel, self.DP
                         ]})
 
