@@ -140,13 +140,13 @@ void UpdateServoPosFromEnc(void) {
 //static int16_t RigPitchPosFiltered=0;
 //static int16_t RigYawPosFiltered=0;
 static int32_t LastRigRollPos=0;
-static int16_t LastRigPitchPos=0;
+
 static int16_t LastRigYawPos=0;
 //static int16_t LastRigRollPosFiltered=0;
 //static int16_t LastRigPitchPosFiltered=0;
 //static int16_t LastRigYawPosFiltered=0;
 static int RigRollLoop=0;
-static int RigPitchLoop=0;
+
 static int RigYawLoop=0;
 //static fractional buttRigRoll[BUTTER_ORDER + 1];
 //static fractional buttRigPitch[BUTTER_ORDER + 1];
@@ -176,8 +176,8 @@ void UpdateRigPos(void) {
         int16_t CurRigYawPos;
 
         CurRigRollPos = -(RigPos[0]-2220);
-        CurRigPitchPos = (RigPos[3]-3669);
-        CurRigYawPos = (RigPos[2]-2657);
+        CurRigPitchPos = (RigPos[2]-2657);
+        CurRigYawPos = -(RigPos[3]-3669);
 
         diff = CurRigRollPos-LastRigRollPos;
         if (diff < 256 && diff > -256)
@@ -193,19 +193,7 @@ void UpdateRigPos(void) {
 //        LastRigRollPosFiltered = RigRollPosFiltered;
         LastRigRollPos = CurRigRollPos;
 
-        diff = CurRigPitchPos-LastRigPitchPos;
-        if (diff < 256 && diff > -256)
-        {
-            RigPitchPos = updateAngle32(CurRigPitchPos, &RigPitchLoop, RigPitchPos);
-        }
-//        else
-//        {
-//            RigPitchPos += RigPitchRate;
-//        }
-//        RigPitchPosFiltered = _butter_update(RigPitchPos, buttRigPitch);
-//        RigPitchRate = RigPitchPosFiltered - LastRigPitchPos;
-//        LastRigPitchPosFiltered = RigPitchPosFiltered;
-        LastRigPitchPos = CurRigPitchPos;
+        RigPitchPos = CurRigPitchPos;
 
         diff = CurRigYawPos-LastRigYawPos;
         if (diff < 256 && diff > -256)
