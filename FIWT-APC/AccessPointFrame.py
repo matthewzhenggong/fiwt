@@ -27,6 +27,9 @@ import threading, logging, struct
 import Queue
 from ConfigParser import SafeConfigParser
 
+import socket
+import json
+
 from wx.lib.newevent import NewEvent
 
 # New Event Declarations
@@ -133,6 +136,11 @@ class MyFrame(wx.Frame):
         parser = SafeConfigParser()
         parser.read('config.ini')
         self.parser = parser
+
+        self.aclink = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.aclink.settimeout(0.01)
+        self.aclink.bind(('127.0.0.1', 7131))
+        self.aclink_addr = ('127.0.0.1', 7132)
 
         wx.Frame.__init__(self, parent, id, title, wx.Point(0, 0),
                           wx.Size(650, 800))
@@ -760,8 +768,16 @@ Unused bits must be set to 0.  '''))
         self.txtGNDDat.SetLabel(event.txt)
 
     def OnExpDat(self, event) :
-        txt = 'RigRoll{13:.2f} RigRollRate{14:.2f}'.format(*event.states)
+        states = event.states
+        txt = 'ACRoll{7:.2f} ACRollRate{1:.2f} RigRoll{13:.2f} RigRollRate{14:.2f}'.format(*states)
         self.txtExpDat.SetLabel(txt)
+        msgs = {'data': {
+                    'VC': states[39]*10,
+                    'VG': states[40],
+                    'heading': states[13],
+                    'roll': states[7],
+                    'pitch': states[9]} }
+        self.aclink.sendto(json.dumps(msgs), self.aclink_addr)
 
     def OnSaveLog(self, event):
         dlg = wx.FileDialog(
