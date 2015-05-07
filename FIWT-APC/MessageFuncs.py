@@ -104,6 +104,9 @@ def cmd_A5(self, cmd):
     self.xbee_network.send(data,remote_host)
     print 'sendA5 to', remote_host
 
+def cmd_reset_rig(self, cmd):
+    self.expData.resetRigAngel()
+
 process_funcs = {'START':msg_start,
     'STOP':msg_stop,
     'REC_START':cmd_rec_start,
@@ -113,5 +116,6 @@ process_funcs = {'START':msg_start,
     'NTP':cmd_ntp,
     'CMD':cmd_command,
     'CLEAR':cmd_clear,
+    'RESET_RIG':cmd_reset_rig,
     'A5':cmd_A5,
     }

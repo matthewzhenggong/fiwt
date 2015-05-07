@@ -31,6 +31,15 @@ def Get14bit(val) :
     else :
         return val & 0x1FFF
 
+def getPeriodDiff(EncPos, EncPos0, peroid=4096):
+    diff = EncPos - EncPos0
+    half_peroid = (peroid>>1)
+    if diff > half_peroid:
+        diff -= peroid
+    elif diff < -half_peroid:
+        diff += peroid
+    return diff
+
 class ExpData(object):
     def __init__(self, msgc2guiQueue):
         self.RigRollRawPos = 0
@@ -133,6 +142,11 @@ class ExpData(object):
         self.A5 = struct.Struct('>BfB6H')
         self.last_update_ts = 0
 
+    def resetRigAngel(self):
+        self.RigRollPos0 += self.RigRollRawPos
+        self.RigPitchPos0 += self.RigPitchRawPos
+        self.RigYawPos0 += self.RigYawRawPos
+
     def updateRigPos(self, RigRollPos,RigPitchPos,RigYawPos, ts_ADC):
         self.RigRollRawPos = RigRollPos - self.RigRollPos0
         self.RigPitchRawPos = RigPitchPos - self.RigPitchPos0
@@ -193,9 +207,9 @@ class ExpData(object):
         self.ACM_servo4 = (ServoPos4-self.ACM_servo4_0)*self.ACMScale
         self.ACM_servo5 = (ServoPos5-self.ACM_servo5_0)*self.ACMScale
         self.ACM_servo6 = (ServoPos6-self.ACM_servo6_0)*self.ACMScale
-        self.ACM_roll = (EncPos1 - self.ACM_roll0)*self.EncScale
-        self.ACM_pitch = (EncPos2 - self.ACM_pitch0)*self.EncScale
-        self.ACM_yaw = (EncPos3 - self.ACM_yaw0)*self.EncScale
+        self.ACM_roll = getPeriodDiff(EncPos1, self.ACM_roll0)*self.EncScale
+        self.ACM_pitch = getPeriodDiff(EncPos2, self.ACM_pitch0)*self.EncScale
+        self.ACM_yaw = getPeriodDiff(EncPos3, self.ACM_yaw0)*self.EncScale
         self.GX = Get14bit(Gx)*0.05
         self.GY = Get14bit(Gy)*-0.05
         self.GZ = Get14bit(Gz)*-0.05

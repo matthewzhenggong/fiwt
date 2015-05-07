@@ -520,6 +520,10 @@ Unused bits must be set to 0.  '''))
 
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
+        self.btnResetRig = wx.Button(panel, -1, "Reset Rig Position")
+        self.btnResetRig.Enable(False)
+        sizer.Add(self.btnResetRig, 0, wx.ALIGN_LEFT, 5)
+
         sub_panel = wx.Panel(panel, -1)
         sub_panel.SetDoubleBuffered(True)
         sub_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -596,6 +600,7 @@ Unused bits must be set to 0.  '''))
         self.Bind(EVT_GND_DAT, self.OnGNDDat)
         self.Bind(EVT_EXP_DAT, self.OnExpDat)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
+        self.Bind(wx.EVT_BUTTON, self.OnRstRig, self.btnResetRig)
 
 
         # Set some program flags
@@ -705,6 +710,7 @@ Unused bits must be set to 0.  '''))
         self.btnRmtAT.Enable(True)
         self.btnTX.Enable(True)
         self.btnTM.Enable(True)
+        self.btnResetRig.Enable(True)
 
     def OnRecALL(self, event) :
         if event.IsChecked():
@@ -769,7 +775,9 @@ Unused bits must be set to 0.  '''))
 
     def OnExpDat(self, event) :
         states = event.states
-        txt = 'ACRoll{7:.2f} ACRollRate{1:.2f} RigRoll{13:.2f} RigRollRate{14:.2f}'.format(*states)
+        txt = ('ACRoll{7:.2f} ACRollRate{1:.2f} '
+        'RigRoll{13:.2f} RigRollRate{14:.2f} '
+        'RigPitch{15:.2f} RigPitchRate{16:.2f}').format(*states)
         self.txtExpDat.SetLabel(txt)
         msgs = {'data': {
                     'VC': states[39]*10,
@@ -802,6 +810,9 @@ Unused bits must be set to 0.  '''))
         self.txtGNDinfo.SetLabel('')
 
         self.gui2msgcQueue.put({'ID': 'CLEAR'})
+
+    def OnRstRig(self, event):
+        self.gui2msgcQueue.put({'ID': 'RESET_RIG'})
 
     def OnTestMotor(self, event):
         InputType = self.InputType.GetSelection()+1
