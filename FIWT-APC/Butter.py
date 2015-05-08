@@ -26,10 +26,10 @@ import numpy as np
 
 class Butter(object):
     def __init__(self):
-        self.A = np.array([[0.6742,  -0.2115],[0.2115,   0.9733]])
-        self.B = np.array([[0.2991],[0.0378]])
-        self.C = np.array([0.0748,   0.6977])
-        self.D = 0.0134
+        self.A = np.array([[0.8299,  -0.1151],[0.1151,   0.9928]])
+        self.B = np.array([[0.1628],[0.0102]])
+        self.C = np.array([0.0407,   0.7045])
+        self.D = 0.0036
         self.X = np.array([[0.0],[0.0]])
 
     def update(self, U):
