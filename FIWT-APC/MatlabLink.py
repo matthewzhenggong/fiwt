@@ -44,7 +44,7 @@ class MatlabLink(object):
         self.tx_udp.connect((self.host,remote_port+1))
         self.tx_udp.setblocking(0)
 
-        self.rx_pack = struct.Struct(">d3d3d")
+        self.rx_pack = struct.Struct(">d4d3d")
         self.tx_pack = struct.Struct(">20d")
 
     def getReadList(self):
@@ -54,9 +54,9 @@ class MatlabLink(object):
         if self.rx_udp in rlist:
             try:
                 (dat,address)=self.rx_udp.recvfrom(1000)
-                time_token, da, de, dr, da_cmp, de_cmp, dr_cmp \
+                time_token, da, dea, de, dr, da_cmp, de_cmp, dr_cmp \
                         = self.rx_pack.unpack(dat)
-                self.expData.sendCommand(time_token, da, de, dr,
+                self.expData.sendCommand(time_token, da, dea, de, dr,
                         da_cmp, de_cmp, dr_cmp)
                 exp = self.expData
                 data = self.tx_pack.pack(exp.ACM_CmdTime,

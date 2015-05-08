@@ -177,7 +177,7 @@ class ExpData(object):
         self.DP = dp
 
     def getCMDhdr(self):
-        return ['TS', 'Dac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']
+        return ['TS', 'Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']
 
     def getGNDhdr(self):
         return ["GND_ADC_TS", "RigRollRawPos", "RigRollPos",
@@ -313,9 +313,10 @@ class ExpData(object):
                 "CMP_mot3", "CMP_mot4"] \
                         + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
-    def sendCommand(self, time_token, dac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
+    def sendCommand(self, time_token, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
         ts1 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
         da = int(dac/self.ACMScale)
+        dea = int(deac/self.ACMScale)
         de = int(dec/self.ACMScale)
         dr = int(drc/self.ACMScale)
 
@@ -327,8 +328,8 @@ class ExpData(object):
         self.ACM_servo2_cmd = self.ACM_servo2_0 - da
         self.ACM_servo3_cmd = self.ACM_servo3_0 + dr
         self.ACM_servo4_cmd = self.ACM_servo4_0 + dr
-        self.ACM_servo5_cmd = self.ACM_servo5_0 + de
-        self.ACM_servo6_cmd = self.ACM_servo6_0 - de
+        self.ACM_servo5_cmd = self.ACM_servo5_0 + de -dea
+        self.ACM_servo6_cmd = self.ACM_servo6_0 - de =dea
         dataA5 = self.A5.pack(0xA5, time_token, 1, self.ACM_servo1_cmd,
                 self.ACM_servo2_cmd, self.ACM_servo3_cmd, self.ACM_servo4_cmd,
                 self.ACM_servo5_cmd,self.ACM_servo6_cmd)
@@ -346,8 +347,8 @@ class ExpData(object):
         self.xbee_network.send(dataA6,self.CMP_node)
         ts3 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
 
-        data = self.AA.pack(0xA6, ts1, dac, dec, drc, dac_cmp, dec_cmp,
-                drc_cmp)
+        data = self.AA.pack(0xA6, ts1, dac, deac, dec, drc,
+                dac_cmp, dec_cmp, drc_cmp)
         self.parent.save(data, ts1, ts2, ts3, 0)
 
     def update2GUI(self, ts_ADC):
