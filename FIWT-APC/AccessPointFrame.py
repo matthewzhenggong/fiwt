@@ -343,14 +343,14 @@ Unused bits must be set to 0.  '''))
         boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        self.Srv2Move1 = wx.CheckBox(panel, -1, "CH1")
-        boxH.Add(self.Srv2Move1, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Da="), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef1 = wx.TextCtrl(panel, -1, "1967",
+        self.ServoRef1 = wx.TextCtrl(panel, -1, "0.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef1, 0, wx.ALIGN_CENTER, 5)
+        self.Srv2Move1 = wx.CheckBox(panel, -1, "CH1")
+        boxH.Add(self.Srv2Move1, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         self.MaxValue1 = wx.TextCtrl(panel, -1, "100",
@@ -372,14 +372,14 @@ Unused bits must be set to 0.  '''))
         boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        self.Srv2Move2 = wx.CheckBox(panel, -1, "CH2")
-        boxH.Add(self.Srv2Move2, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "De="), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef2 = wx.TextCtrl(panel, -1, "2259",
+        self.ServoRef2 = wx.TextCtrl(panel, -1, "4.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef2, 0, wx.ALIGN_CENTER, 5)
+        self.Srv2Move2 = wx.CheckBox(panel, -1, "CH2")
+        boxH.Add(self.Srv2Move2, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         self.MaxValue2 = wx.TextCtrl(panel, -1, "100",
@@ -401,14 +401,14 @@ Unused bits must be set to 0.  '''))
         boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        self.Srv2Move3 = wx.CheckBox(panel, -1, "CH3")
-        boxH.Add(self.Srv2Move3, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Dr="), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef3 = wx.TextCtrl(panel, -1, "2000",
+        self.ServoRef3 = wx.TextCtrl(panel, -1, "0.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef3, 0, wx.ALIGN_CENTER, 5)
+        self.Srv2Move3 = wx.CheckBox(panel, -1, "CH3")
+        boxH.Add(self.Srv2Move3, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         self.MaxValue3 = wx.TextCtrl(panel, -1, "100",
@@ -430,14 +430,14 @@ Unused bits must be set to 0.  '''))
         boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        self.Srv2Move4 = wx.CheckBox(panel, -1, "CH4")
-        boxH.Add(self.Srv2Move4, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Ca="), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef4 = wx.TextCtrl(panel, -1, "2200",
+        self.ServoRef4 = wx.TextCtrl(panel, -1, "0.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef4, 0, wx.ALIGN_CENTER, 5)
+        self.Srv2Move4 = wx.CheckBox(panel, -1, "CH4")
+        boxH.Add(self.Srv2Move4, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         self.MaxValue4 = wx.TextCtrl(panel, -1, "100",
@@ -459,14 +459,14 @@ Unused bits must be set to 0.  '''))
         boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        self.Srv2Move5 = wx.CheckBox(panel, -1, "CH5")
-        boxH.Add(self.Srv2Move5, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Ce="), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef5 = wx.TextCtrl(panel, -1, "1820",
+        self.ServoRef5 = wx.TextCtrl(panel, -1, "0.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef5, 0, wx.ALIGN_CENTER, 5)
+        self.Srv2Move5 = wx.CheckBox(panel, -1, "CH5")
+        boxH.Add(self.Srv2Move5, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         self.MaxValue5 = wx.TextCtrl(panel, -1, "100",
@@ -488,14 +488,14 @@ Unused bits must be set to 0.  '''))
         boxV.Add(boxH, 0, wx.ALIGN_CENTER, 5)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        self.Srv2Move6 = wx.CheckBox(panel, -1, "CH6")
-        boxH.Add(self.Srv2Move6, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "ServoRef"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "Cr="), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.ServoRef6 = wx.TextCtrl(panel, -1, "2210",
+        self.ServoRef6 = wx.TextCtrl(panel, -1, "0.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.ServoRef6, 0, wx.ALIGN_CENTER, 5)
+        self.Srv2Move6 = wx.CheckBox(panel, -1, "CH6")
+        boxH.Add(self.Srv2Move6, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         self.MaxValue6 = wx.TextCtrl(panel, -1, "100",
@@ -821,13 +821,14 @@ Unused bits must be set to 0.  '''))
         else:
             Id = 0xA5
         if InputType == 1:
-            ServoRef = [int(self.ServoRef1.GetValue()),
-                        int(self.ServoRef2.GetValue()),
-                        int(self.ServoRef3.GetValue()),
-                        int(self.ServoRef4.GetValue()),
-                        int(self.ServoRef5.GetValue()),
-                        int(self.ServoRef6.GetValue()) ]
-            data = struct.pack('>BfB6H', Id, 0.0, InputType, *ServoRef)
+            cmd = {'ID': 'CMD',
+                   'da': float(self.ServoRef1.GetValue()),
+                   'de': float(self.ServoRef2.GetValue()),
+                   'dr': float(self.ServoRef3.GetValue()),
+                   'da_cmp': float(self.ServoRef4.GetValue()),
+                   'de_cmp': float(self.ServoRef5.GetValue()),
+                   'dr_cmp': float(self.ServoRef6.GetValue()) }
+            self.gui2msgcQueue.put(cmd)
         else :
             Srv2Move = (1 if self.Srv2Move1.GetValue() else 0) \
                      | (2 if self.Srv2Move2.GetValue() else 0) \
@@ -859,7 +860,7 @@ Unused bits must be set to 0.  '''))
             nofcyc = int(self.NofCycles.GetValue())
             data = struct.pack('>Bf2B2HB6B6B6B', Id, 0.0, InputType, Srv2Move,
                     starttime, deltatime, nofcyc, *others)
-        self.gui2msgcQueue.put({'ID': 'A5', 'target':self.target,
-            'data':data})
+            self.gui2msgcQueue.put({'ID': 'A5', 'target':self.target,
+                'data':data})
 
 

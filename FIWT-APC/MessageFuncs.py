@@ -91,11 +91,17 @@ def cmd_ntp(self, cmd):
     self.log.info('TODO')
 
 def cmd_command(self, cmd):
-    remote_host = cmd['target']
-    self.log.info('TODO')
+    da = cmd['da']
+    de = cmd['da']
+    dr = cmd['da']
+    da_cmp = cmd['da_cmp']
+    de_cmp = cmd['da_cmp']
+    dr_cmp = cmd['da_cmp']
+    self.expData.sendCommand(0, da, de, dr, da_cmp, de_cmp, dr_cmp)
 
 def cmd_clear(self, cmd):
     self.xbee_network.arrv_cnt = -1
+    self.max_dt = 0
 
 def cmd_A5(self, cmd):
     target = cmd['target']

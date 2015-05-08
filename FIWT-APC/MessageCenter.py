@@ -50,6 +50,7 @@ class Worker(object):
         self.fileALL = None
         self.packHdr = struct.Struct(">B3I2H")
         self.expData = ExpData(msgc2guiQueue)
+        self.max_dt = 0
 
         #logging
         self.log = logging.getLogger(__name__)
@@ -84,9 +85,14 @@ class Worker(object):
         while self.main_thread_running:
             rlist,wlist,elist=select.select(self.socklist,[],[],0.2)
             if rlist:
-                recv_ts = int((time.clock()-self.T0)*1e6)&0x7fffffff
+                t_s = time.clock()
+                recv_ts = int((t_s-self.T0)*1e6)&0x7fffffff
                 self.xbee_network.read(rlist, recv_ts)
                 self.matlab_link.read(rlist, recv_ts)
+                dt = time.clock()-t_s
+                if dt > self.max_dt:
+                    self.max_dt = dt
+                    self.log.info('MainLoop Max DT={:.3f}'.format(dt))
         self.log.info('Work end.')
         if self.fileALL:
             self.fileALL.close()
