@@ -18,13 +18,13 @@ CODE_AEROCOMP_SERVO_POS = 0x33
 CODE_GNDBOARD_ADCM_READ = 0x44
 CODE_GNDBOARD_MANI_READ = 0x45
 
-CODE_AC_MODEL_SERV_CMD = 0xA5
 CODE_AEROCOMP_SERV_CMD = 0xA6
 
 packCODE_GNDBOARD_ADCM_READ = struct.Struct('>B4Hi2hI')
 packCODE_GNDBOARD_MANI_READ = struct.Struct('>B2f')
 packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hI6h6hf')
 packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HI4h4hf')
+packCODE_AEROCOMP_SERV_CMD = struct.Struct('>BI6f')
 
 class fileParser(object):
     def __init__(self):
@@ -70,10 +70,11 @@ class fileParser(object):
                     ADC_TimeStamp = packCODE_GNDBOARD_ADCM_READ.unpack(rf_data)
             self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp)
             self.data44.append(self.expData.getGNDdata() + [gen_ts, sent_ts, recv_ts, port])
-        elif ord(rf_data[0]) == CODE_AC_MODEL_SERV_CMD:
-            pass
-        elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD:
-            pass
+        elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD :
+            Id, TimeStamp, dac, dec, drc, dac_cmp, dec_cmp, drc_cmp = packCODE_AEROCOMP_SERV_CMD.unpack(rf_data)
+            TS = TimeStamp*1e-6
+            self.data44.append([TS, dac, dec, drc, dac_cmp, dec_cmp, drc_cmp,
+                gen_ts, sent_ts, recv_ts, port])
 
     def parse_file(self, filename):
         self.data22 = []

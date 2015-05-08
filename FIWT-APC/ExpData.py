@@ -41,7 +41,8 @@ def getPeriodDiff(EncPos, EncPos0, peroid=4096):
     return diff
 
 class ExpData(object):
-    def __init__(self, msgc2guiQueue):
+    def __init__(self, parent, msgc2guiQueue):
+        self.parent = parent
         self.RigRollRawPos = 0
         self.RigRollPos0 = 0
         self.RigPitchRawPos = 0
@@ -140,6 +141,7 @@ class ExpData(object):
         self.ACM_yaw_butt = Butter()
 
         self.A5 = struct.Struct('>BfB6H')
+        self.AA = struct.Struct('>BI6f')
         self.last_update_ts = 0
 
     def resetRigAngel(self):
@@ -175,7 +177,7 @@ class ExpData(object):
         self.DP = dp
 
     def getCMDhdr(self):
-        return []
+        return ['TS', 'Dac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']
 
     def getGNDhdr(self):
         return ["GND_ADC_TS", "RigRollRawPos", "RigRollPos",
@@ -311,14 +313,15 @@ class ExpData(object):
                 "CMP_mot3", "CMP_mot4"] \
                         + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
-    def sendCommand(self, time_token, da, de, dr, da_cmp, de_cmp, dr_cmp):
-        da = int(da/self.ACMScale)
-        de = int(de/self.ACMScale)
-        dr = int(dr/self.ACMScale)
+    def sendCommand(self, time_token, dac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
+        ts1 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
+        da = int(dac/self.ACMScale)
+        de = int(dec/self.ACMScale)
+        dr = int(drc/self.ACMScale)
 
-        da_cmp = int(da_cmp/self.CMPScale)
-        de_cmp = int(de_cmp/self.CMPScale)
-        dr_cmp = int(dr_cmp/self.CMPScale)
+        da_cmp = int(dac_cmp/self.CMPScale)
+        de_cmp = int(dec_cmp/self.CMPScale)
+        dr_cmp = int(drc_cmp/self.CMPScale)
 
         self.ACM_servo1_cmd = self.ACM_servo1_0 - da
         self.ACM_servo2_cmd = self.ACM_servo2_0 - da
@@ -326,20 +329,26 @@ class ExpData(object):
         self.ACM_servo4_cmd = self.ACM_servo4_0 + dr
         self.ACM_servo5_cmd = self.ACM_servo5_0 + de
         self.ACM_servo6_cmd = self.ACM_servo6_0 - de
-        data = self.A5.pack(0xA5, time_token, 1, self.ACM_servo1_cmd,
+        dataA5 = self.A5.pack(0xA5, time_token, 1, self.ACM_servo1_cmd,
                 self.ACM_servo2_cmd, self.ACM_servo3_cmd, self.ACM_servo4_cmd,
                 self.ACM_servo5_cmd,self.ACM_servo6_cmd)
-        self.xbee_network.send(data,self.ACM_node)
+        self.xbee_network.send(dataA5,self.ACM_node)
+        ts2 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
 
         self.CMP_servo1_cmd = self.CMP_servo1_0 + da_cmp +de_cmp
         self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp -dr_cmp
         self.CMP_servo3_cmd = self.CMP_servo3_0 + da_cmp -de_cmp
         self.CMP_servo4_cmd = self.CMP_servo4_0 + da_cmp +dr_cmp
 
-        data = self.A5.pack(0xA6, time_token, 1, self.CMP_servo1_cmd,
+        dataA6 = self.A5.pack(0xA6, time_token, 1, self.CMP_servo1_cmd,
                 self.CMP_servo2_cmd, self.CMP_servo3_cmd, self.CMP_servo4_cmd,
                 2000,2000)
-        self.xbee_network.send(data,self.CMP_node)
+        self.xbee_network.send(dataA6,self.CMP_node)
+        ts3 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
+
+        data = self.AA.pack(0xA6, ts1, dac, dec, drc, dac_cmp, dec_cmp,
+                drc_cmp)
+        self.parent.save(data, ts1, ts2, ts3, 0)
 
     def update2GUI(self, ts_ADC):
         if not self.msgc2guiQueue:

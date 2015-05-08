@@ -42,7 +42,8 @@ class XBeeNetwork(object):
         self.msgc2guiQueue = parent.msgc2guiQueue
         self.log = parent.log
         self.arrv_cnt = -1
-        host = hosts[0][0]
+        self.local = hosts[0]
+        host = self.local[0]
         self.socklist = []
         for i in hosts :
             try:
