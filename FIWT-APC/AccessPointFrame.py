@@ -776,8 +776,8 @@ Unused bits must be set to 0.  '''))
     def OnExpDat(self, event) :
         states = event.states
         txt = ('ACRoll{7:.2f} ACRollRate{1:.2f} '
-        'RigRoll{13:.2f} RigRollRate{14:.2f} '
-        'RigPitch{15:.2f} RigPitchRate{16:.2f}').format(*states)
+        'RigRoll{13:07.2f} RigRollRate{14:07.2f} '
+        'RigPitch{15:07.2f} RigPitchRate{16:07.2f}').format(*states)
         self.txtExpDat.SetLabel(txt)
         msgs = {'data': {
                     'VC': states[39]*10,
