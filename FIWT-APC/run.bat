@@ -1,2 +1,2 @@
-@start /B /realtime /AFFINITY C0 python AccessPointCenter.py
+@start /B /realtime /AFFINITY F0 python AccessPointCenter.py
 

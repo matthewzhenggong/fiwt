@@ -26,6 +26,7 @@ import struct, math, time, traceback
 import select
 import Queue, threading
 import logging
+from utils import getMicroseconds
 
 from MessageFuncs import process_funcs
 from ExpData import ExpData
@@ -79,20 +80,20 @@ class Worker(object):
     def MainLoop(self):
         while self.main_thread_running and not self.ready:
             time.sleep(1)
-            self.log.info('Waiting for start...')
+            self.log.debug('Waiting for start...')
 
         self.log.info('Started.')
         while self.main_thread_running:
             rlist,wlist,elist=select.select(self.socklist,[],[],0.2)
             if rlist:
-                t_s = time.clock()
-                recv_ts = int((t_s-self.T0)*1e6)&0x7fffffff
+                t_s = getMicroseconds()
+                recv_ts = t_s - self.T0
                 self.xbee_network.read(rlist, recv_ts)
                 self.matlab_link.read(rlist, recv_ts)
-                dt = time.clock()-t_s
+                dt = getMicroseconds()-t_s
                 if dt > self.max_dt:
                     self.max_dt = dt
-                    self.log.info('MainLoop Max DT={:.3f}'.format(dt))
+                    self.log.info('MainLoop Max DT={}us'.format(dt))
         self.log.info('Work end.')
         if self.fileALL:
             self.fileALL.close()

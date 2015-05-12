@@ -41,7 +41,7 @@ class XBeeApplicationService(object):
 
 
 if __name__ == '__main__' :
-    service = XBeeApplicationService('192.168.191.1',1.0)
+    service = XBeeApplicationService('192.168.191.1')
     while True:
         print service.getPacket()
 

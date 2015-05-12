@@ -30,6 +30,7 @@ CODE_AC_MODEL_SERVO_POS = 0x22
 CODE_AEROCOMP_SERVO_POS = 0x33
 CODE_GNDBOARD_ADCM_READ = 0x44
 CODE_GNDBOARD_MANI_READ = 0x45
+CODE_GNDBOARD_MANI_RAW_READ = 0x46
 
 # State Statistics
 CODE_GNDBOARD_STATS = 0x76
@@ -111,6 +112,18 @@ def process_CODE_GNDBOARD_MANI_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
 
 process_funcs[CODE_GNDBOARD_MANI_READ] = process_CODE_GNDBOARD_MANI_READ
 
+def process_CODE_GNDBOARD_MANI_RAW_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
+                                    addr):
+    Id = ord(rf_data[0])
+    if Id == CODE_GNDBOARD_MANI_RAW_READ:
+        if ord(rf_data[1]) == 0:
+            self.log.info('Manometer:{}'.format(':'.join([hex(ord(i)) for i in rf_data[1:]])))
+        else:
+            self.log.info('Manometer:{}'.format(rf_data[1:]))
+
+
+process_funcs[CODE_GNDBOARD_MANI_RAW_READ] = process_CODE_GNDBOARD_MANI_RAW_READ
+
 packCODE_AEROCOMP_STATS = struct.Struct('>B2h3B3H')
 
 
@@ -118,7 +131,17 @@ def process_CODE_AEROCOMP_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AEROCOMP_STATS.unpack(
         rf_data)
     if Id == CODE_AEROCOMP_STATS:
-        info = 'CMP states NTP{}/{} B{}/{}/{} Load{}/{}/{}'.format(
+        B1 = B1*1.294e-2*1.515
+        B2 = B2*1.294e-2*3.0606
+        B3 = B3*1.294e-2*4.6363
+        B2 -= B1
+        if B2 < 0 :
+            B2 = 0
+        B2 =0 #TODO
+        B3 -= B1+B2
+        if B3 < 0 :
+            B3 = 0
+        info = 'CMP states NTP{}/{} B{:04.2f}/{:04.2f}/{:04.2f}(V) Load{}/{}/{}'.format(
             NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'CMP_STA', 'info':info})
 
@@ -132,7 +155,17 @@ def process_CODE_AC_MODEL_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AC_MODEL_STATS.unpack(
         rf_data)
     if Id == CODE_AC_MODEL_STATS:
-        info = 'ACM states NTP{}/{} B{}/{}/{} Load{}/{}/{}'.format(
+        B1 = B1*1.294e-2*1.515
+        B2 = B2*1.294e-2*3.0606
+        B3 = B3*1.294e-2*4.6363
+        B2 -= B1
+        if B2 < 0 :
+            B2 = 0
+        B2 =0 #TODO
+        B3 -= B1+B2
+        if B3 < 0 :
+            B3 = 0
+        info = 'ACM states NTP{}/{} B{:04.2f}/{:04.2f}/{:04.2f}(V) Load{}/{}/{}'.format(
             NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'ACM_STA', 'info':info})
 

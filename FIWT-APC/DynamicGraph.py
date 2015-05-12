@@ -65,8 +65,7 @@ class MyFrame(wx.Frame):
                     states = output['states']
                     ht = self.hpanel
                     ht.data_t.append(states[0])
-                    ht.data_y.append(states[19])
-                    ht.data_y2.append(states[20])
+                    ht.data_y.append(states[7])
                     ht.draw_plot()
                 elif output['ID'] == 'STOP':
                     self.Destroy()
@@ -99,10 +98,10 @@ class MyApp(wx.App):
         return True
 
 def drawer(gui2drawerQueue):
-    return
     """
     Worker process to draw data
     """
+    return
     # Create the app
     app = MyApp(redirect=True,
                 filename='DynamicGraph.stderr.log',

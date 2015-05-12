@@ -25,6 +25,8 @@ import socket, time, traceback
 import XBeeIPServices
 import PayloadPackage
 import XBeeMessageFuncs
+import netaddr
+from utils import getMicroseconds
 
 at_status = {
     0: 'OK',
@@ -43,12 +45,13 @@ class XBeeNetwork(object):
         self.log = parent.log
         self.arrv_cnt = -1
         self.local = hosts[0]
-        host = self.local[0]
+        host = netaddr.IPNetwork(hosts[0][0]+'/24')
+        host_bc = str(host.broadcast)
         self.socklist = []
         for i in hosts :
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.bind((host,i[1]))
+                sock.bind((host_bc,i[1]))
                 sock.setblocking(0)
                 self.socklist.append(sock)
             except:
@@ -56,14 +59,14 @@ class XBeeNetwork(object):
         self.socklist_set = set(self.socklist)
         self.tx_socket = self.socklist[0]
 
-        self.service = XBeeIPServices.XBeeApplicationService(host)
+        self.service = XBeeIPServices.XBeeApplicationService(str(host.network))
         self.socklist.append(self.service.sock)
 
     def getReadList(self):
         return self.socklist
 
     def send(self, pack, addr):
-        ts = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
+        ts = getMicroseconds() - self.parent.T0
         data = PayloadPackage.pack(pack,ts)
 
         data = PayloadPackage.packs(ts,data)
@@ -85,12 +88,12 @@ class XBeeNetwork(object):
             if self.arrv_cnt < 0:
                 self.arrv_cnt = 0
                 self.arrv_bcnt = 0
-                self.ariv_T0 = time.clock()
+                self.ariv_T0 = time.time()
                 self.last_elapsed = 0
             else:
                 self.arrv_cnt += 1
                 self.arrv_bcnt += bcnt
-                elapsed = time.clock() - self.ariv_T0
+                elapsed = time.time() - self.ariv_T0
                 if elapsed - self.last_elapsed > 1 :
                     self.last_elapsed = elapsed
                     self.parent.msgc2guiQueue.put_nowait({'ID':'Statistics',

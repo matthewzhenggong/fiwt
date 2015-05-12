@@ -27,12 +27,11 @@ import threading
 import traceback
 
 class Manimeter(object):
-    def __init__(self, port_name, baudrate=9600):
-        self.Vel = 0
-        self.DP = 0
+    def __init__(self, parent, port_name, baudrate=4800):
+        self.parent = parent
         try:
             self.serial_port = serial.Serial(port=port_name,
-                    baudrate=baudrate, timeout=1)
+                    baudrate=baudrate, timeout=5)
         except:
             self.serial_port = None
             traceback.print_exc()
@@ -45,23 +44,27 @@ class Manimeter(object):
     def processMsg(self):
         ser = self.serial_port
         while self.running:
-            ser.write('T')
-            data = ser.read(64)
+            ser.write('T\n')
+            data = ser.read(128)
             seg = data.split(',')
             num = len(seg)
             props = {}
-            for i in xrange(0,num,2):
+            for i in xrange(0,num,3):
                 try:
-                    props[seg[i].strip('\"')] = float(seg[i+1])
+                    props[seg[i].strip('\"')] = (float(seg[i+1]), seg[i+2])
                 except:
                     pass
-            print data
-            print props
+            print len(data),data
+            if self.parent:
+                if 'Velocity' in props:
+                    self.parent.Vel = props['Velocity'][0]
+                if 'D.P.' in props:
+                    self.parent.DP = props['D.P.'][0]
 
 
 if __name__ == '__main__':
     import time
-    m = Manimeter('COM6')
+    m = Manimeter(None, 'COM6')
     while True:
         time.sleep(1)
 

@@ -24,6 +24,10 @@ License along with this library.
 
 import math, struct
 from Butter import Butter
+import time
+from utils import getMicroseconds
+
+import Manimeter
 
 def Get14bit(val) :
     if val & 0x2000 :
@@ -31,7 +35,7 @@ def Get14bit(val) :
     else :
         return val & 0x1FFF
 
-def getPeriodDiff(EncPos, EncPos0, peroid=4096):
+def getPeriodDiff(EncPos, EncPos0, peroid=2**13):
     diff = EncPos - EncPos0
     half_peroid = (peroid>>1)
     if diff > half_peroid:
@@ -51,6 +55,7 @@ class ExpData(object):
         self.RigYawPos0 = 0
         self.Vel = 0
         self.DP = 0
+        #self.mano = Manimeter.Manimeter(self,'COM6')
         self.GND_ADC_TS = 0
         self.msgc2guiQueue = msgc2guiQueue
 
@@ -80,7 +85,7 @@ class ExpData(object):
         self.ACM_servo3_0 = 2000
         self.ACM_servo4_0 = 2200
         self.ACM_servo5_0 = 1820
-        self.ACM_servo6_0 = 2210
+        self.ACM_servo6_0 = 2110
 
         self.CMP_servo1_0 = 2020
         self.CMP_servo2_0 = 2050
@@ -106,7 +111,7 @@ class ExpData(object):
         self.ACM_roll = 0
         self.ACM_yaw = 0
 
-        self.ACM_pitch0 = 236
+        self.ACM_pitch0 = 180
         self.ACM_roll0 = 4964
         self.ACM_yaw0 = 0
 
@@ -141,7 +146,7 @@ class ExpData(object):
         self.ACM_yaw_butt = Butter()
 
         self.A5 = struct.Struct('>BfB6H')
-        self.AA = struct.Struct('>BI6f')
+        self.AA = struct.Struct('>BI7f')
         self.last_update_ts = 0
 
     def resetRigAngel(self):
@@ -314,7 +319,7 @@ class ExpData(object):
                         + ["gen_ts", "sent_ts", "recv_ts", "port"]
 
     def sendCommand(self, time_token, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
-        ts1 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
+        ts1 = getMicroseconds()-self.parent.T0
         da = int(dac/self.ACMScale)
         dea = int(deac/self.ACMScale)
         de = int(dec/self.ACMScale)
@@ -329,12 +334,12 @@ class ExpData(object):
         self.ACM_servo3_cmd = self.ACM_servo3_0 + dr
         self.ACM_servo4_cmd = self.ACM_servo4_0 + dr
         self.ACM_servo5_cmd = self.ACM_servo5_0 + de -dea
-        self.ACM_servo6_cmd = self.ACM_servo6_0 - de =dea
+        self.ACM_servo6_cmd = self.ACM_servo6_0 - de -dea
         dataA5 = self.A5.pack(0xA5, time_token, 1, self.ACM_servo1_cmd,
                 self.ACM_servo2_cmd, self.ACM_servo3_cmd, self.ACM_servo4_cmd,
                 self.ACM_servo5_cmd,self.ACM_servo6_cmd)
         self.xbee_network.send(dataA5,self.ACM_node)
-        ts2 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
+        ts2 = getMicroseconds()-self.parent.T0
 
         self.CMP_servo1_cmd = self.CMP_servo1_0 + da_cmp +de_cmp
         self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp -dr_cmp
@@ -345,11 +350,11 @@ class ExpData(object):
                 self.CMP_servo2_cmd, self.CMP_servo3_cmd, self.CMP_servo4_cmd,
                 2000,2000)
         self.xbee_network.send(dataA6,self.CMP_node)
-        ts3 = int((time.clock()-self.parent.T0)*1e6)&0x7fffffff
+        ts3 = getMicroseconds()-self.parent.T0
 
         data = self.AA.pack(0xA6, ts1, dac, deac, dec, drc,
                 dac_cmp, dec_cmp, drc_cmp)
-        self.parent.save(data, ts1, ts2, ts3, 0)
+        self.parent.save(data, ts1, ts2, ts3, ['192.168.191.1',0])
 
     def update2GUI(self, ts_ADC):
         if not self.msgc2guiQueue:

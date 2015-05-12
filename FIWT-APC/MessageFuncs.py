@@ -26,6 +26,7 @@ import struct, math, time, traceback
 
 from MatlabLink import MatlabLink
 from XBeeWifiNetwork import XBeeNetwork
+from utils import getMicroseconds
 
 def msg_start(self, cmd):
     if not self.ready:
@@ -38,7 +39,7 @@ def msg_start(self, cmd):
         self.socklist += self.xbee_network.getReadList()
         self.matlab_link = MatlabLink(self, cmd['matlab_ports'])
         self.socklist += self.matlab_link.getReadList()
-        self.T0 = time.clock()
+        self.T0 = getMicroseconds()
         self.ready = True
         self.expData.xbee_network = self.xbee_network
         self.expData.ACM_node = self.node_addr['ACM']
@@ -63,7 +64,7 @@ def cmd_rec_stop(self, cmd):
         self.log.info('Stop Recording to {}.'.format(self.filename))
 
 def cmd_set_base_time(self, cmd):
-    self.T0 = time.clock()
+    self.T0 = getMicroseconds()
     self.log.info('Reset T0')
 
 def cmd_at(self, cmd):
@@ -92,12 +93,13 @@ def cmd_ntp(self, cmd):
 
 def cmd_command(self, cmd):
     da = cmd['da']
-    de = cmd['da']
-    dr = cmd['da']
+    dea = 0
+    de = cmd['de']
+    dr = cmd['dr']
     da_cmp = cmd['da_cmp']
-    de_cmp = cmd['da_cmp']
-    dr_cmp = cmd['da_cmp']
-    self.expData.sendCommand(0, da, de, dr, da_cmp, de_cmp, dr_cmp)
+    de_cmp = cmd['de_cmp']
+    dr_cmp = cmd['dr_cmp']
+    self.expData.sendCommand(0, da, dea, de, dr, da_cmp, de_cmp, dr_cmp)
 
 def cmd_clear(self, cmd):
     self.xbee_network.arrv_cnt = -1
