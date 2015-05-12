@@ -103,6 +103,21 @@ bool sendRigPack(void) {
     return pushMessage(_msg, _sen_data_target, head, pack - head);
 }
 
+
+bool sendManoPack(uint8_t buff, size_t buff_len) {
+    uint8_t head[128];
+    uint8_t *pack;
+
+    size_t i;
+
+    pack = head;
+    *(pack++) = CODE_GNDBOARD_MANI_RAW_READ;
+    memcpy(pack, buff, buff_len);
+
+    return pushMessage(_msg, _sen_data_target, head, buff_len+1);
+}
+
+
 bool sendSpeedPack(void) {
     uint8_t head[1+RIGPOSADCNUM*2+4];
     uint8_t *pack;

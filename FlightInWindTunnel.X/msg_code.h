@@ -18,6 +18,7 @@ extern "C" {
 #define CODE_AEROCOMP_SERVO_POS		0x33
 #define CODE_GNDBOARD_ADCM_READ		0x44
 #define CODE_GNDBOARD_MANI_READ		0x45
+#define CODE_GNDBOARD_MANI_RAW_READ	0x46
 
 // State Statistics
 #define CODE_GNDBOARD_STATS		0x76

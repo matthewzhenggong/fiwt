@@ -183,12 +183,13 @@ PT_THREAD(remoteSenLoop)(TaskHandle_p task) {
             switch (packin) {
                 case ZB_RX_RESPONSE:
                     if (XBeeZBRxResponse(parameters->xbee, &parameters->rx_rsp)) {
-                        if (process_data(parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength)) {
-                            sendSpeedPack();
+                        sendManoPack(parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength);
 #if USE_LEDEXTBOARD
                             mLED_4_Toggle();
 #endif
-                        }
+//                        if (process_data(parameters->rx_rsp._payloadPtr, parameters->rx_rsp._payloadLength)) {
+//                            sendSpeedPack();
+//                        }
                     }
                     break;
             }
