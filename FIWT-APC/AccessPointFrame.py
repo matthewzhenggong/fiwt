@@ -237,9 +237,7 @@ class MyFrame(wx.Frame):
         self.btnRmtAT = wx.Button(panel, -1, "Send RemoteAT", size=(100, -1))
         self.btnRmtAT.Enable(False)
         box.Add(self.btnRmtAT, 0, wx.ALIGN_CENTER, 5)
-        self.txtRmtATcmd = wx.ComboBox(panel, -1, "MY",
-                                       choices=AT_CMD,
-                                       size=(50, -1))
+        self.txtRmtATcmd = wx.ComboBox(panel, -1, "MY", choices=AT_CMD)
         self.txtRmtATcmd.SetToolTip(wx.ToolTip('''AT Command in TWO characters :
 MY - IP Network Address
 MK - IP Address Mask
