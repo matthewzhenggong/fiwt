@@ -22,7 +22,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library.
 """
 
-import math, sys, time, types, string, wx
+import math, os, sys, time, types, string, wx
 import threading, logging, struct
 import Queue
 from ConfigParser import SafeConfigParser
@@ -155,6 +155,10 @@ class MyFrame(wx.Frame):
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
         self.txtHost = wx.TextCtrl(panel, -1, parser.get('host','AP'), size=(100, -1))
         box.Add(self.txtHost, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        box.Add(wx.StaticText(panel, wx.ID_ANY, "ManoSer:"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
+        self.txtCOM = wx.TextCtrl(panel, -1, parser.get('host','COM'), size=(100, -1))
+        box.Add(self.txtCOM, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         self.btnBaseTime = wx.Button(panel, -1, "Set Base Time", size=(100, -1))
         self.btnBaseTime.Enable(False)
         box.Add(self.btnBaseTime, 0, wx.ALIGN_CENTER, 5)
@@ -625,6 +629,7 @@ Unused bits must be set to 0.  '''))
     def saveConfig(self):
         parser = self.parser
         parser.set('host','AP', self.txtHost.GetValue())
+        parser.set('host','COM', self.txtCOM.GetValue())
         parser.set('host','GND', self.txtGNDhost.GetValue())
         parser.set('host','ACM', self.txtACMhost.GetValue())
         parser.set('host','CMP', self.txtCMPhost.GetValue())
@@ -679,8 +684,7 @@ Unused bits must be set to 0.  '''))
 
         if self.graph_process.is_alive():
             self.graph_process.terminate()
-            self.gui2drawerQueue.put_nowait({'ID': 'STOP'})
-            self.graph_process.join(0.5)
+            self.graph_process.join()
 
     def OnStart(self, event):
         self.gui2msgcQueue.put({'ID': 'START',
@@ -688,12 +692,14 @@ Unused bits must be set to 0.  '''))
                 (self.txtGNDhost.GetValue(), int(self.txtGNDport.GetValue())),
                 (self.txtACMhost.GetValue(), int(self.txtACMport.GetValue())),
                 (self.txtCMPhost.GetValue(), int(self.txtCMPport.GetValue()))],
+            'mano_port': self.txtCOM.GetValue(),
             'matlab_ports': [int(self.txtMatlabRx.GetValue()),
                 int(self.txtMatlabTx.GetValue())],
                 })
 
         self.btnStart.Enable(False)
         self.txtHost.Enable(False)
+        self.txtCOM.Enable(False)
         self.txtGNDhost.Enable(False)
         self.txtACMhost.Enable(False)
         self.txtCMPhost.Enable(False)

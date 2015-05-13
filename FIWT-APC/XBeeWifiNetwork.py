@@ -25,8 +25,7 @@ import socket, time, traceback
 import XBeeIPServices
 import PayloadPackage
 import XBeeMessageFuncs
-import netaddr
-from utils import getMicroseconds
+from utils import getMicroseconds, getBindHost
 
 at_status = {
     0: 'OK',
@@ -45,8 +44,7 @@ class XBeeNetwork(object):
         self.log = parent.log
         self.arrv_cnt = -1
         self.local = hosts[0]
-        host = netaddr.IPNetwork(hosts[0][0]+'/24')
-        host_bc = str(host.broadcast)
+        host,host_bc = getBindHost(hosts[0][0])
         self.socklist = []
         for i in hosts :
             try:
@@ -59,7 +57,7 @@ class XBeeNetwork(object):
         self.socklist_set = set(self.socklist)
         self.tx_socket = self.socklist[0]
 
-        self.service = XBeeIPServices.XBeeApplicationService(str(host.network))
+        self.service = XBeeIPServices.XBeeApplicationService(host)
         self.socklist.append(self.service.sock)
 
     def getReadList(self):

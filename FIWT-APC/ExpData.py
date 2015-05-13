@@ -27,8 +27,6 @@ from Butter import Butter
 import time
 from utils import getMicroseconds
 
-import Manimeter
-
 def Get14bit(val) :
     if val & 0x2000 :
         return -(((val & 0x1FFF)^0x1FFF)+1)
@@ -55,7 +53,6 @@ class ExpData(object):
         self.RigYawPos0 = 0
         self.Vel = 0
         self.DP = 0
-        #self.mano = Manimeter.Manimeter(self,'COM6')
         self.GND_ADC_TS = 0
         self.msgc2guiQueue = msgc2guiQueue
 

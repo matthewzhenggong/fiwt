@@ -28,6 +28,8 @@ from MatlabLink import MatlabLink
 from XBeeWifiNetwork import XBeeNetwork
 from utils import getMicroseconds
 
+import Manimeter
+
 def msg_start(self, cmd):
     if not self.ready:
         self.log.info('Starting...')
@@ -44,10 +46,13 @@ def msg_start(self, cmd):
         self.expData.xbee_network = self.xbee_network
         self.expData.ACM_node = self.node_addr['ACM']
         self.expData.CMP_node = self.node_addr['CMP']
+        self.mano = Manimeter.Manimeter(self.expData,cmd['mano_port'])
 
 def msg_stop(self, cmd):
     self.main_thread_running = False
     self.msg_thread_running = False
+    if self.mano:
+        self.mano.running = False
 
 def cmd_rec_start(self, cmd):
     self.filename = cmd['filename']

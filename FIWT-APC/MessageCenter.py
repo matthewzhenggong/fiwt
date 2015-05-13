@@ -48,6 +48,7 @@ class Worker(object):
         self.msgc2guiQueue = msgc2guiQueue
         self.socklist = []
         self.writing = False
+        self.mano = None
         self.fileALL = None
         self.packHdr = struct.Struct(">B3I2H")
         self.expData = ExpData(self, msgc2guiQueue)

@@ -64,7 +64,7 @@ class Manimeter(object):
 
 if __name__ == '__main__':
     import time
-    m = Manimeter(None, 'COM6')
+    m = Manimeter(None, '/dev/ttyUSB0')
     while True:
         time.sleep(1)
 
