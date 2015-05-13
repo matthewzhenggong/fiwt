@@ -27,12 +27,17 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 def run(dat, queue, ax, t,y,line):
-    data = queue.get()
+    size = queue.qsize()
+    if size < 1:
+        size = 1
+    for i in xrange(size):
+        data = queue.get()
+
     data = data['states']
     t1 = data[0]
     y1 = data[13]
     tmin, tmax = ax.get_xlim()
-    if t1 > tmax or t1 < tmin or t1 < t[-1]:
+    if t1 > tmax or t1 < tmin or len(t)>1 and t1 < t[-1]:
         del t[:]
         del y[:]
         ax.set_xlim(t1,t1+20)
