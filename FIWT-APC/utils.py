@@ -31,7 +31,16 @@ if is_windows:
 
     def getMicroseconds():
         return int(time.clock() * 1e6)
+
+    def getBindHost(host):
+        return (host,host)
 else:
+    import netaddr
 
     def getMicroseconds():
         return int(time.time() * 1e6)
+
+    def getBindHost(host):
+        net = netaddr.IPNetwork(host+'/24')
+        return (str(net.network), str(net.broadcast))
+
