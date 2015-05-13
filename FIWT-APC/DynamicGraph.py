@@ -22,89 +22,42 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library.
 """
 
-import struct, math, time, traceback
-import select
-import Queue, threading
-import logging
-import wx
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
-from dynamic_chart import HistChart
+def run(dat, queue, ax, t,y,line):
+    data = queue.get()
+    data = data['states']
+    t1 = data[0]
+    y1 = data[13]
+    tmin, tmax = ax.get_xlim()
+    if t1 > tmax or t1 < tmin or t1 < t[-1]:
+        del t[:]
+        del y[:]
+        ax.set_xlim(t1,t1+20)
+        ax.figure.canvas.draw()
+    t.append(t1)
+    y.append(y1)
+    line.set_data(t,y)
+    return line,
 
-class MyFrame(wx.Frame):
-    def __init__(self, parent, id, title, gui2drawerQueue):
-        """
-        Initialise the Frame.
-        """
-        self.gui2drawerQueue = gui2drawerQueue
-
-        wx.Frame.__init__(self, parent, id, title, wx.Point(650, 0),
-                          wx.Size(650, 800))
-        panel = wx.Panel(self, -1)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-
-        self.hpanel = HistChart(panel)
-        sizer.Add(self.hpanel, 1, wx.ALL|wx.EXPAND, 1)
-
-        panel.SetSizer(sizer)
-        sizer.Fit(panel)
-
-        # Set some program flags
-        self.keepgoing = True
-        self.msg_thread = threading.Thread(target=self.processMsgTask)
-        self.msg_thread.daemon = True
-        self.msg_thread.start()
-
-    def processMsgTask(self):
-        """
-        Start the execution of tasks by the processes.
-        """
-        while self.keepgoing:
-            try:
-                output = self.gui2drawerQueue.get(block=True,timeout=0.2)
-                if output['ID'] == 'ExpData':
-                    states = output['states']
-                    ht = self.hpanel
-                    ht.data_t.append(states[0])
-                    ht.data_y.append(states[7])
-                    ht.draw_plot()
-                elif output['ID'] == 'STOP':
-                    self.Destroy()
-            except Queue.Empty:
-                pass
-
-class MyApp(wx.App):
-    """
-    A simple App class, modified to hold the processes and task queues.
-    """
-
-    def __init__(self,
-                 redirect=True,
-                 filename=None,
-                 useBestVisual=False,
-                 clearSigInt=True,
-                 gui2drawerQueue=None):
-        """
-        Initialise the App.
-        """
-        self.gui2drawerQueue=gui2drawerQueue
-        wx.App.__init__(self, redirect, filename, useBestVisual, clearSigInt)
-
-    def OnInit(self):
-        """
-        Initialise the App with a Frame.
-        """
-        self.frame = MyFrame(None, -1, 'Drawer', self.gui2drawerQueue)
-        self.frame.Show(True)
-        return True
 
 def drawer(gui2drawerQueue):
     """
     Worker process to draw data
     """
-    return
-    # Create the app
-    app = MyApp(redirect=True,
-                filename='DynamicGraph.stderr.log',
-                gui2drawerQueue=gui2drawerQueue)
-    app.MainLoop()
+    fig1,ax = plt.subplots()
+
+    t = []
+    y = []
+    l, = plt.plot(t, y, 'r-')
+    plt.xlim(0, 20)
+    plt.ylim(-180, 180)
+    plt.xlabel('T/s')
+
+    line_ani = animation.FuncAnimation(fig1, run, fargs=(gui2drawerQueue,ax,t,y,l),
+        interval=10, blit=True)
+
+    plt.show()
 
