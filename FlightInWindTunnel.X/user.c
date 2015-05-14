@@ -30,7 +30,6 @@
 #include "Servo.h"
 #include "Enc.h"
 #include "IMU.h"
-#include "SPIS.h"
 
 /* Device header file */
 #include <xc.h>

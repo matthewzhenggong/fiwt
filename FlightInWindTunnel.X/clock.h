@@ -23,6 +23,7 @@
 
 #include <xc.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @file clock.h
@@ -35,25 +36,19 @@
 extern "C" {
 #endif
 
-    /**
-     * Tick instance
-     *
-     * @note It will be counted up every milliseond by timer interrupt.
-     *        the task schedule will count it down.
-     */
-    extern unsigned int volatile elapsed_ticks;
+    #define timestamp_size (8)
+    typedef int64_t timestamp_t;
 
-    extern int32_t volatile offset_us;
+    extern timestamp_t volatile offset_us;
 
-    /**
-     * Get ticks in microseconds in [0-999]
-     *
-     */
-    #define microsec_ticks (TMR1)
+    timestamp_t getMicroseconds();
 
-    int32_t getMicroseconds();
-    
-    void setMicroseconds(int32_t microseconds);
+    uint32_t getMicrosecondsLSDW();
+
+    void set_time_offset(timestamp_t microseconds);
+    void setMicroseconds(timestamp_t microseconds);
+
+    bool apply_time_offset(void);
 
     /**
      * Reset this global clock.

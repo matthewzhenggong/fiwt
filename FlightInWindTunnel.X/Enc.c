@@ -67,6 +67,7 @@ void EncUpdate(void) {
     bool phase_sync;
 
     phase_sync = true;
+    DisableInterrupts();
     //trigger for start
     ENC_CLOCK = 0;
     timestamp0 = getMicroseconds();
@@ -131,6 +132,7 @@ void EncUpdate(void) {
 
     //End. Set ENC_CLOCK to a logical high state
     ENC_CLOCK = 1;
+    EnableInterrupts();
     if (phase_sync) {
         for (i = 0; i < ENCNUM; ++i) {
                 EncPos[i] = CurEncPos[i];

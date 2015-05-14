@@ -31,9 +31,6 @@ unsigned int RigPos[RIGPOSADCNUM];
 int32_t RigRollPos=0;
 int16_t RigPitchPos=0;
 int16_t RigYawPos=0;
-//int16_t RigRollRate=0;
-//int16_t RigPitchRate=0;
-//int16_t RigYawRate=0;
 #else
 uint8_t BattCell[BATTCELLADCNUM];
 #if AC_MODEL
@@ -43,7 +40,7 @@ unsigned int ServoPos[SERVOPOSADCNUM];
 #endif
 #endif
 
-uint32_t ADC_TimeStamp;
+timestamp_t ADC_TimeStamp;
 
 void UpdateAnalogInputs(void) {
     ADC_TimeStamp = getMicroseconds();
@@ -111,46 +108,10 @@ void UpdateServoPosFromEnc(void) {
 }
 #elif GNDBOARD
 
-//// two-order butterwolf filter 10Hz
-//#define BUTTER_ORDER (2)
-////    0.6012  -0.2536 0.3586
-////    0.2536   0.9598 0.0568
-////    0.08966  0.6929 0.02008
-//// x 2^15 =
-//static fractional _butter_mat_frac[] = {
-//     19700, -8310, 11752,
-//      8310, 31452,  1861,
-//      2938, 22705,   658,
-//};
-//
-//static fractional _butter_update(fractional input, fractional butt[BUTTER_ORDER + 1]) {
-//    fractional dstM[BUTTER_ORDER];
-//    int i;
-//
-//    butt[BUTTER_ORDER] = input;
-//    MatrixMultiply(BUTTER_ORDER, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac, butt);
-//    for (i = 0; i < BUTTER_ORDER; ++i) {
-//        butt[i] = dstM[i];
-//    }
-//    MatrixMultiply(1, BUTTER_ORDER + 1, 1, dstM, _butter_mat_frac + BUTTER_ORDER * (BUTTER_ORDER + 1), butt);
-//    return dstM[0];
-//}
-
-//static int32_t RigRollPosFiltered=0;
-//static int16_t RigPitchPosFiltered=0;
-//static int16_t RigYawPosFiltered=0;
 static int32_t LastRigRollPos=0;
-
 static int16_t LastRigYawPos=0;
-//static int16_t LastRigRollPosFiltered=0;
-//static int16_t LastRigPitchPosFiltered=0;
-//static int16_t LastRigYawPosFiltered=0;
 static int RigRollLoop=0;
-
 static int RigYawLoop=0;
-//static fractional buttRigRoll[BUTTER_ORDER + 1];
-//static fractional buttRigPitch[BUTTER_ORDER + 1];
-//static fractional buttRigYaw[BUTTER_ORDER + 1];
 
 int32_t updateAngle32(int16_t CurRigRollPos, int *RigRollLoop, int32_t RigRollPos) {
     int32_t diff;
@@ -184,13 +145,6 @@ void UpdateRigPos(void) {
         {
             RigRollPos = updateAngle32(CurRigRollPos, &RigRollLoop, RigRollPos);
         }
-//        else
-//        {
-//            RigRollPos += RigRollRate;
-//        }
-//        RigRollPosFiltered = _butter_update(RigRollPos, buttRigRoll);
-//        RigRollRate = RigRollPosFiltered - LastRigRollPos;
-//        LastRigRollPosFiltered = RigRollPosFiltered;
         LastRigRollPos = CurRigRollPos;
 
         RigPitchPos = CurRigPitchPos;
@@ -200,13 +154,6 @@ void UpdateRigPos(void) {
         {
             RigYawPos = updateAngle32(CurRigYawPos, &RigYawLoop, RigYawPos);
         }
-//        else
-//        {
-//            RigYawPos += RigYawRate;
-//        }
-//        RigYawPosFiltered = _butter_update(RigYawPos, buttRigYaw);
-//        RigYawRate = RigYawPosFiltered - LastRigYawPos;
-//        LastRigYawPosFiltered = RigYawPosFiltered;
         LastRigYawPos = CurRigYawPos;
 }
 

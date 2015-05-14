@@ -33,17 +33,16 @@
  * and interrupt on period match
  */
 
-__near unsigned int volatile elapsed_ticks = 0;
-__near int32_t volatile offset_us = 0;
+__near timestamp_t volatile offset_us = 0;
+__near uint32_t volatile clock_us_MSW = 0;
+
+bool _offset_set_req;
+timestamp_t _offset_us_req;
 
 void initClock(void) {
-    elapsed_ticks = 0; /* clear software registers */
     offset_us = 0;
-
-    T1CONbits.TON = 0; /* Disable Timer*/
-    T1CONbits.TCS = 0; /* set internal clock source */
-    T1CONbits.TGATE = 0; /* Disable Gated Timer mode */
-    T1CONbits.TCKPS = 0b10; /* Select 1:64 Prescaler */
+    clock_us_MSW = 0;
+    _offset_set_req = false;
 
     T3CONbits.TON = 0; /* Disable Timer*/
     T2CONbits.TON = 0; /* Disable Timer*/
@@ -52,47 +51,59 @@ void initClock(void) {
     T2CONbits.TGATE = 0; /* Disable Gated Timer mode */
     T2CONbits.TCKPS = 0b10; /* Select 1:64 Prescaler */
 
-    TMR1 = 0; /* clear timer1 register */
     TMR2 = 0; /* clear timer2 register */
     TMR3 = 0; /* clear timer3 register */
-    /** Timer1 period for 1 ms */
-    PR1 = 999; /* set period1 register */
 
     /** Timer1 period for 1 ms */
-    PR3 = 0x7FFF; /* set period3 register, MSW */
+    PR3 = 0xFFFF; /* set period3 register, MSW */
     PR2 = 0xFFFF; /* set period2 register, LSW */
-
-    _T1IP = SCHEDULE_TIMER_PRIORITY_LEVEL; /* set priority level */
-    _T1IF = 0; /* clear interrupt flag */
-    _T1IE = 1; /* enable interrupts */
 
     _T3IP = SCHEDULE_TIMER_PRIORITY_LEVEL; /* set priority level */
     _T3IF = 0; /* clear interrupt flag */
     _T3IE = 1; /* enable interrupts */
 
     T2CONbits.TON = 1; /* start the timer*/
-    T1CONbits.TON = 1; /* start the timer*/
-}
-
-__interrupt(no_auto_psv) void _T1Interrupt(void) {
-    IFS0bits.T1IF = 0; /* clear interrupt flag */
-    ++elapsed_ticks;
 }
 
 __interrupt(no_auto_psv) void _T3Interrupt(void) {
     IFS0bits.T3IF = 0; /* clear interrupt flag */
+    ++clock_us_MSW;
 }
 
-int32_t getMicroseconds() {
-    int32_t lsw, msw;
-    lsw = TMR2;
-    msw = TMR3HLD;
-    return (msw<<16)+lsw+offset_us;
+timestamp_t getMicroseconds() {
+    timestamp_t tick_us;
+    *((uint16_t*)(&tick_us)) = TMR2;
+    *((uint16_t*)(&tick_us)+1) = TMR3HLD;
+    *((uint32_t*)(&tick_us)+1) = clock_us_MSW;
+    return tick_us+offset_us;
 }
 
-void setMicroseconds(int32_t microseconds) {
-    int32_t lsw, msw;
-    lsw = TMR2;
-    msw = TMR3HLD;
-    offset_us = microseconds - ((msw<<16)+lsw);
+uint32_t getMicrosecondsLSDW() {
+    uint32_t tick_us;
+    *((uint16_t*)(&tick_us)) = TMR2;
+    *((uint16_t*)(&tick_us)+1) = TMR3HLD;
+    return tick_us+*((uint32_t*)(&offset_us));
+}
+
+void set_time_offset(timestamp_t microseconds) {
+    _offset_us_req = microseconds + offset_us;
+    _offset_set_req = true;
+}
+
+void setMicroseconds(timestamp_t microseconds) {
+    timestamp_t tick_us;
+    *((uint16_t*)(&tick_us)) = TMR2;
+    *((uint16_t*)(&tick_us)+1) = TMR3HLD;
+    *((uint32_t*)(&tick_us)+1) = clock_us_MSW;
+    _offset_us_req = microseconds - tick_us;
+    _offset_set_req = true;
+}
+
+bool apply_time_offset(void) {
+    if (_offset_set_req) {
+        _offset_set_req = false;
+        offset_us = _offset_us_req;
+        return true;
+    }
+    return false;
 }

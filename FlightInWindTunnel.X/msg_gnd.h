@@ -38,12 +38,11 @@ extern "C" {
 #endif
 
     typedef struct msgParamGND{
-        TaskHandle_p rsen_Task;
         TaskHandle_p msg_Task;
         TaskHandle_p sen_Task;
     }msgParamGND_t, *msgParamGND_p;
 
-    void msgRegistGND(msgParam_p, msgParamGND_p);
+    void msgRegistGND(msgParam_p, msgParamGND_p, unsigned);
 
     bool sendRigPack(void);
     bool sendSpeedPack(void);

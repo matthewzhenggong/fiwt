@@ -11,7 +11,6 @@
       <itemPath>clock.h</itemPath>
       <itemPath>config.h</itemPath>
       <itemPath>user.h</itemPath>
-      <itemPath>idle.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/ADC1.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.h</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/config_pwm.h</itemPath>
@@ -23,7 +22,6 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/servoTask.h</itemPath>
       <itemPath>Enc.h</itemPath>
       <itemPath>IMU.h</itemPath>
-      <itemPath>SPIS.h</itemPath>
       <itemPath>config_servo.h</itemPath>
       <itemPath>senTask.h</itemPath>
       <itemPath>LedExtBoard.h</itemPath>
@@ -32,7 +30,6 @@
       <itemPath>msg_acm.h</itemPath>
       <itemPath>msg_gnd.h</itemPath>
       <itemPath>XBee.h</itemPath>
-      <itemPath>remoteSenTask.h</itemPath>
       <itemPath>msg_comm.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
@@ -50,7 +47,6 @@
       <itemPath>SerialStream.c</itemPath>
       <itemPath>task.c</itemPath>
       <itemPath>clock.c</itemPath>
-      <itemPath>idle.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/ADC1.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/AnalogInput.c</itemPath>
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/PWMx.c</itemPath>
@@ -62,14 +58,12 @@
       <itemPath>D:/source/fiwt/FlightInWindTunnel.X/UART4.c</itemPath>
       <itemPath>Enc.c</itemPath>
       <itemPath>IMU.c</itemPath>
-      <itemPath>SPIS.c</itemPath>
       <itemPath>senTask.c</itemPath>
       <itemPath>msg.c</itemPath>
       <itemPath>msg_comm.c</itemPath>
       <itemPath>msg_acm.c</itemPath>
       <itemPath>msg_gnd.c</itemPath>
       <itemPath>XBee.c</itemPath>
-      <itemPath>remoteSenTask.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -298,7 +292,6 @@
         <property key="UART 3" value="true"/>
         <property key="UART 4" value="true"/>
         <property key="USB" value="true"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>

@@ -25,20 +25,18 @@
 #include "AnalogInput.h"
 #include "msg_code.h"
 #include "msg_comm.h"
-#include "remoteSenTask.h"
 
 #include "clock.h"
 #include <stdbool.h>
+#include <string.h>
 
-static size_t updateCommPack(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) {
+static bool updateCommPack(sendmsgParam_p msg) {
+    uint8_t head[1+4+4];
     uint8_t *pack;
     msgParamGND_p p;
 
-    p = (msgParamGND_p)(msg_h->parameters);
+    p = (msgParamGND_p)(msg->_param);
 
-    if (max_len < 1+6+4) {
-        return 0;
-    }
     pack = head;
 
     *(pack++) = CODE_GNDBOARD_STATS;
@@ -49,27 +47,26 @@ static size_t updateCommPack(PushMessageHandle_p msg_h, uint8_t *head, size_t ma
 
     *(pack++) = p->sen_Task->load_max >> 8;
     *(pack++) = p->sen_Task->load_max & 0xFF;
-    *(pack++) = p->rsen_Task->load_max >> 8;
-    *(pack++) = p->rsen_Task->load_max & 0xFF;
     *(pack++) = p->msg_Task->load_max >> 8;
     *(pack++) = p->msg_Task->load_max & 0xFF;
 
-    return pack - head;
+    return pushMessage(msg->_msg, TargetAP, head, pack - head);
 }
 
+static sendmsgParam_t comm;
 static msgParam_p _msg;
 uint16_t _sen_data_target;
 
-void msgRegistGND(msgParam_p msg, msgParamGND_p param) {
+void msgRegistGND(msgParam_p msg, msgParamGND_p param, unsigned priority) {
     _msg = msg;
     _sen_data_target = TargetAP;
 
-    registerPushMessageHandle(msg, "COMM", &updateCommPack, param,
-            MSG_DEST_PORT, 1000, 508);
+    sendmsgInit(&comm, msg, &updateCommPack, param);
+    TaskCreate(sendmsgLoop, "COMM", (void *) &comm, 0x3FF, 0x101, priority);
 }
 
 bool sendRigPack(void) {
-    uint8_t head[1+RIGPOSADCNUM*2+8+4];
+    uint8_t head[1+RIGPOSADCNUM*2+8+timestamp_size+2];
     uint8_t *pack;
     int i;
 
@@ -79,6 +76,7 @@ bool sendRigPack(void) {
         *(pack++) = RigPos[i] >> 8;
         *(pack++) = RigPos[i] & 0xff;
     }
+
     *(pack++) = RigRollPos >> 24;
     *(pack++) = RigRollPos >> 16;
     *(pack++) = RigRollPos >> 8;
@@ -88,56 +86,7 @@ bool sendRigPack(void) {
     *(pack++) = RigYawPos >> 8;
     *(pack++) = RigYawPos & 0xff;
 
-//    *(pack++) = RigRollRate >> 8;
-//    *(pack++) = RigRollRate & 0xff;
-//    *(pack++) = RigPitchRate >> 8;
-//    *(pack++) = RigPitchRate & 0xff;
-//    *(pack++) = RigYawRate >> 8;
-//    *(pack++) = RigYawRate & 0xff;
-
-    *(pack++) = ADC_TimeStamp >>24;
-    *(pack++) = ADC_TimeStamp >>16;
-    *(pack++) = ADC_TimeStamp >> 8;
-    *(pack++) = ADC_TimeStamp & 0xFF;
-
-    return pushMessage(_msg, _sen_data_target, head, pack - head);
-}
-
-
-bool sendManoPack(uint8_t buff, size_t buff_len) {
-    uint8_t head[128];
-    uint8_t *pack;
-
-    size_t i;
-
-    pack = head;
-    *(pack++) = CODE_GNDBOARD_MANI_RAW_READ;
-    memcpy(pack, buff, buff_len);
-
-    return pushMessage(_msg, _sen_data_target, head, buff_len+1);
-}
-
-
-bool sendSpeedPack(void) {
-    uint8_t head[1+RIGPOSADCNUM*2+4];
-    uint8_t *pack;
-
-    uint8_t *float_addr;
-
-    pack = head;
-    *(pack++) = CODE_GNDBOARD_MANI_READ;
-
-    float_addr = (uint8_t *)&windtunnel_wind_speed;
-    *(pack++) = *(float_addr+3);
-    *(pack++) = *(float_addr+2);
-    *(pack++) = *(float_addr+1);
-    *(pack++) = *(float_addr);
-
-    float_addr = (uint8_t *)&windtunnel_dynamic_pressure;
-    *(pack++) = *(float_addr+3);
-    *(pack++) = *(float_addr+2);
-    *(pack++) = *(float_addr+1);
-    *(pack++) = *(float_addr);
+    pack = packInt(pack, &ADC_TimeStamp, timestamp_size);
 
     return pushMessage(_msg, _sen_data_target, head, pack - head);
 }

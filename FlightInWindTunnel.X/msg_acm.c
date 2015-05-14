@@ -71,7 +71,7 @@ bool servoProcA5Cmd(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t msg
     if (cmd[0] != 0xA5 && cmd[0] != 0xA6) {
         return false;
     }
-    parameters->time_token = ((uint32_t)cmd[1]<<24)+((uint32_t)cmd[2]<<16)+((uint32_t)cmd[3]<<8)+(uint32_t)cmd[4];
+    unpack(cmd+1, &(parameters->time_token), 4);
 
     switch (cmd[5]) {
         case 1:
@@ -175,10 +175,7 @@ bool sendDataPack(uint32_t T1) {
     *(pack++) = IMU_ZAccl >> 8;
     *(pack++) = IMU_ZAccl & 0xFF;
 #endif
-    *(pack++) = ADC_TimeStamp >>24;
-    *(pack++) = ADC_TimeStamp >>16;
-    *(pack++) = ADC_TimeStamp >> 8;
-    *(pack++) = ADC_TimeStamp & 0xFF;
+    pack = packInt(pack, &ADC_TimeStamp, timestamp_t);
     for (i = 0; i < SEVERONUM; ++i) {
         *(pack++) = Servos[i].Ctrl >> 8;
         *(pack++) = Servos[i].Ctrl & 0xFF;
@@ -187,11 +184,7 @@ bool sendDataPack(uint32_t T1) {
         *(pack++) = Servos[i].Reference >> 8;
         *(pack++) = Servos[i].Reference & 0xFF;
     }
-
-    *(pack++) = (T1 >> 24);
-    *(pack++) = (T1 >> 16);
-    *(pack++) = (T1 >> 8);
-    *(pack++) = (T1 & 0xff);
+    pack = packInt(pack, &T1, 4);
 
     return pushMessage(_msg, _sen_data_target, head, pack - head);
 }

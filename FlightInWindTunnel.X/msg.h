@@ -25,6 +25,7 @@
 
 #include "XBee.h"
 #include "task.h"
+#include "clock.h"
 #include <pt.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -37,7 +38,7 @@
 #define MSG_MAX_PROCESS_FUNCS (8)
 #define MSG_MAX_PUSH_FUNCS (8)
 #define MSG_NAME_MAX_LEN (8)
-#define MSG_ID_POS (4)
+#define MSG_ID_POS (timestamp_size)
 
 #ifdef	__cplusplus
 extern "C" {
@@ -50,35 +51,21 @@ extern "C" {
         char name[MSG_NAME_MAX_LEN];
         uint8_t msg_id;
         void * parameters;
-        uint32_t remote_gen_timestamp;
-        uint32_t remote_tx_timestamp;
-        uint32_t rx_timestamp;
+        timestamp_t remote_gen_timestamp;
+        timestamp_t remote_tx_timestamp;
+        timestamp_t rx_timestamp;
         uint16_t rx_cnt;
         uint16_t rx_port;
         uint16_t remote_tx_port;
         ProcessMessageHandleFunc_p func;
     } ProcessMessageHandle_t;
 
-    struct PushMessageHandle;
-    typedef struct PushMessageHandle* PushMessageHandle_p;
-    typedef size_t (*PushMessageHandleFunc_p)(PushMessageHandle_p, uint8_t *head, size_t max_len);
-    typedef struct PushMessageHandle {
-        char name[MSG_NAME_MAX_LEN];
-        void * parameters;
-        unsigned int tx_cnt;
-        unsigned int peroid;
-        unsigned int offset;
-        uint16_t target;
-        uint32_t timestamp;
-        PushMessageHandleFunc_p func;
-    } PushMessageHandle_t;
-
     typedef struct {
         struct pt PT;
         XBee_p xbee;
 
-        uint32_t rx_timestamp;
-        uint32_t remote_tx_timestamp;
+        timestamp_t rx_timestamp;
+        timestamp_t remote_tx_timestamp;
         RxIPv4Response_t rx_rsp;
         ProcessMessageHandle_t process_handle_list[MSG_MAX_PROCESS_FUNCS];
         size_t process_handle_list_num;
@@ -95,22 +82,30 @@ extern "C" {
         size_t msg_len[DEST_MAX_NUM];
         uint16_t msg_port[DEST_MAX_NUM];
 
-        PushMessageHandle_t push_handle_list[MSG_MAX_PUSH_FUNCS];
-        size_t push_handle_list_num;
-        uint8_t push_buff[MSG_TX_BUFF_LEN];
     } msgParam_t, *msgParam_p;
+
+    struct SendMessageParam;
+    typedef struct SendMessageParam* sendmsgParam_p;
+    typedef bool (*SendMessageHandleFunc_p)(sendmsgParam_p);
+    typedef struct SendMessageParam{
+        struct pt PT;
+        msgParam_p _msg;
+        SendMessageHandleFunc_p _func;
+        void * _param;
+    } sendmsgParam_t;
 
     bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t msg_len);
 
     bool registerProcessMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN], uint8_t id, ProcessMessageHandleFunc_p func, void * parameters);
 
-    bool registerPushMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN],
-            PushMessageHandleFunc_p func, void * parameters, uint16_t target,
-            unsigned int circle, unsigned int offset);
-
     PT_THREAD(msgLoop)(TaskHandle_p task);
+    PT_THREAD(sendmsgLoop)(TaskHandle_p task);
 
     void msgInit(msgParam_p parameters, XBee_p s6);
+    void sendmsgInit(sendmsgParam_p parameters, msgParam_p msg, SendMessageHandleFunc_p func, void * param);
+
+    uint8_t * packInt(uint8_t *pack, const void *data, size_t len);
+    const uint8_t * unpackInt(const uint8_t *pack, void *data, size_t len);
 
 
 #ifdef	__cplusplus

@@ -30,7 +30,7 @@ extern "C" {
     extern  int16_t ntp_offset;
     extern  int16_t ntp_delay;
 
-    void msgRegistNTP(msgParam_p);
+    void msgRegistNTP(msgParam_p, unsigned);
 
 #ifdef	__cplusplus
 }

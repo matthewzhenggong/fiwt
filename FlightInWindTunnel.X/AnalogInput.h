@@ -57,7 +57,7 @@ extern "C" {
     /** Analog Input Time Stamp
      *  Update when call function UpdateAnalogInputs()
      */
-    extern uint32_t ADC_TimeStamp;
+    extern timestamp_t ADC_TimeStamp;
 
     /** Update Analog Inputs from SFRs
      *  call it before visit ADC values

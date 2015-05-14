@@ -30,8 +30,7 @@
 
 #elif GNDBOARD
 #include "msg_gnd.h"
-#include "remoteSenTask.h"
-#include <xc.h>
+//#include <xc.h>
 
 #elif STARTKITBOARD
 #include "IMU.h"
@@ -39,7 +38,6 @@
 #include "msg_comm.h"
 #include "senTask.h"
 
-#include "idle.h"
 #include "task.h"
 #include "user.h"          /* User funct/params, such as InitApp              */
 #include "system.h"        /* System funct/params, like osc/peripheral config */
@@ -55,12 +53,10 @@ senParam_t sen;
 msgParamACM_t msgACM;
 #elif GNDBOARD
 senParam_t sen;
-remoteSenParam_t remoteSen;
 msgParamGND_t msgGND;
 #endif
 msgParam_t msg;
 
-idleParam_t idle_params;
 
 int main(void) {
     uint16_t i;
@@ -99,13 +95,11 @@ int main(void) {
     msgRegistACM(&msg, &msgACM);
 #elif GNDBOARD
     senInit(&sen);
-    msgGND.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
-    remoteSenInit(&remoteSen, &Xbee3);
-    msgGND.rsen_Task = TaskCreate(remoteSenLoop, "MANIMET", (void *) &remoteSen, 100, 0, 10);
+    msgGND.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, 0x3, 0x1, 30);
     msgInit(&msg, &Xbee2);
-    msgGND.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
-    msgRegistNTP(&msg);
-    msgRegistGND(&msg, &msgGND);
+    msgGND.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 0x0, 0x0, 0);
+    msgRegistNTP(&msg, 2);
+    msgRegistGND(&msg, &msgGND, 1);
 #elif STARTKITBOARD
     while (1) {
         asm ("repeat #4000;");
@@ -113,9 +107,6 @@ int main(void) {
         IMUUpdate();
     }
 #endif
-
-    idleInit(&idle_params);
-    TaskSetIdleHook(idleLoop, (void *) &idle_params);
 
     /**
      * Start the RTOS scheduler, this function should not return.

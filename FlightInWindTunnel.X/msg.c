@@ -24,6 +24,22 @@
 #include "clock.h"
 #include <string.h>
 
+uint8_t * packInt(uint8_t *pack, const void *data, size_t len) {
+    size_t i;
+    for (i=0;i<len;++i) {
+        pack[i] = *((uint8_t *)data+(len-1-i));
+    }
+    return pack+len;
+}
+
+const uint8_t * unpackInt(const uint8_t *pack, void *data, size_t len) {
+    size_t i;
+    for (i=0;i<len;++i) {
+        *((uint8_t *)data+(len-1-i)) = pack[i];
+    }
+    return pack+len;
+}
+
 static uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
     if (b == MSG_DILIMITER || b == MSG_ESC) {
         *(pack++) = MSG_ESC;
@@ -34,21 +50,35 @@ static uint8_t* EscapeByte(uint8_t* pack, uint8_t b) {
     return pack;
 }
 
+uint8_t * packIntEsc(uint8_t *head, const void *data, size_t len) {
+    size_t i;
+    uint8_t *pack;
+    pack = head;
+    for (i=0;i<len;++i) {
+        pack = EscapeByte(pack, *((uint8_t *)data+(len-1-i)));
+    }
+    return pack;
+}
+
 /*
  * msg_ptr :
  * 0 - TS MSB remote gen-timestamp
  * 1 - TS
  * 2 - TS
- * 3 - TS LSB
- * 4 - PKG ID
- * 5 - Ctx first byte
+ * 3 - TS
+ * 4 - TS
+ * 5 - TS
+ * 6 - TS
+ * 7 - TS LSB
+ * 8 - PKG ID
+ * 9 - Ctx first byte
  * ...
  * n - Ctx last byte
  */
-static bool process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
+static bool process_message(msgParam_p parameters, const uint8_t *msg_ptr, size_t msg_len) {
     uint8_t id;
     ProcessMessageHandle_p h;
-    uint32_t ts;
+    timestamp_t ts;
 
     id = msg_ptr[MSG_ID_POS];
     id = parameters->process_map[id];
@@ -57,10 +87,7 @@ static bool process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_
         h->rx_timestamp = parameters->rx_timestamp;
         ++(h->rx_cnt);
         h->remote_tx_timestamp = parameters->remote_tx_timestamp;
-        ts = ((uint32_t)*(msg_ptr++) << 24);
-        ts += ((uint32_t)*(msg_ptr++) << 16);
-        ts += ((uint32_t)*(msg_ptr++) << 8);
-        ts += (uint32_t)*(msg_ptr++);
+        msg_ptr = unpackInt(msg_ptr, &ts, timestamp_size);
         h->remote_gen_timestamp = ts;
         h->rx_port = parameters->rx_rsp._port;
         h->remote_tx_port = parameters->rx_rsp._src_port;
@@ -75,28 +102,33 @@ static bool process_message(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_
  * 1 - TS MSB remote gen-timestamp
  * 2 - TS
  * 3 - TS
- * 4 - TS LSB
- * 5 - PKG ID
- * 6 - Ctx first byte
+ * 4 - TS
+ * 5 - TS
+ * 6 - TS
+ * 7 - TS
+ * 8 - TS LSB
+ * 9 - PKG ID
+ * 10 - Ctx first byte
  * ...
  * n - Ctx last byte
  * n+1 - TS MSB remote send-timestamp
  * n+2 - TS
  * n+3 - TS
- * n+4 - TS LSB
+ * n+4 - TS
+ * n+5 - TS
+ * n+6 - TS
+ * n+7 - TS
+ * n+8 - TS LSB
  */
 static bool process_packages(msgParam_p parameters, uint8_t *msg_ptr, size_t msg_len) {
     uint8_t *head;
     uint8_t *end;
     uint8_t *msg_tail;
-    uint32_t ts;
+    timestamp_t ts;
     bool rslt;
 
     msg_tail = msg_ptr + msg_len;
-    ts = (uint32_t) *(--msg_tail);
-    ts += ((uint32_t) *(--msg_tail) << 8);
-    ts += ((uint32_t) *(--msg_tail) << 16);
-    ts += ((uint32_t)*(--msg_tail) << 24);
+    unpackInt(msg_tail-8u, &ts, timestamp_size);
     parameters->remote_tx_timestamp = ts;
     rslt = true;
     head = end = NULL;
@@ -144,7 +176,7 @@ bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t 
     uint8_t * pack;
     uint8_t * pack_tail;
     size_t i;
-    int32_t ts;
+    timestamp_t ts;
     int target;
 
     ts = getMicroseconds();
@@ -174,10 +206,7 @@ bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t 
     //HEAD
     *(pack++) = MSG_DILIMITER;
     //GEN_TIME_STAMP
-    pack = EscapeByte(pack, ts >> 24);
-    pack = EscapeByte(pack, ts >> 16);
-    pack = EscapeByte(pack, ts >> 8);
-    pack = EscapeByte(pack, ts & 0xff);
+    pack = packIntEsc(pack, &ts, timestamp_size);
     //BODY
     for (i = 0; i < msg_len && pack < pack_tail; ++i) {
         pack = EscapeByte(pack, *(msg++));
@@ -191,42 +220,6 @@ bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t 
     return true;
 }
 
-bool registerPushMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN],
-        PushMessageHandleFunc_p func, void * parameters,
-        uint16_t des_port, unsigned int circle, unsigned int offset) {
-    PushMessageHandle_p h;
-    uint16_t target;
-    int flag;
-    if (des_port < DEST_MAX_NUM) {
-        target = des_port;
-    } else {
-        flag = 0;
-        for (target=0; target < DEST_MAX_NUM; ++target) {
-            if (msg->msg_port[target] == des_port) {
-                flag = 1;
-                break;
-            }
-        }
-        if (!flag) {
-            return false;
-        }
-    }
-
-    if (msg->push_handle_list_num < MSG_MAX_PUSH_FUNCS) {
-        h = msg->push_handle_list + msg->push_handle_list_num;
-        strncpy(h->name, name, MSG_NAME_MAX_LEN);
-        h->func = func;
-        h->parameters = parameters;
-        h->peroid = circle;
-        h->offset = offset + 1;
-        h->target = target;
-        h->tx_cnt = 0;
-
-        ++msg->push_handle_list_num;
-        return true;
-    }
-    return false;
-}
 
 void msgInit(msgParam_p parameters, XBee_p s6) {
     struct pt * pt;
@@ -275,27 +268,27 @@ void msgInit(msgParam_p parameters, XBee_p s6) {
     for (i = 0; i < 256; ++i) {
         parameters->process_map[i] = 0xFF;
     }
+}
 
-    for (i = 0; i < MSG_MAX_PUSH_FUNCS; ++i) {
-        parameters->push_handle_list[i].parameters = NULL;
-        parameters->push_handle_list[i].tx_cnt = 0;
-        parameters->push_handle_list[i].target = 0;
-        parameters->push_handle_list[i].peroid = 0;
-        parameters->push_handle_list[i].func = NULL;
-    }
-    parameters->push_handle_list_num = 0;
+void sendmsgInit(sendmsgParam_p parameters, msgParam_p msg, SendMessageHandleFunc_p func, void *param) {
+    struct pt * pt;
+    int i;
 
+    pt = &(parameters->PT);
+    PT_INIT(pt);
+
+    parameters->_msg = msg;
+    parameters->_func = func;
+    parameters->_param = param;
 }
 
 PT_THREAD(msgLoop)(TaskHandle_p task) {
     int packin;
     msgParam_p parameters;
     struct pt *pt;
-    uint32_t ts;
+    timestamp_t ts;
     uint8_t *pack;
     int i;
-    PushMessageHandle_p pmh;
-    size_t s;
 
     parameters = (msgParam_p) (task->parameters);
     pt = &(parameters->PT);
@@ -324,17 +317,6 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
             packin = XBeeReadPacket(parameters->xbee);
         }
 
-        for (i = 0; i < parameters->push_handle_list_num; ++i) {
-            pmh = parameters->push_handle_list + i;
-            if (--pmh->offset == 0u) {
-                pmh->offset = pmh->peroid;
-                s = pmh->func(pmh, parameters->push_buff, parameters->msg_len[pmh->target]);
-                if (s > 0) {
-                    pushMessage(parameters, pmh->target, parameters->push_buff, s);
-                    ++pmh->tx_cnt;
-                }
-            }
-        }
         ++parameters->cnt;
         for (i = 0; i < DEST_MAX_NUM; ++i) {
             if (parameters->msg_tail[i] != parameters->msg_head[i]) {
@@ -344,10 +326,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
                 parameters->msg_tail[i] = parameters->msg_head[i];
                 pack = parameters->tx_req._payloadPtr + packin;
                 ts = getMicroseconds();
-                pack = EscapeByte(pack, ts >> 24);
-                pack = EscapeByte(pack, ts >> 16);
-                pack = EscapeByte(pack, ts >> 8);
-                pack = EscapeByte(pack, ts & 0xff);
+                pack = packIntEsc(pack, &ts, timestamp_size);
                 parameters->tx_req._payloadLength = pack - parameters->tx_req._payloadPtr;
                 XBeeTxIPv4Request(parameters->xbee, &parameters->tx_req, 0u);
                 // Reset to send to MSG_DEST_PORT
@@ -358,13 +337,28 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
             }
         }
 
-        // clock adjust
-        if (parameters->cnt % 10 == 0) {
-            offset_us += 1u;
-        } else if (parameters->cnt % 289 == 0) {
-            offset_us -= 1u;
-        }
+        PT_YIELD(pt);
+    }
 
+    /* All protothread functions must end with PT_END() which takes a
+     pointer to a struct pt. */
+    PT_END(pt);
+}
+
+PT_THREAD(sendmsgLoop)(TaskHandle_p task) {
+    sendmsgParam_p parameters;
+    struct pt *pt;
+
+    parameters = (sendmsgParam_p) (task->parameters);
+    pt = &(parameters->PT);
+
+    /* A protothread function must begin with PT_BEGIN() which takes a
+     pointer to a struct pt. */
+    PT_BEGIN(pt);
+
+    /* We loop forever here. */
+    while (1) {
+        parameters->_func(parameters);
         PT_YIELD(pt);
     }
 

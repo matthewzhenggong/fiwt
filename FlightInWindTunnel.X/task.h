@@ -61,8 +61,6 @@ extern "C" {
     /** Header pointing to task list */
     extern TaskHandle_p TaskListHeader;
 
-    extern struct TaskHandle_t TaskIdle;
-
     /**
      * Task Flags
      * bit0 : OverRun Flag
@@ -98,15 +96,6 @@ extern "C" {
             unsigned period,
             unsigned delay,
             unsigned priority
-            );
-
-    /**
-     * Setup idle task
-     * @param task_func : Pointer to task function
-     * @param parameters : Pointer to task parameters
-     */
-    void TaskSetIdleHook(TaskFunction_t task_func,
-            void * parameters
             );
 
     /**

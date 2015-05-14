@@ -29,9 +29,9 @@
 #include "config.h"
 #include "task.h"
 #include "clock.h"
-#include "system.h"
-#include <xc.h>
-#include <stddef.h>
+//#include "system.h"
+#include "LedExtBoard.h"
+
 #include <string.h>
 
 static struct TaskHandle_t tasks[MAX_NUM_TASKS];
@@ -40,7 +40,6 @@ unsigned TaskNumber = 0u;
 
 TaskHandle_p TaskListHeader = NULL;
 TaskHandle_p TaskFreeListHeader;
-struct TaskHandle_t TaskIdle;
 
 void TaskInit(void) {
     unsigned i;
@@ -49,11 +48,6 @@ void TaskInit(void) {
     TaskNumber = 0u;
 
     TaskListHeader = NULL;
-    TaskIdle.task_func = NULL;
-    TaskIdle.parameters = NULL;
-    TaskIdle.task_num = 0;
-    strcpy(TaskIdle.task_name, "idle");
-
     for (i = 1u, TaskFreeListHeader = tasks; i < MAX_NUM_TASKS; ++i, ++TaskFreeListHeader) {
         TaskFreeListHeader->delay = 0u;
         TaskFreeListHeader->load_max = 0u;
@@ -137,61 +131,77 @@ TaskHandle_p TaskCreate(TaskFunction_t task_func, const char * name, void * para
     return NULL;
 }
 
-void TaskSetIdleHook(TaskFunction_t task_func,
-        void * parameters) {
-    TaskIdle.task_func = task_func;
-    TaskIdle.parameters = parameters;
-}
-
 void TaskStartScheduler(void) {
     TaskHandle_p task;
     unsigned int tick_in;
-    unsigned int last_elapsed_ticks;
-    unsigned int overshoot_test;
+    uint32_t lswd;
+    unsigned int usec, msec, last_msec;
+    unsigned int msec_cnt, msec_cnt2, msec_cnt3;
 
-    elapsed_ticks = 1;
+    msec_cnt = 0;
+    msec_cnt2 = 0;
+    msec_cnt3 = 0;
+    lswd = getMicrosecondsLSDW();
+    last_msec = (lswd >> TASK_TIMESLICE_BITS);
     while (1) {
         //DisableInterrupts();
-        overshoot_test = 0;
-        while (elapsed_ticks > 0u) { /* TRUE only if the ISR ran. */
+        lswd = getMicrosecondsLSDW();
+        msec = (lswd >> TASK_TIMESLICE_BITS);
+        usec = lswd & TASK_TIMESLICE_MASK;
+        if (msec != last_msec) {
+            last_msec = msec;
             /* loop working tasks */
             for (task = TaskListHeader; task; task = task->next) {
-                if (--task->delay == 0u) {
-                    task->delay = task->period;
-
+                if (task->period == 0 || ((msec & task->period) == task->delay)) {
                     if (task->cur_status < 2) {
-                        tick_in = microsec_ticks;
-                        last_elapsed_ticks = elapsed_ticks;
+                        tick_in = usec;
                         /* Task is waiting. Wake it up! */
                         //EnableInterrupts();
                         task->cur_status = task->task_func(task); /* Execute the task! */
                         //DisableInterrupts();
                         ++task->runtime_cnt;
-                        if (last_elapsed_ticks == elapsed_ticks) {
-                            tick_in = microsec_ticks - tick_in;
+                        lswd = getMicrosecondsLSDW();
+                        msec = (lswd >> TASK_TIMESLICE_BITS);
+                        usec = lswd & TASK_TIMESLICE_MASK;
+                        if (msec == last_msec) {
+                            tick_in = usec - tick_in;
+                        } else if (msec > last_msec) {
+                            tick_in = ((msec - last_msec) << TASK_TIMESLICE_BITS)
+                                    + usec - tick_in;
                         } else {
-                            tick_in = ((elapsed_ticks - last_elapsed_ticks) << 10)
-                                    + microsec_ticks - tick_in;
+                            tick_in = ((msec + (1 << (16 - TASK_TIMESLICE_BITS)) - last_msec) << TASK_TIMESLICE_BITS)
+                                    + usec - tick_in;
                         }
                         task->runtime_microseconds += tick_in;
                         if (tick_in > task->load_max) {
                             task->load_max = tick_in;
-                        }
-                        /** overshoot test */
-                        if (overshoot_test > 0) {
-                            TaskFlags |= 1;
                         }
                     } else {
                         // TODO free the task
                     }
                 }
             }
-            ++overshoot_test;
-            --elapsed_ticks;
+            ++msec_cnt;
+            ++msec_cnt2;
+            ++msec_cnt3;
+        } else if (msec_cnt >= 1000u) {
+            msec_cnt = 0;
+#if USE_LEDEXTBOARD
+            mLED_1_Toggle();
+            mLED_2_Off();
+            mLED_3_Off();
+            mLED_4_Off();
+#endif
+        } else if (msec_cnt2 >= 10) {
+            msec_cnt2 = 0;
+            ++offset_us;
+        } else if (msec_cnt3 >= 289) {
+            msec_cnt3 = 0;
+            --offset_us;
+        } else if (apply_time_offset()) {
+            lswd = getMicrosecondsLSDW();
+            last_msec = (lswd >> TASK_TIMESLICE_BITS);
         }
         //EnableInterrupts();
-        if (TaskIdle.task_func) {
-            TaskIdle.task_func(&TaskIdle);
-        }
     }
 }

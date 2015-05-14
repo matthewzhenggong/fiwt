@@ -46,7 +46,7 @@
 #define MSG_DEST_PORT MSG_SRC_AP_PORT
 
 #if AC_MODEL || AEROCOMP
-#define TASK_PERIOD (4u) // 250Hz
+#define TASK_PERIOD (3u) // 250Hz
 #define XBEE1_ATAP 2
 #define ENC_HALF_PEROID (5)
 
@@ -70,7 +70,7 @@ typedef enum TargetIdx {
 #endif
 
 #elif GNDBOARD
-#define TASK_PERIOD (4u) // 250Hz
+#define TASK_PERIOD (3u) // 250Hz
 #define XBEE2_ATAP 2
 #define XBEE3_ATAP 2
 #define MSG_SRC_PORT MSG_SRC_GND_PORT
@@ -103,7 +103,6 @@ typedef enum TargetIdx {
 #define USE_PWM   1
 #define USE_ENC   1
 #define USE_IMU   1
-#define USE_SPIS  0
 #define USE_EKF   0
 #define USE_TESTBOARD 0
 #define ENCNUM (3)
@@ -120,8 +119,6 @@ typedef enum TargetIdx {
 #define USE_PWM   1
 #define USE_ENC   1
 #define USE_IMU   0
-#define USE_SPIS  0
-#define USE_EKF   0
 #define ENCNUM (4)
 #define BATTCELLADCNUM (3)
 #define SERVOPOSADCNUM (4)
@@ -130,14 +127,12 @@ typedef enum TargetIdx {
 #elif GNDBOARD
 #define USE_UART1 0
 #define USE_UART2 1
-#define USE_UART3 1
+#define USE_UART3 0
 #define USE_UART4 0
 #define USE_ADC1  1
 #define USE_PWM   0
 #define USE_ENC   0
 #define USE_IMU   0
-#define USE_SPIS  0
-#define USE_EKF   0
 #define USE_LEDEXTBOARD 1
 #define NOT_USE_EXTOSC 0
 #define ENCNUM (0)
@@ -155,8 +150,6 @@ typedef enum TargetIdx {
 #define USE_PWM   0
 #define USE_ENC   0
 #define USE_IMU   1
-#define USE_SPIS  0
-#define USE_EKF   0
 #define ENCNUM (0)
 
 #else
@@ -195,6 +188,8 @@ typedef enum TargetIdx {
  */
 #define TASK_NAME_MAX (8)
 #define MAX_NUM_TASKS (8)
+#define TASK_TIMESLICE_BITS (10)
+#define TASK_TIMESLICE_MASK (0x3FF)
 
 #define MSG_DILIMITER (0x9E) //0x80+0x1E(RS)
 #define MSG_ESC (0x9B) //0x80+0x1B(ESC)
