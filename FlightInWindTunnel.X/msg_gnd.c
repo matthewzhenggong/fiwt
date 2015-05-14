@@ -55,11 +55,9 @@ static bool updateCommPack(sendmsgParam_p msg) {
 
 static sendmsgParam_t comm;
 static msgParam_p _msg;
-uint16_t _sen_data_target;
 
 void msgRegistGND(msgParam_p msg, msgParamGND_p param, unsigned priority) {
     _msg = msg;
-    _sen_data_target = TargetAP;
 
     sendmsgInit(&comm, msg, &updateCommPack, param);
     TaskCreate(sendmsgLoop, "COMM", (void *) &comm, 0x3FF, 0x101, priority);
@@ -88,7 +86,7 @@ bool sendRigPack(void) {
 
     pack = packInt(pack, &ADC_TimeStamp, timestamp_size);
 
-    return pushMessage(_msg, _sen_data_target, head, pack - head);
+    return pushMessage(_msg, TargetAP, head, pack - head);
 }
 
 

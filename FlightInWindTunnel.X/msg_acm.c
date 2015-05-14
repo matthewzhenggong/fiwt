@@ -127,11 +127,9 @@ xxxx:
 }
 
 static msgParam_p _msg;
-uint16_t _sen_data_target;
 
 void msgRegistACM(msgParam_p msg, msgParamACM_p param) {
     _msg = msg;
-    _sen_data_target = TargetAP;
 
     registerPushMessageHandle(msg, "COMM", &updateCommPack, param,
             MSG_DEST_PORT, 1000, 508);
@@ -186,7 +184,7 @@ bool sendDataPack(uint32_t T1) {
     }
     pack = packInt(pack, &T1, 4);
 
-    return pushMessage(_msg, _sen_data_target, head, pack - head);
+    return pushMessage(_msg, TargetAP, head, pack - head);
 }
 
 

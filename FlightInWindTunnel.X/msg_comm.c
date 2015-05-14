@@ -58,7 +58,7 @@ bool processNTPreq(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t max_
         *(pack++) = cmd[2];
         pack = packInt(pack, &T1, timestamp_size);
         pack = packInt(pack, &T2, timestamp_size);
-        return pushMessage((msgParam_p)msg_h->parameters, msg_h->remote_tx_port, head, 19);
+        return pushMessage((msgParam_p)msg_h->parameters, findTarget((msgParam_p)msg_h->parameters, msg_h->remote_tx_addr), head, pack - head);
     }
     return false;
 }

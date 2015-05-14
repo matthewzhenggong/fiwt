@@ -32,18 +32,19 @@
 #define STARTKITBOARD 0
 
 // IP=192.169.191.255
-#define MSG_DEST_ADDR_MSW (0xc0a8)
-#define MSG_DEST_ADDR_LSW (0xbfff)
-#define MSG_DEST_ADDR "\x00\x00\x00\x00\xc0\xa8\xbf\xff"
+#define MSG_NETWORK_MSW (0xc0a8)
+#define MSG_NETWORK_LSW (0xbf00)
+#define MSG_APC_ADDR (0x01)
+#define MSG_GND_ADDR (0x02)
+#define MSG_CMP_ADDR (0x03)
+#define MSG_ACM_ADDR (0x04)
 
-#define MSG_SRC_AP_PORT 0x2000
-#define MSG_SRC_ACM_PORT 0x2267
-#define MSG_SRC_CMP_PORT 0x2677
-#define MSG_SRC_GND_PORT 0x2616
+#define MSG_DES_ADDR MSG_APC_ADDR
 
+#define MSG_SRC_PORT 0x2000
+#define MSG_DES_PORT MSG_SRC_PORT
 #define DEST_MAX_NUM (3)
 #define MSG_TX_BUFF_LEN (600)
-#define MSG_DEST_PORT MSG_SRC_AP_PORT
 
 #if AC_MODEL || AEROCOMP
 #define TASK_PERIOD (3u) // 250Hz
@@ -51,18 +52,12 @@
 #define ENC_HALF_PEROID (5)
 
 #if AC_MODEL
-#define MSG_SRC_PORT MSG_SRC_ACM_PORT
-#define MSG_DEST2_PORT MSG_SRC_GND_PORT
-#define MSG_DEST3_PORT MSG_SRC_CMP_PORT
 typedef enum TargetIdx {
     TargetAP=0,
     TargetGND, TargetCMP
 } TargetIdx_t;
 
 #elif AEROCOMP
-#define MSG_SRC_PORT MSG_SRC_CMP_PORT
-#define MSG_DEST2_PORT MSG_SRC_GND_PORT
-#define MSG_DEST3_PORT MSG_SRC_ACM_PORT
 typedef enum TargetIdx {
     TargetAP=0,
     TargetGND, TargetACM
@@ -72,14 +67,12 @@ typedef enum TargetIdx {
 #elif GNDBOARD
 #define TASK_PERIOD (3u) // 250Hz
 #define XBEE2_ATAP 2
-#define XBEE3_ATAP 2
-#define MSG_SRC_PORT MSG_SRC_GND_PORT
-#define MSG_DEST2_PORT MSG_SRC_CMP_PORT
-#define MSG_DEST3_PORT MSG_SRC_ACM_PORT
 typedef enum TargetIdx {
     TargetAP=0,
     TargetCMP, TargetACM
 } TargetIdx_t;
+#define MSG_DES2_ADDR MSG_CMP_ADDR
+#define MSG_DES3_ADDR MSG_ACM_ADDR
 
 #endif
 

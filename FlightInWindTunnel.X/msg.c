@@ -89,8 +89,7 @@ static bool process_message(msgParam_p parameters, const uint8_t *msg_ptr, size_
         h->remote_tx_timestamp = parameters->remote_tx_timestamp;
         msg_ptr = unpackInt(msg_ptr, &ts, timestamp_size);
         h->remote_gen_timestamp = ts;
-        h->rx_port = parameters->rx_rsp._port;
-        h->remote_tx_port = parameters->rx_rsp._src_port;
+        h->remote_tx_addr = parameters->rx_rsp._src_addr_lsw;
         return h->func(h, msg_ptr, msg_len - MSG_ID_POS);
     }
     return false;
@@ -172,30 +171,23 @@ bool registerProcessMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN], u
     return false;
 }
 
-bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t msg_len) {
+TargetIdx_t findTarget(msgParam_p parameters, uint8_t addr) {
+    size_t i;
+    for (i=0u;i<DEST_MAX_NUM;++i) {
+        if (parameters->msg_des_addr[i] == addr) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+bool pushMessage(msgParam_p parameters, TargetIdx_t target, uint8_t *msg, size_t msg_len) {
     uint8_t * pack;
     uint8_t * pack_tail;
     size_t i;
     timestamp_t ts;
-    int target;
 
     ts = getMicroseconds();
-
-    if (des_port < DEST_MAX_NUM) {
-        target = des_port;
-    } else {
-        i = 0;
-        for (target=0; target < DEST_MAX_NUM; ++target) {
-            if (parameters->msg_port[target] == des_port) {
-                i = 1;
-                break;
-            }
-        }
-        if (!i) {
-            ++parameters->bad_tx_pkg_cnt;
-            return false;
-        }
-    }
 
     pack = parameters->msg_tail[target];
     pack_tail = parameters->msg_head[target + 1] - 1u;
@@ -228,9 +220,9 @@ void msgInit(msgParam_p parameters, XBee_p s6) {
     pt = &(parameters->PT);
     PT_INIT(pt);
     parameters->xbee = s6;
-    parameters->tx_req._des_addr_msw = MSG_DEST_ADDR_MSW;
-    parameters->tx_req._des_addr_lsw = MSG_DEST_ADDR_LSW;
-    parameters->tx_req._des_port = MSG_DEST_PORT;
+    parameters->tx_req._des_addr_msw = MSG_NETWORK_MSW;
+    parameters->tx_req._des_addr_lsw = MSG_NETWORK_LSW;
+    parameters->tx_req._des_port = MSG_DES_PORT;
     parameters->tx_req._src_port = MSG_SRC_PORT;
     parameters->tx_req._protocol = 0u;
     parameters->tx_req._option = 0u;
@@ -242,17 +234,17 @@ void msgInit(msgParam_p parameters, XBee_p s6) {
     parameters->bad_tx_pkg_cnt = 0u;
 
     parameters->msg_tail[0] = parameters->msg_head[0] = parameters->msg_buff + 0;
-    parameters->msg_port[0] = MSG_DEST_PORT;
+    parameters->msg_des_addr[0] = MSG_DES_ADDR;
 
     parameters->msg_tail[1] = parameters->msg_head[1] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 200);
-    parameters->msg_port[1] = MSG_DEST2_PORT;
+    parameters->msg_des_addr[1] = MSG_DES2_ADDR;
 
     parameters->msg_tail[2] = parameters->msg_head[2] = parameters->msg_buff + (MSG_TX_BUFF_LEN - 100);
-    parameters->msg_port[2] = MSG_DEST3_PORT;
+    parameters->msg_des_addr[2] = MSG_DES3_ADDR;
 
     /*Last Empty Item used as stop-bit */
     parameters->msg_tail[3] = parameters->msg_head[3] = parameters->msg_buff + MSG_TX_BUFF_LEN;
-    parameters->msg_port[3] = 0;
+    parameters->msg_des_addr[3] = 0;
 
     parameters->msg_len[0] = parameters->msg_head[1] - parameters->msg_head[0];
     parameters->msg_len[1] = parameters->msg_head[2] - parameters->msg_head[1];
@@ -272,7 +264,6 @@ void msgInit(msgParam_p parameters, XBee_p s6) {
 
 void sendmsgInit(sendmsgParam_p parameters, msgParam_p msg, SendMessageHandleFunc_p func, void *param) {
     struct pt * pt;
-    int i;
 
     pt = &(parameters->PT);
     PT_INIT(pt);
@@ -320,7 +311,7 @@ PT_THREAD(msgLoop)(TaskHandle_p task) {
         ++parameters->cnt;
         for (i = 0; i < DEST_MAX_NUM; ++i) {
             if (parameters->msg_tail[i] != parameters->msg_head[i]) {
-                parameters->tx_req._des_port = parameters->msg_port[i];
+                (*(uint8_t*)&(parameters->tx_req._des_addr_lsw)) = parameters->msg_des_addr[i];
                 packin = parameters->msg_tail[i] - parameters->msg_head[i];
                 memcpy(parameters->tx_req._payloadPtr, parameters->msg_head[i], packin);
                 parameters->msg_tail[i] = parameters->msg_head[i];

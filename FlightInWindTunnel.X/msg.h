@@ -55,8 +55,7 @@ extern "C" {
         timestamp_t remote_tx_timestamp;
         timestamp_t rx_timestamp;
         uint16_t rx_cnt;
-        uint16_t rx_port;
-        uint16_t remote_tx_port;
+        uint8_t remote_tx_addr;
         ProcessMessageHandleFunc_p func;
     } ProcessMessageHandle_t;
 
@@ -80,7 +79,7 @@ extern "C" {
         uint8_t * msg_head[DEST_MAX_NUM+1];
         uint8_t * msg_tail[DEST_MAX_NUM+1];
         size_t msg_len[DEST_MAX_NUM];
-        uint16_t msg_port[DEST_MAX_NUM];
+        uint8_t msg_des_addr[DEST_MAX_NUM];
 
     } msgParam_t, *msgParam_p;
 
@@ -94,7 +93,8 @@ extern "C" {
         void * _param;
     } sendmsgParam_t;
 
-    bool pushMessage(msgParam_p parameters, uint16_t des_port, uint8_t *msg, size_t msg_len);
+    TargetIdx_t findTarget(msgParam_p parameters, uint8_t addr);
+    bool pushMessage(msgParam_p parameters, TargetIdx_t target, uint8_t *msg, size_t msg_len);
 
     bool registerProcessMessageHandle(msgParam_p msg, char name[MSG_NAME_MAX_LEN], uint8_t id, ProcessMessageHandleFunc_p func, void * parameters);
 
