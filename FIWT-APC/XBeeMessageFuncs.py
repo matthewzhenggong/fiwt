@@ -46,7 +46,7 @@ CODE_NTP_REQUEST = 0x01
 CODE_NTP_RESPONSE = 0x02
 
 packCODE_NTP_REQUEST = struct.Struct('>BH')
-packCODE_NTP_RESPONSE = struct.Struct('>BH2I')
+packCODE_NTP_RESPONSE = struct.Struct('>BH2q')
 
 cnt = [0,0,0]
 
@@ -63,21 +63,21 @@ def process_CODE_NTP_REQUEST(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
 
 process_funcs[CODE_NTP_REQUEST] = process_CODE_NTP_REQUEST
 
-packCODE_GNDBOARD_STATS = struct.Struct('>B2h3H')
+packCODE_GNDBOARD_STATS = struct.Struct('>B2h2H')
 
 
 def process_CODE_GNDBOARD_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
-    Id, NTP_delay, NTP_offset, load_sen, load_rsen, load_msg = packCODE_GNDBOARD_STATS.unpack(
+    Id, NTP_delay, NTP_offset, load_sen, load_msg = packCODE_GNDBOARD_STATS.unpack(
         rf_data)
     if Id == CODE_GNDBOARD_STATS:
-        info = 'GND states NTP{}/{} Load{}/{}/{}'.format(
-            NTP_delay, NTP_offset, load_sen, load_rsen, load_msg)
+        info = 'GND states NTP{}/{} Load{}/{}'.format(
+            NTP_delay, NTP_offset, load_sen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'GND_STA', 'info':info})
 
 
 process_funcs[CODE_GNDBOARD_STATS] = process_CODE_GNDBOARD_STATS
 
-packCODE_GNDBOARD_ADCM_READ = struct.Struct('>B4Hi2hI')
+packCODE_GNDBOARD_ADCM_READ = struct.Struct('>B4Hi2hq')
 
 
 def process_CODE_GNDBOARD_ADCM_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
@@ -98,31 +98,6 @@ def process_CODE_GNDBOARD_ADCM_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
 
 process_funcs[CODE_GNDBOARD_ADCM_READ] = process_CODE_GNDBOARD_ADCM_READ
 
-packCODE_GNDBOARD_MANI_READ = struct.Struct('>B2f')
-
-
-def process_CODE_GNDBOARD_MANI_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
-                                    addr):
-    Id, Vel, DP = packCODE_GNDBOARD_MANI_READ.unpack(rf_data)
-    if Id == CODE_GNDBOARD_MANI_READ:
-        self.expData.updateMani(Vel, DP)
-        self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
-        self.log.info('Manimeter Vel{:.2f} DP{:.1f}'.format(Vel,DP))
-
-
-process_funcs[CODE_GNDBOARD_MANI_READ] = process_CODE_GNDBOARD_MANI_READ
-
-def process_CODE_GNDBOARD_MANI_RAW_READ(self, rf_data, gen_ts, sent_ts, recv_ts,
-                                    addr):
-    Id = ord(rf_data[0])
-    if Id == CODE_GNDBOARD_MANI_RAW_READ:
-        if ord(rf_data[1]) == 0:
-            self.log.info('Manometer:{}'.format(':'.join([hex(ord(i)) for i in rf_data[1:]])))
-        else:
-            self.log.info('Manometer:{}'.format(rf_data[1:]))
-
-
-process_funcs[CODE_GNDBOARD_MANI_RAW_READ] = process_CODE_GNDBOARD_MANI_RAW_READ
 
 packCODE_AEROCOMP_STATS = struct.Struct('>B2h3B3H')
 
@@ -172,7 +147,7 @@ def process_CODE_AC_MODEL_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
 
 process_funcs[CODE_AC_MODEL_STATS] = process_CODE_AC_MODEL_STATS
 
-packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hI6h6hf')
+packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hq6h6hf')
 
 def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6, \
@@ -201,7 +176,7 @@ def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
 
 process_funcs[CODE_AC_MODEL_SERVO_POS] = process_CODE_AC_MODEL_SERVO_POS
 
-packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HI4h4hf')
+packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4Hq4h4hf')
 
 def process_CODE_AEROCOMP_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \

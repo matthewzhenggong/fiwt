@@ -27,7 +27,8 @@ import struct
 MSG_DILIMITER = '\x9E' #0x80+0x1E(RS)
 MSG_ESC = '\x9B'     #0x80+0x1B(ESC)
 ESCAPE_BYTES = (MSG_DILIMITER, MSG_ESC)
-TS = struct.Struct('>I')
+TS = struct.Struct('>q')
+lenTS = TS.size
 
 
 def unpack(data) :
@@ -39,9 +40,9 @@ def unpack(data) :
             for i in s[1:]]))
     if len(packs):
         last = packs[-1]
-        sent_timestamp = TS.unpack(last[-4:])[0]
-        packs[-1] = last[:-4]
-        packs = [(TS.unpack(i[:4])[0], i[4:]) for i in packs]
+        sent_timestamp = TS.unpack(last[-lenTS:])[0]
+        packs[-1] = last[:-lenTS]
+        packs = [(TS.unpack(i[:lenTS])[0], i[lenTS:]) for i in packs]
         return packs, sent_timestamp
     else:
         return None
@@ -59,10 +60,9 @@ def packs(timestamp,*data_list) :
     return "".join(data_list)+ts
 
 if __name__ == '__main__' :
-    data = '\x9E"\x9B\x00\x00\x04I\x00\x00\x00\x00\x00\x00\x1f\xff\x1f\xff\x1f\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\x90\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    print unpack(data)
-    print ':'.join(['{:02x}'.format(ord(i)) for i in pack('Phello')])
-    print ':'.join(['{:02x}'.format(ord(i)) for i in pack('Phello')])
-    print ':'.join(['{:02x}'.format(ord(i))
-        for i in packs('Phello','Phello','Phello')])
+    p1 = pack('Phello',1000000)
+    print ':'.join(['{:02x}'.format(ord(i)) for i in p1])
+    px = packs(1000001,p1)
+    print ':'.join(['{:02x}'.format(ord(i)) for i in px])
+    print unpack(px)
 
