@@ -40,7 +40,7 @@ def run(dat, queue, ax, t,y,line):
     if t1 > tmax or t1 < tmin or len(t)>1 and t1 < t[-1]:
         del t[:]
         del y[:]
-        ax.set_xlim(t1,t1+20)
+        ax.set_xlim(t1,t1+10)
         ax.figure.canvas.draw()
     t.append(t1)
     y.append(y1)
@@ -57,7 +57,7 @@ def drawer(gui2drawerQueue):
     t = []
     y = []
     l, = plt.plot(t, y, 'r-')
-    plt.xlim(0, 20)
+    plt.xlim(0, 10)
     plt.ylim(-180, 180)
     plt.xlabel('T/s')
 

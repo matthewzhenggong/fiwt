@@ -34,10 +34,10 @@ def msg_start(self, cmd):
     if not self.ready:
         self.log.info('Starting...')
         self.host = cmd['xbee_hosts'][0]
-        self.node_addr = { 'GND': cmd['xbee_hosts'][1],
-                'ACM': cmd['xbee_hosts'][2],
-                'CMP': cmd['xbee_hosts'][3] }
-        self.xbee_network = XBeeNetwork(self,cmd['xbee_hosts'])
+        self.node_addr = { 'GND': (cmd['xbee_hosts'][1],cmd['xbee_port']),
+                'ACM': (cmd['xbee_hosts'][2],cmd['xbee_port']),
+                'CMP': (cmd['xbee_hosts'][3],cmd['xbee_port']) }
+        self.xbee_network = XBeeNetwork(self,cmd['xbee_hosts'],cmd['xbee_port'])
         self.socklist += self.xbee_network.getReadList()
         self.matlab_link = MatlabLink(self, cmd['matlab_ports'])
         self.socklist += self.matlab_link.getReadList()
@@ -93,8 +93,7 @@ def cmd_at(self, cmd):
         command, parameter, frame_id=1, options=options)
 
 def cmd_ntp(self, cmd):
-    remote_host = cmd['target']
-    self.log.info('TODO')
+    self.xbee_network.response_ntp = cmd['enable']
 
 def cmd_command(self, cmd):
     da = cmd['da']
@@ -132,3 +131,4 @@ process_funcs = {'START':msg_start,
     'RESET_RIG':cmd_reset_rig,
     'A5':cmd_A5,
     }
+

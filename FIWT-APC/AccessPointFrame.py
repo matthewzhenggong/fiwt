@@ -162,7 +162,8 @@ class MyFrame(wx.Frame):
         self.btnBaseTime = wx.Button(panel, -1, "Set Base Time", size=(100, -1))
         self.btnBaseTime.Enable(False)
         box.Add(self.btnBaseTime, 0, wx.ALIGN_CENTER, 5)
-        self.btnGNDsynct = wx.Button(panel, -1, "Sync Time")
+        self.btnGNDsynct = wx.ToggleButton(panel, -1, "Sync Time")
+        self.btnGNDsynct.SetValue(True)
         self.btnGNDsynct.Enable(False)
         box.Add(self.btnGNDsynct, 0, wx.ALIGN_CENTER, 5)
         self.txtRecName = wx.TextCtrl(panel, -1, parser.get('rec','prefix'),
@@ -176,8 +177,6 @@ class MyFrame(wx.Frame):
         AT_CMD = ['MY', 'MK', 'GW', 'SH', 'SL', 'DL', 'C0', 'ID', 'AH', 'MA',
                 'PL', 'BD', 'AI', 'WR', 'FR',]
         HOST_LIST = ["192.168.191.2", "192.168.191.3", "192.168.191.4"]
-        self.PORT_LIST = ["9750", "8807", "9847", "8192"]
-
 
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.target = 'GND'
@@ -187,9 +186,6 @@ class MyFrame(wx.Frame):
         self.txtGNDhost = wx.ComboBox(panel, -1, parser.get('host','GND'),
                                           choices=HOST_LIST)
         box.Add(self.txtGNDhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtGNDport = wx.ComboBox(panel, -1, "9750",
-                choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
-        box.Add(self.txtGNDport, 0, wx.ALIGN_CENTER, 5)
         self.txtGNDinfo = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtGNDinfo.SetForegroundColour((255, 55, 0))
         box.Add(self.txtGNDinfo, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -208,9 +204,6 @@ class MyFrame(wx.Frame):
         self.txtACMhost = wx.ComboBox(panel, -1, parser.get('host','ACM'),
                                           choices=HOST_LIST)
         box.Add(self.txtACMhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtACMport = wx.ComboBox(panel, -1, "8807",
-                choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
-        box.Add(self.txtACMport, 0, wx.ALIGN_CENTER, 5)
         self.txtACMbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtACMbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtACMbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -229,9 +222,6 @@ class MyFrame(wx.Frame):
         self.txtCMPhost = wx.ComboBox(panel, -1, parser.get('host','CMP'),
                                           choices=HOST_LIST)
         box.Add(self.txtCMPhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtCMPport = wx.ComboBox(panel, -1, "9847",
-                choices=self.PORT_LIST[:-1], validator=MyValidator(HEX_ONLY))
-        box.Add(self.txtCMPport, 0, wx.ALIGN_CENTER, 5)
         self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
         self.txtCMPbat.SetForegroundColour((255, 55, 0))
         box.Add(self.txtCMPbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
@@ -584,7 +574,7 @@ Unused bits must be set to 0.  '''))
         self.Bind(EVT_LOG, self.OnLog)
         self.Bind(wx.EVT_BUTTON, self.OnStart, self.btnStart)
         self.Bind(wx.EVT_BUTTON, self.OnRmtAT, self.btnRmtAT)
-        self.Bind(wx.EVT_BUTTON, self.OnSyncGND, self.btnGNDsynct)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.OnSyncGND, self.btnGNDsynct)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.OnRecALL, self.btnALLrec)
         self.Bind(wx.EVT_BUTTON, self.OnSetBaseTime, self.btnBaseTime)
         self.Bind(wx.EVT_BUTTON, self.OnTX, self.btnTX)
@@ -688,11 +678,9 @@ Unused bits must be set to 0.  '''))
 
     def OnStart(self, event):
         self.gui2msgcQueue.put({'ID': 'START',
-            'xbee_hosts': [(self.txtHost.GetValue(), int(self.PORT_LIST[-1])),
-                (self.txtGNDhost.GetValue(), int(self.txtGNDport.GetValue())),
-                (self.txtACMhost.GetValue(), int(self.txtACMport.GetValue())),
-                (self.txtCMPhost.GetValue(), int(self.txtCMPport.GetValue()))],
-            'mano_port': self.txtCOM.GetValue(),
+            'xbee_hosts': [self.txtHost.GetValue(), self.txtGNDhost.GetValue(),
+                self.txtACMhost.GetValue(), self.txtCMPhost.GetValue()],
+            'xbee_port': 0x2000, 'mano_port': self.txtCOM.GetValue(),
             'matlab_ports': [int(self.txtMatlabRx.GetValue()),
                 int(self.txtMatlabTx.GetValue())],
                 })
@@ -703,9 +691,6 @@ Unused bits must be set to 0.  '''))
         self.txtGNDhost.Enable(False)
         self.txtACMhost.Enable(False)
         self.txtCMPhost.Enable(False)
-        self.txtGNDport.Enable(False)
-        self.txtACMport.Enable(False)
-        self.txtCMPport.Enable(False)
         self.txtMatlabRx.Enable(False)
         self.txtMatlabTx.Enable(False)
         self.btnALLrec.Enable(True)
@@ -749,8 +734,7 @@ Unused bits must be set to 0.  '''))
         self.log.info('Target {}'.format(self.target))
 
     def OnSyncGND(self, event) :
-        self.gui2msgcQueue.put({'ID': 'NTP', 'target':self.target})
-
+        self.gui2msgcQueue.put({'ID': 'NTP', 'enable':event.IsChecked()})
 
     def OnTX(self, event):
         data = self.txtTX.GetValue().encode()

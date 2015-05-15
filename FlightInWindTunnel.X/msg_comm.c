@@ -90,7 +90,7 @@ bool processNTPrsp(ProcessMessageHandle_p msg_h, const uint8_t *msg_ptr, size_t 
         delay = (T4-T1) - (T3-T2);
         offset = (((T2-T1) + (T3-T4))>>1);
         if (offset < 4000 && offset > -4000) {
-            offset >>= 2;
+            offset >>= 3;
         }
         set_time_offset(offset);
 
@@ -106,11 +106,11 @@ static sendmsgParam_t ntpreq;
 void msgRegistNTP(msgParam_p msg, unsigned priority) {
     sendmsgInit(&ntpreq, msg, &requestNTP, NULL);
 #if AC_MODEL
-    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x3FF, 3, priority);
+    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 3, priority);
 #elif AEROCOMP
-    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x3FF, 2, priority);
+    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 2, priority);
 #else
-    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x3FF, 1, priority);
+    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 1, priority);
 #endif
     registerProcessMessageHandle(msg, "NTPREQ", CODE_NTP_REQUEST, processNTPreq, msg);
     registerProcessMessageHandle(msg, "NTPRSP", CODE_NTP_RESPONSE, processNTPrsp, msg);

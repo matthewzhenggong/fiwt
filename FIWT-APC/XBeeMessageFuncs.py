@@ -52,7 +52,7 @@ cnt = [0,0,0]
 
 def process_CODE_NTP_REQUEST(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     Id, NTP_Token = packCODE_NTP_REQUEST.unpack(rf_data)
-    if Id == CODE_NTP_REQUEST and sent_ts-gen_ts < 1000 \
+    if Id == CODE_NTP_REQUEST and sent_ts-gen_ts < 1000 and self.response_ntp \
             and sent_ts-gen_ts > 0:
         #self.log.info('NTP request {} from {}'.format(
         #    sent_ts-recv_ts, addr.__repr__()))
