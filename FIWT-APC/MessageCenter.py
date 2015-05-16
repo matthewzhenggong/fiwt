@@ -26,6 +26,7 @@ import struct, math, time, traceback
 import select
 import Queue, threading
 import logging
+import gc
 from utils import getMicroseconds
 
 from MessageFuncs import process_funcs
@@ -66,12 +67,15 @@ class Worker(object):
         self.msg_thread = threading.Thread(target=self.processGUImsg)
         self.msg_thread.daemon = True
         self.msg_thread.start()
+        self.msg_blocking = False
 
     def processGUImsg(self):
         while self.msg_thread_running:
             try:
                 output = self.gui2msgcQueue.get(block=True,timeout=0.2)
                 try:
+                    while self.msg_blocking:
+                        time.sleep(0.01)
                     process_funcs[output['ID']](self, output)
                 except:
                     self.log.error(traceback.format_exc())
@@ -87,11 +91,15 @@ class Worker(object):
         while self.main_thread_running:
             rlist,wlist,elist=select.select(self.socklist,[],[],0.2)
             if rlist:
+                gc.disable()
+                self.msg_blocking = True
                 t_s = getMicroseconds()
                 recv_ts = t_s - self.T0
                 self.xbee_network.read(rlist, recv_ts)
                 self.matlab_link.read(rlist, recv_ts)
                 dt = getMicroseconds()-t_s
+                gc.enable()
+                self.msg_blocking = False
                 if dt > self.max_dt:
                     self.max_dt = dt
                     self.log.info('MainLoop Max DT={}us'.format(dt))
