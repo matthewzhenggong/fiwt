@@ -26,8 +26,8 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 1
-#define AC_MODEL 0
+#define GNDBOARD 0
+#define AC_MODEL 1
 #define AEROCOMP 0
 #define STARTKITBOARD 0
 
@@ -47,7 +47,7 @@
 #define MSG_TX_BUFF_LEN (600)
 
 #if AC_MODEL || AEROCOMP
-#define TASK_PERIOD (3u) // 250Hz
+#define TASK_PERIOD (4u)
 #define XBEE1_ATAP 2
 #define ENC_HALF_PEROID (5)
 
@@ -56,12 +56,16 @@ typedef enum TargetIdx {
     TargetAP=0,
     TargetGND, TargetCMP
 } TargetIdx_t;
+#define MSG_DES2_ADDR MSG_GND_ADDR
+#define MSG_DES3_ADDR MSG_CMP_ADDR
 
 #elif AEROCOMP
 typedef enum TargetIdx {
     TargetAP=0,
     TargetGND, TargetACM
 } TargetIdx_t;
+#define MSG_DES2_ADDR MSG_GND_ADDR
+#define MSG_DES3_ADDR MSG_ACM_ADDR
 #endif
 
 #elif GNDBOARD

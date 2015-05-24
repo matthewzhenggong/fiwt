@@ -45,7 +45,7 @@ extern "C" {
         servoParam_p serov_param;
     }msgParamACM_t, *msgParamACM_p;
 
-    void msgRegistACM(msgParam_p, msgParamACM_p);
+    void msgRegistACM(msgParam_p, msgParamACM_p, unsigned);
 
     bool sendDataPack(uint32_t time_token);
 

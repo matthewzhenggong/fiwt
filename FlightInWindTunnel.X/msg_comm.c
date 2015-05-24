@@ -106,9 +106,9 @@ static sendmsgParam_t ntpreq;
 void msgRegistNTP(msgParam_p msg, unsigned priority) {
     sendmsgInit(&ntpreq, msg, &requestNTP, NULL);
 #if AC_MODEL
-    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 3, priority);
-#elif AEROCOMP
     TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 2, priority);
+#elif AEROCOMP
+    TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 3, priority);
 #else
     TaskCreate(sendmsgLoop, "NTPREQ", (void *) &ntpreq, 0x7FF, 1, priority);
 #endif

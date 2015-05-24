@@ -81,18 +81,28 @@ int main(void) {
     TaskInit();
 
     /* Add Task */
-#if AC_MODEL || AEROCOMP
-    servoInit(&servo);
-    msgACM.servo_Task = TaskCreate(servoLoop, "SVO", (void *) &servo, TASK_PERIOD, 0, 20);
-
+#if AC_MODEL
     senInit(&sen);
-    msgACM.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, TASK_PERIOD, 0, 30);
+    msgACM.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, 0x3, 0x2, 30);
+    servoInit(&servo);
+    msgACM.servo_Task = TaskCreate(servoLoop, "SVO", (void *) &servo, 0x3, 0x2, 20);
 
     msgInit(&msg, &Xbee1);
-    msgACM.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 1, 0, 0);
+    msgACM.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 0x0, 0x0, 0);
     msgACM.serov_param = &servo;
-    msgRegistNTP(&msg);
-    msgRegistACM(&msg, &msgACM);
+    msgRegistNTP(&msg,2);
+    msgRegistACM(&msg, &msgACM,1);
+#elif AEROCOMP
+    senInit(&sen);
+    msgACM.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, 0x3, 0x3, 30);
+    servoInit(&servo);
+    msgACM.servo_Task = TaskCreate(servoLoop, "SVO", (void *) &servo, 0x3, 0x3, 20);
+
+    msgInit(&msg, &Xbee1);
+    msgACM.msg_Task = TaskCreate(msgLoop, "MSG", (void *) &msg, 0x0, 0x0, 0);
+    msgACM.serov_param = &servo;
+    msgRegistNTP(&msg,2);
+    msgRegistACM(&msg, &msgACM,1);
 #elif GNDBOARD
     senInit(&sen);
     msgGND.sen_Task = TaskCreate(senLoop, "SEN", (void *) &sen, 0x3, 0x1, 30);

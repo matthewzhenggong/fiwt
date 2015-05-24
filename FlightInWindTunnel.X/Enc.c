@@ -22,6 +22,7 @@
 #include "Enc.h"
 
 #if USE_ENC
+#include "system.h"
 #include <stdbool.h>
 
 #define ENC_CLOCK	LATHbits.LATH0

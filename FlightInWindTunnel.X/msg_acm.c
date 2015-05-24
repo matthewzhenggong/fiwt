@@ -29,15 +29,16 @@
 #include "msg_code.h"
 #include "msg_comm.h"
 
-size_t updateCommPack(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) {
+static bool updateCommPack(sendmsgParam_p msg) {
+    uint8_t head[1+4+BATTCELLADCNUM+2*3];
     uint8_t *pack;
     msgParamACM_p p;
     int i;
-    p = (msgParamACM_p)(msg_h->parameters);
+
+    p = (msgParamACM_p)(msg->_param);
+
     pack = head;
-    if (max_len < 1+6+4) {
-        return 0;
-    }
+
 #if AEROCOMP
     *(pack++) = CODE_AEROCOMP_STATS;
 #else
@@ -57,9 +58,8 @@ size_t updateCommPack(PushMessageHandle_p msg_h, uint8_t *head, size_t max_len) 
     *(pack++) = p->msg_Task->load_max >> 8;
     *(pack++) = p->msg_Task->load_max & 0xFF;
 
-    return pack - head;
+    return pushMessage(msg->_msg, TargetAP, head, pack - head);
 }
-
 
 bool servoProcA5Cmd(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t msg_len) {
     int i;
@@ -71,7 +71,7 @@ bool servoProcA5Cmd(ProcessMessageHandle_p msg_h, const uint8_t *cmd, size_t msg
     if (cmd[0] != 0xA5 && cmd[0] != 0xA6) {
         return false;
     }
-    unpack(cmd+1, &(parameters->time_token), 4);
+    unpackInt(cmd+1, &(parameters->time_token), 4);
 
     switch (cmd[5]) {
         case 1:
@@ -126,22 +126,24 @@ xxxx:
     return true;
 }
 
+static sendmsgParam_t comm;
 static msgParam_p _msg;
 
-void msgRegistACM(msgParam_p msg, msgParamACM_p param) {
+void msgRegistACM(msgParam_p msg, msgParamACM_p param, unsigned priority ) {
     _msg = msg;
 
-    registerPushMessageHandle(msg, "COMM", &updateCommPack, param,
-            MSG_DEST_PORT, 1000, 508);
+    sendmsgInit(&comm, msg, &updateCommPack, param);
 #if AC_MODEL
+    TaskCreate(sendmsgLoop, "COMM", (void *) &comm, 0x3FF, 0x102, priority);
     registerProcessMessageHandle(msg, "CMDA5", CODE_AC_MODEL_SERV_CMD, servoProcA5Cmd, param);
 #else
+    TaskCreate(sendmsgLoop, "COMM", (void *) &comm, 0x3FF, 0x103, priority);
     registerProcessMessageHandle(msg, "CMDA6", CODE_AEROCOMP_SERV_CMD, servoProcA5Cmd, param);
 #endif
 }
 
 bool sendDataPack(uint32_t T1) {
-    uint8_t head[1+SERVOPOSADCNUM*2+ENCNUM*2+6*2+4+SEVERONUM*4+4];
+    uint8_t head[1+SERVOPOSADCNUM*2+ENCNUM*2+6*2+sizeof(timestamp_t)+SEVERONUM*4+4];
     uint8_t *pack;
     int i;
 
@@ -173,7 +175,7 @@ bool sendDataPack(uint32_t T1) {
     *(pack++) = IMU_ZAccl >> 8;
     *(pack++) = IMU_ZAccl & 0xFF;
 #endif
-    pack = packInt(pack, &ADC_TimeStamp, timestamp_t);
+    pack = packInt(pack, &ADC_TimeStamp, sizeof(timestamp_t));
     for (i = 0; i < SEVERONUM; ++i) {
         *(pack++) = Servos[i].Ctrl >> 8;
         *(pack++) = Servos[i].Ctrl & 0xFF;
