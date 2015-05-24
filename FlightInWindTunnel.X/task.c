@@ -113,7 +113,7 @@ TaskHandle_p TaskCreate(TaskFunction_t task_func, const char * name, void * para
         }
         t->period = period;
         // Avoid underflow in the dispatcher.
-        t->delay = delay + 1u;
+        t->delay = delay;
         t->priority = priority;
         t->load_max = 0u;
         t->cur_status = 0;

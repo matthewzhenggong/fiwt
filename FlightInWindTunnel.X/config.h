@@ -26,8 +26,8 @@
  * @file Global configureation macros and constants
  */
 
-#define GNDBOARD 0
-#define AC_MODEL 1
+#define GNDBOARD 1
+#define AC_MODEL 0
 #define AEROCOMP 0
 #define STARTKITBOARD 0
 
@@ -69,7 +69,7 @@ typedef enum TargetIdx {
 #endif
 
 #elif GNDBOARD
-#define TASK_PERIOD (3u) // 250Hz
+#define TASK_PERIOD (4u) // 250Hz
 #define XBEE2_ATAP 2
 typedef enum TargetIdx {
     TargetAP=0,
@@ -117,6 +117,7 @@ typedef enum TargetIdx {
 #define USE_ENC   1
 #define USE_IMU   0
 #define ENCNUM (4)
+#define USE_TESTBOARD (0)
 #define BATTCELLADCNUM (3)
 #define SERVOPOSADCNUM (4)
 #define SEVERONUM (4)
