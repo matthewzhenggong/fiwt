@@ -114,7 +114,6 @@ def cmd_A5(self, cmd):
     remote_host = self.node_addr[target]
     data = cmd['data']
     self.xbee_network.send(data,remote_host)
-    print 'sendA5 to', remote_host
 
 def cmd_reset_rig(self, cmd):
     self.expData.resetRigAngel()
