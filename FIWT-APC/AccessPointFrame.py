@@ -31,6 +31,7 @@ import socket
 import json
 
 from wx.lib.newevent import NewEvent
+import wx.lib.agw.pygauge as PG
 
 # New Event Declarations
 LogEvent, EVT_LOG = NewEvent()
@@ -143,7 +144,7 @@ class MyFrame(wx.Frame):
         self.aclink_addr = ('127.0.0.1', 7132)
 
         wx.Frame.__init__(self, parent, id, title, wx.Point(0, 0),
-                          wx.Size(650, 800))
+                          wx.Size(720, 800))
 
         panel = wx.Panel(self, -1)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -204,9 +205,11 @@ class MyFrame(wx.Frame):
         self.txtACMhost = wx.ComboBox(panel, -1, parser.get('host','ACM'),
                                           choices=HOST_LIST)
         box.Add(self.txtACMhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtACMbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
-        self.txtACMbat.SetForegroundColour((255, 55, 0))
-        box.Add(self.txtACMbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
+        self.ggACMbat = PG.PyGauge(panel, wx.ID_ANY, size=(50, 16))
+        self.ggACMbat.SetValue(0)
+        self.ggACMbat.SetDrawValue(draw=True, drawPercent=True, font=wx.SMALL_FONT, colour=wx.BLUE)
+        box.Add(self.ggACMbat, 0, wx.ALIGN_CENTER|wx.LEFT, 5)
+        box.AddStretchSpacer()
 
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Simulink Rx port:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
@@ -222,9 +225,12 @@ class MyFrame(wx.Frame):
         self.txtCMPhost = wx.ComboBox(panel, -1, parser.get('host','CMP'),
                                           choices=HOST_LIST)
         box.Add(self.txtCMPhost, 0, wx.ALIGN_CENTER, 5)
-        self.txtCMPbat = wx.StaticText(panel, wx.ID_ANY, "", size=(32, 16))
-        self.txtCMPbat.SetForegroundColour((255, 55, 0))
-        box.Add(self.txtCMPbat, 1, wx.ALIGN_CENTER|wx.LEFT, 5)
+        self.ggCMPbat = PG.PyGauge(panel, wx.ID_ANY, size=(50, 16))
+        self.ggCMPbat.SetValue(0)
+        self.ggCMPbat.SetDrawValue(draw=True, drawPercent=True, font=wx.SMALL_FONT, colour=wx.BLUE)
+        box.Add(self.ggCMPbat, 0, wx.ALIGN_CENTER|wx.LEFT, 5)
+        box.AddStretchSpacer()
+
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
@@ -649,11 +655,13 @@ Unused bits must be set to 0.  '''))
                         arrv_cnt, elapsed, arrv_cnt / elapsed,
                         arrv_bcnt * 10 / elapsed)))
                 elif output['ID'] == 'ACM_STA':
-                    wx.PostEvent(self, ACM_StaEvent(txt=output['info']))
+                    wx.PostEvent(self, ACM_StaEvent(txt=output['info'],
+                        batpct=output['batpct']))
                 elif output['ID'] == 'ACM_DAT':
                     wx.PostEvent(self, ACM_DatEvent(txt=output['info']))
                 elif output['ID'] == 'CMP_STA':
-                    wx.PostEvent(self, CMP_StaEvent(txt=output['info']))
+                    wx.PostEvent(self, CMP_StaEvent(txt=output['info'],
+                        batpct=output['batpct']))
                 elif output['ID'] == 'CMP_DAT':
                     wx.PostEvent(self, CMP_DatEvent(txt=output['info']))
                 elif output['ID'] == 'GND_STA':
@@ -745,9 +753,25 @@ Unused bits must be set to 0.  '''))
 
     def OnACMSta(self, event) :
         self.txtACMSta.SetLabel(event.txt)
+        self.ggACMbat.SetValue(event.batpct)
+        if event.batpct < 10:
+            self.ggACMbat.SetBarColor(wx.RED)
+        elif event.batpct < 20:
+            self.ggACMbat.SetBarColor(wx.YELLOW)
+        else:
+            self.ggACMbat.SetBarColor(wx.GREEN)
+        self.ggACMbat.Refresh()
 
     def OnCMPSta(self, event) :
         self.txtCMPSta.SetLabel(event.txt)
+        self.ggCMPbat.SetValue(event.batpct)
+        if event.batpct < 10:
+            self.ggCMPbat.SetBarColor(wx.RED)
+        elif event.batpct < 20:
+            self.ggCMPbat.SetBarColor(wx.YELLOW)
+        else:
+            self.ggCMPbat.SetBarColor(wx.GREEN)
+        self.ggCMPbat.Refresh()
 
     def OnGNDSta(self, event) :
         self.txtGNDSta.SetLabel(event.txt)
@@ -793,8 +817,10 @@ Unused bits must be set to 0.  '''))
         self.txtCMPDat.SetLabel('')
         self.txtGNDDat.SetLabel('')
 
-        self.txtACMbat.SetLabel('')
-        self.txtCMPbat.SetLabel('')
+        self.ggACMbat.SetValue(0)
+        self.ggACMbat.Refresh()
+        self.ggCMPbat.SetValue(0)
+        self.ggCMPbat.Refresh()
         self.txtGNDinfo.SetLabel('')
 
         self.gui2msgcQueue.put({'ID': 'CLEAR'})

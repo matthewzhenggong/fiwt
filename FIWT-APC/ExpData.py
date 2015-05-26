@@ -143,7 +143,7 @@ class ExpData(object):
         self.ACM_yaw_butt = Butter()
 
         self.A5 = struct.Struct('>BfB6H')
-        self.AA = struct.Struct('>BI7f')
+        self.AA = struct.Struct('>Bf7f')
         self.last_update_ts = 0
 
     def resetRigAngel(self):
@@ -349,7 +349,7 @@ class ExpData(object):
         self.xbee_network.send(dataA6,self.CMP_node)
         ts3 = getMicroseconds()-self.parent.T0
 
-        data = self.AA.pack(0xA6, ts1, dac, deac, dec, drc,
+        data = self.AA.pack(0xA6, time_token, dac, deac, dec, drc,
                 dac_cmp, dec_cmp, drc_cmp)
         self.parent.save(data, ts1, ts2, ts3, ['192.168.191.1',0])
 

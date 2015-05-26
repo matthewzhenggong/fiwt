@@ -112,7 +112,8 @@ def worker(gui2msgcQueue, msgc2guiQueue):
     """
     Worker process to manage all messages
     """
-    getHighPriorityLevel()
     w = Worker(gui2msgcQueue, msgc2guiQueue)
+    if not getHighPriorityLevel():
+        w.log.warning('Fail to get high priority.')
     w.MainLoop()
 

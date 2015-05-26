@@ -35,6 +35,7 @@ if is_windows:
     def getHighPriorityLevel():
         p = psutil.Process()
         p.nice(psutil.HIGH_PRIORITY_CLASS)
+        return True
 
 else:
     def getMicroseconds():
@@ -42,5 +43,9 @@ else:
 
     def getHighPriorityLevel():
         p = psutil.Process()
-        p.nice(-20)
+        try:
+            p.nice(-20)
+        except psutil.AccessDenied:
+            return False
+        return True
 
