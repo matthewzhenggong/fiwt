@@ -146,6 +146,18 @@ class MyFrame(wx.Frame):
         wx.Frame.__init__(self, parent, id, title, wx.Point(0, 0),
                           wx.Size(720, 800))
 
+        # Prepare the menu bar
+        menuBar = wx.MenuBar()
+
+        # 1st menu from left
+        menu1 = wx.Menu()
+        menu1.AppendSeparator()
+        menu_close = menu1.Append(wx.ID_ANY, "&Close\tCTRL+Q", "Close this frame")
+        # Add menu to the menu bar
+        menuBar.Append(menu1, "&File")
+
+        self.SetMenuBar(menuBar)
+
         panel = wx.Panel(self, -1)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -577,6 +589,7 @@ Unused bits must be set to 0.  '''))
 
         # bind events to functions
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_MENU, self.OnClose, menu_close)
         self.Bind(EVT_LOG, self.OnLog)
         self.Bind(wx.EVT_BUTTON, self.OnStart, self.btnStart)
         self.Bind(wx.EVT_BUTTON, self.OnRmtAT, self.btnRmtAT)
