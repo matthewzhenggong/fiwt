@@ -27,8 +27,7 @@ import select
 import Queue
 import logging
 import gc
-from utils import getMicroseconds
-import psutil
+from utils import getMicroseconds, getHighPriorityLevel
 
 from MessageFuncs import process_funcs
 from ExpData import ExpData
@@ -113,8 +112,7 @@ def worker(gui2msgcQueue, msgc2guiQueue):
     """
     Worker process to manage all messages
     """
-    p = psutil.Process()
-    p.nice(psutil.HIGH_PRIORITY_CLASS)
+    getHighPriorityLevel()
     w = Worker(gui2msgcQueue, msgc2guiQueue)
     w.MainLoop()
 

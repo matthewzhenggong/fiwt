@@ -24,6 +24,7 @@ License along with this library.
 
 import sys
 import time
+import psutil
 
 is_windows = sys.platform.startswith('win')
 
@@ -31,7 +32,15 @@ if is_windows:
     def getMicroseconds():
         return int(time.clock() * 1e6)
 
+    def getHighPriorityLevel():
+        p = psutil.Process()
+        p.nice(psutil.HIGH_PRIORITY_CLASS)
+
 else:
     def getMicroseconds():
         return int(time.time() * 1e6)
+
+    def getHighPriorityLevel():
+        p = psutil.Process()
+        p.nice(-20)
 
