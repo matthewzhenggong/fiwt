@@ -59,10 +59,13 @@ def run(dat, queue, t,ax_data,lines):
     d = ax_data[3][0]
     for i in xrange(4):
         d[i].append(data[41+i])
-    for i in ax_data:
-        for j,k in izip(i[2],i[0]):
-            j.set_data(t,k)
-    return lines
+    if len(t)>2:
+        for i in ax_data:
+            for j,k in izip(i[2],i[0]):
+                j.set_data(t,k)
+        return lines
+    else:
+        return ()
 
 
 def drawer(gui2drawerQueue):
@@ -112,9 +115,7 @@ def drawer(gui2drawerQueue):
                 [cmpsvo, cmpsvo_ax, cmpsvo_l],
                 [cmpmot, cmpmot_ax, cmpmot_l],
               ]
-    lines = ()
-    for i in ax_data:
-        lines += i[2]
+    lines = rigpos_l+acmpos_l+cmpsvo_l+cmpmot_l
 
     fig1.subplots_adjust(wspace=0.3,hspace=0.1)
 
