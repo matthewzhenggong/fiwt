@@ -378,6 +378,8 @@ class ExpData(object):
                         self.CMP_servo2, self.CMP_svoref2,
                         self.CMP_servo3, self.CMP_svoref3,
                         self.CMP_servo4, self.CMP_svoref4,
-                        self.Vel, self.DP
+                        self.Vel, self.DP,
+                        self.CMP_mot1, self.CMP_mot2, #41 42
+                        self.CMP_mot3, self.CMP_mot4,
                         ]})
 
