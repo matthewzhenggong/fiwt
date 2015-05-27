@@ -106,7 +106,7 @@ xxxx:
             parameters->StartTime = ((cmd[7] << 8) | cmd[8]) / TASK_PERIOD;
             parameters->NofCycles = cmd[11];
             for (i = 0; i < 6; ++i) {
-                parameters->MaxValue[i] = (cmd[12 + i] << 1);
+                parameters->MaxValue[i] = (cmd[12 + i] << 2);
             }
             for (i = 0; i < 6; ++i) {
                 parameters->MinValue[i] = (cmd[18 + i] << 1);
