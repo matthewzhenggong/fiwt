@@ -121,6 +121,10 @@ class ExpData(object):
         self.RigRollPos = 0
         self.RigPitchPos = 0
         self.RigYawPos = 0
+        self.CMP_mot1 = 0
+        self.CMP_mot2 = 0
+        self.CMP_mot3 = 0
+        self.CMP_mot4 = 0
 
         self.RigRollPosRate = 0
         self.RigPitchPosRate = 0
