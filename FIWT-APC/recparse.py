@@ -20,10 +20,10 @@ CODE_GNDBOARD_MANI_READ = 0x45
 
 CODE_AEROCOMP_SERV_CMD = 0xA6
 
-packCODE_GNDBOARD_ADCM_READ = struct.Struct('>B4Hi2hI')
+packCODE_GNDBOARD_ADCM_READ = struct.Struct('>B4Hi2hQ')
 packCODE_GNDBOARD_MANI_READ = struct.Struct('>B2f')
-packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hI6h6hf')
-packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HI4h4hf')
+packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hQ6h6hf')
+packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HQ4h4hf')
 packCODE_AEROCOMP_SERV_CMD = struct.Struct('>Bf7f')
 
 class fileParser(object):
