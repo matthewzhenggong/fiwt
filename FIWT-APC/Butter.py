@@ -31,9 +31,20 @@ class Butter(object):
         self.C = np.array([0.0407,   0.7045])
         self.D = 0.0036
         self.X = np.array([[0.0],[0.0]])
+        self.circle = 0
+        self.U0 = 0
 
     def update(self, U):
-        self.X = np.dot(self.A,self.X) + np.dot(self.B,U)
-        y = np.dot(self.C,self.X) + np.dot(self.D,U)
-        return y[0]
+        while U+self.circle - self.U0 > 180:
+            self.circle -= 360
+        while U+self.circle - self.U0 < -180:
+            self.circle = 360
+        self.U0 = U+self.circle
+        self.X = np.dot(self.A,self.X) + np.dot(self.B,self.U0)
+        y = np.dot(self.C,self.X) + np.dot(self.D,self.U0)
+        YC = Y = y[0]%360
+        if YC > 180:
+            YC -= 360
+        return Y,YC
+
 
