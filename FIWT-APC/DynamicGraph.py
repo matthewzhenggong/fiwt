@@ -59,6 +59,12 @@ def run(dat, queue, t,ax_data,lines):
     d = ax_data[3][0]
     for i in xrange(4):
         d[i].append(data[41+i])
+    d = ax_data[4][0]
+    for i in xrange(10):
+        d[i].append(data[19+i])
+    d = ax_data[5][0]
+    for i in xrange(5):
+        d[i].append(data[45+i])
     if len(t)>2:
         for i in ax_data:
             for j,k in izip(i[2],i[0]):
@@ -73,6 +79,8 @@ def drawer(gui2drawerQueue):
     Worker process to draw data
     """
     fig1,axarr = plt.subplots(3,2,sharex=True)
+    mngr = plt.get_current_fig_manager()
+    mngr.window.wm_geometry("700x800+720+0")
 
     t = []
 
@@ -80,6 +88,7 @@ def drawer(gui2drawerQueue):
     rigpos_ax = axarr[0][0]
     rigpos_l = rigpos_ax.plot(t, rigpos[0], 'r-',t, rigpos[1], 'g-',
             t, rigpos[2], 'b-')
+    rigpos_ax.grid(True)
     rigpos_ax.set_xlim(0, 10)
     rigpos_ax.set_ylim(-180, 180)
     rigpos_ax.set_ylabel(r'$RigPos/^o$')
@@ -88,16 +97,18 @@ def drawer(gui2drawerQueue):
     acmpos_ax = axarr[0][1]
     acmpos_l = acmpos_ax.plot(t, acmpos[0], 'r-',t, acmpos[1], 'g-',
             t, acmpos[2], 'b-')
+    acmpos_ax.grid(True)
     acmpos_ax.set_xlim(0, 10)
     acmpos_ax.set_ylim(-90, 90)
     acmpos_ax.set_ylabel(r'$AcmPos/^o$')
 
     cmpsvo = [[],[],[],[],[],[],[],[]]
     cmpsvo_ax = axarr[1][0]
-    cmpsvo_l = cmpsvo_ax.plot(t, cmpsvo[0], 'r-',t, cmpsvo[1], 'r--',
-            t, cmpsvo[2], 'b-', t, cmpsvo[3], 'b--',
-            t, cmpsvo[4], 'g-', t, cmpsvo[5], 'g--',
-            t, cmpsvo[6], 'm-', t, cmpsvo[7], 'm--')
+    cmpsvo_l = cmpsvo_ax.plot(t, cmpsvo[0], 'r-',t, cmpsvo[1], 'r:',
+            t, cmpsvo[2], 'b-', t, cmpsvo[3], 'b:',
+            t, cmpsvo[4], 'g-', t, cmpsvo[5], 'g:',
+            t, cmpsvo[6], 'm-', t, cmpsvo[7], 'm:')
+    cmpsvo_ax.grid(True)
     cmpsvo_ax.set_xlim(0, 10)
     cmpsvo_ax.set_ylim(-50, 50)
     cmpsvo_ax.set_ylabel(r'$CmpServo/^o$')
@@ -106,16 +117,42 @@ def drawer(gui2drawerQueue):
     cmpmot_ax = axarr[1][1]
     cmpmot_l = cmpmot_ax.plot(t, cmpmot[0], 'r-', t, cmpmot[1], 'b-',
             t, cmpmot[2], 'g-', t, cmpmot[3], 'm-')
+    cmpmot_ax.grid(True)
     cmpmot_ax.set_xlim(0, 10)
     cmpmot_ax.set_ylim(-1000, 1000)
     cmpmot_ax.set_ylabel(r'$CmpMot$')
+
+    acmsvo = [[],[],[],[],[],[],[],[],[],[]]
+    acmsvo_ax = axarr[2][0]
+    acmsvo_l = acmsvo_ax.plot(t, acmsvo[0], 'r-',t, acmsvo[1], 'r:',
+            t, acmsvo[2], 'b-', t, acmsvo[3], 'b:',
+            t, acmsvo[4], 'g-', t, acmsvo[5], 'g:',
+            t, acmsvo[6], 'm-', t, acmsvo[7], 'm:',
+            t, acmsvo[8], 'm-', t, acmsvo[9], 'c:')
+    acmsvo_ax.grid(True)
+    acmsvo_ax.set_xlim(0, 10)
+    acmsvo_ax.set_ylim(-30, 30)
+    acmsvo_ax.set_ylabel(r'$AcmServo/^o$')
+    acmsvo_ax.set_xlabel(r'$T/s$')
+
+    acmmot = [[],[],[],[],[]]
+    acmmot_ax = axarr[2][1]
+    acmmot_l = acmmot_ax.plot(t, acmmot[0], 'r-', t, acmmot[1], 'b-',
+            t, acmmot[2], 'g-', t, acmmot[3], 'm-', t, acmmot[4], 'c-')
+    acmmot_ax.grid(True)
+    acmmot_ax.set_xlim(0, 10)
+    acmmot_ax.set_ylim(-1000, 1000)
+    acmmot_ax.set_ylabel(r'$AcmMot$')
+    acmmot_ax.set_xlabel(r'$T/s$')
 
     ax_data = [ [rigpos, rigpos_ax, rigpos_l],
                 [acmpos, acmpos_ax, acmpos_l],
                 [cmpsvo, cmpsvo_ax, cmpsvo_l],
                 [cmpmot, cmpmot_ax, cmpmot_l],
+                [acmsvo, acmsvo_ax, acmsvo_l],
+                [acmmot, acmmot_ax, acmmot_l],
               ]
-    lines = rigpos_l+acmpos_l+cmpsvo_l+cmpmot_l
+    lines = rigpos_l+acmpos_l+cmpsvo_l+cmpmot_l+acmsvo_l+acmmot_l
 
     fig1.subplots_adjust(wspace=0.3,hspace=0.1)
 
