@@ -118,6 +118,12 @@ def cmd_A5(self, cmd):
 def cmd_reset_rig(self, cmd):
     self.expData.resetRigAngel()
 
+def cmd_emergency_stop(self, cmd):
+    pass
+
+def cmd_emergency_cancelled(self, cmd):
+    pass
+
 process_funcs = {'START':msg_start,
     'STOP':msg_stop,
     'REC_START':cmd_rec_start,
@@ -129,5 +135,7 @@ process_funcs = {'START':msg_start,
     'CLEAR':cmd_clear,
     'RESET_RIG':cmd_reset_rig,
     'A5':cmd_A5,
+    'EMERGENCY_STOP':cmd_emergency_stop,
+    'EMERGENCY_CANCELED':cmd_emergency_cancelled,
     }
 

@@ -33,6 +33,8 @@ import json
 from wx.lib.newevent import NewEvent
 import wx.lib.agw.pygauge as PG
 
+from embed_images import ES
+
 # New Event Declarations
 LogEvent, EVT_LOG = NewEvent()
 RxStaEvent, EVT_STAT = NewEvent()
@@ -151,6 +153,8 @@ class MyFrame(wx.Frame):
 
         # 1st menu from left
         menu1 = wx.Menu()
+        menu_ES = menu1.Append(wx.ID_ANY, "&Emergency Stop\tCTRL+E", "Emergency Stop")
+        menu_ER = menu1.Append(wx.ID_ANY, "Emergency &Cancel\tCTRL+C", "Emergency Canceled")
         menu1.AppendSeparator()
         menu_close = menu1.Append(wx.ID_ANY, "&Close\tCTRL+Q", "Close this frame")
         # Add menu to the menu bar
@@ -323,9 +327,12 @@ Unused bits must be set to 0.  '''))
 
         box = wx.BoxSizer(wx.HORIZONTAL)
 
+        boxV = wx.BoxSizer(wx.VERTICAL)
         self.btnTM = wx.Button(panel, -1, "Servo Command", size=(100, -1))
         self.btnTM.Enable(False)
-        box.Add(self.btnTM, 0, wx.ALIGN_CENTER, 5)
+        boxV.Add(self.btnTM, 0, wx.ALIGN_CENTER, 5)
+        box.Add(boxV, 0, wx.ALIGN_CENTER, 5)
+
         boxV = wx.BoxSizer(wx.VERTICAL)
 
         boxH = wx.BoxSizer(wx.HORIZONTAL)
@@ -532,6 +539,14 @@ Unused bits must be set to 0.  '''))
 
         box.Add(boxV, 0, wx.ALIGN_CENTER, 5)
 
+        boxV = wx.BoxSizer(wx.VERTICAL)
+        self.btnES = wx.BitmapButton(panel, -1, bitmap=ES.getBitmap(), size=(100, -1))
+        self.btnES.Enable(False)
+        self.btnES.SetBackgroundColour(wx.RED)
+        boxV.Add(self.btnES, 1, wx.ALIGN_CENTER|wx.EXPAND, 5)
+        box.Add(boxV, 1, wx.ALIGN_CENTER|wx.EXPAND, 5)
+
+
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         self.btnResetRig = wx.Button(panel, -1, "Reset Rig Position")
@@ -615,6 +630,9 @@ Unused bits must be set to 0.  '''))
         self.Bind(EVT_GND_DAT, self.OnGNDDat)
         self.Bind(EVT_EXP_DAT, self.OnExpDat)
         self.Bind(wx.EVT_BUTTON, self.OnTestMotor, self.btnTM)
+        self.Bind(wx.EVT_BUTTON, self.OnES, self.btnES)
+        self.Bind(wx.EVT_MENU, self.OnES, menu_ES)
+        self.Bind(wx.EVT_MENU, self.OnER, menu_ER)
         self.Bind(wx.EVT_BUTTON, self.OnRstRig, self.btnResetRig)
 
 
@@ -724,6 +742,7 @@ Unused bits must be set to 0.  '''))
         self.btnRmtAT.Enable(True)
         self.btnTX.Enable(True)
         self.btnTM.Enable(True)
+        self.btnES.Enable(True)
         self.btnResetRig.Enable(True)
 
     def OnRecALL(self, event) :
@@ -844,6 +863,12 @@ Unused bits must be set to 0.  '''))
 
     def OnRstRig(self, event):
         self.gui2msgcQueue.put({'ID': 'RESET_RIG'})
+
+    def OnES(self, event):
+        self.gui2msgcQueue.put({'ID': 'EMERGENCY_STOP'})
+
+    def OnER(self, event):
+        self.gui2msgcQueue.put({'ID': 'EMERGENCY_CANCELED'})
 
     def OnTestMotor(self, event):
         InputType = self.InputType.GetSelection()+1
