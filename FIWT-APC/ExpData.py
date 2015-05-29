@@ -108,14 +108,14 @@ class ExpData(object):
         self.ACM_roll = 0
         self.ACM_yaw = 0
 
-        self.ACM_pitch0 = 180
-        self.ACM_roll0 = 4964
+        self.ACM_pitch0 = 180+1.45*4095/180.0
+        self.ACM_roll0 = 4964+1.2*4095/180.0
         self.ACM_yaw0 = 0
 
         self.ACMScale = 180/4096.0
         self.CMPScale = 180/4096.0
         self.EncScale = 180/4096.0
-        self.RigScale = 120/3873.0
+        self.RigScale = 360/3873.0*160/167.0
         self.RigScaleYZ = 360/4095.0
 
         self.RigRollPos = 0
@@ -125,6 +125,12 @@ class ExpData(object):
         self.CMP_mot2 = 0
         self.CMP_mot3 = 0
         self.CMP_mot4 = 0
+        self.ACM_mot1 = 0
+        self.ACM_mot2 = 0
+        self.ACM_mot3 = 0
+        self.ACM_mot4 = 0
+        self.ACM_mot5 = 0
+        self.ACM_mot6 = 0
 
         self.RigRollPosRate = 0
         self.RigPitchPosRate = 0
@@ -135,6 +141,9 @@ class ExpData(object):
         self.RigRollPosButt = Butter()
         self.RigPitchPosButt = Butter()
         self.RigYawPosButt = Butter()
+        self.RigRollPosLast = 0
+        self.RigPitchPosLast = 0
+        self.RigYawPosLast = 0
 
         self.ACM_pitch_rate = 0
         self.ACM_roll_rate = 0
@@ -142,6 +151,9 @@ class ExpData(object):
         self.ACM_pitch_filtered = 0
         self.ACM_roll_filtered = 0
         self.ACM_yaw_filtered = 0
+        self.ACM_pitch_last = 0
+        self.ACM_roll_last = 0
+        self.ACM_yaw_last = 0
         self.ACM_pitch_butt = Butter()
         self.ACM_roll_butt = Butter()
         self.ACM_yaw_butt = Butter()
@@ -166,15 +178,15 @@ class ExpData(object):
         self.RigRollPos = self.RigRollRawPos*self.RigScale
         self.RigPitchPos = self.RigPitchRawPos*self.RigScaleYZ
         self.RigYawPos = self.RigYawRawPos*self.RigScaleYZ
-        roll = self.RigRollPosButt.update(self.RigRollPos)
-        pitch = self.RigPitchPosButt.update(self.RigPitchPos)
-        yaw = self.RigYawPosButt.update(self.RigYawPos)
-        self.RigRollPosRate = (roll - self.RigRollPosFiltered)/dt
-        self.RigPitchPosRate = (pitch - self.RigPitchPosFiltered)/dt
-        self.RigYawPosRate = (yaw - self.RigYawPosFiltered)/dt
-        self.RigRollPosFiltered = roll
-        self.RigPitchPosFiltered = pitch
-        self.RigYawPosFiltered = yaw
+        roll,self.RigRollPosFiltered = self.RigRollPosButt.update(self.RigRollPos)
+        pitch,self.RigPitchPosFiltered = self.RigPitchPosButt.update(self.RigPitchPos)
+        yaw,self.RigYawPosFiltered = self.RigYawPosButt.update(self.RigYawPos)
+        self.RigRollPosRate = (roll - self.RigRollPosLast)/dt
+        self.RigPitchPosRate = (pitch - self.RigPitchPosLast)/dt
+        self.RigYawPosRate = (yaw - self.RigYawPosLast)/dt
+        self.RigRollPosLast = roll
+        self.RigPitchPosLast = pitch
+        self.RigYawPosLast = yaw
 
         self.update2GUI(ts_ADC)
 
@@ -242,15 +254,15 @@ class ExpData(object):
         self.ACM_CmdTime = CmdTime
 
 
-        pitch = self.ACM_pitch_butt.update(self.ACM_pitch)
-        roll = self.ACM_roll_butt.update(self.ACM_roll)
-        yaw = self.ACM_yaw_butt.update(self.ACM_yaw)
-        self.ACM_pitch_rate = (pitch - self.ACM_pitch_filtered)/dt
-        self.ACM_roll_rate = (roll - self.ACM_roll_filtered)/dt
-        self.ACM_yaw_rate = (yaw - self.ACM_yaw_filtered)/dt
-        self.ACM_pitch_filtered = pitch
-        self.ACM_roll_filtered = roll
-        self.ACM_yaw_filtered = yaw
+        pitch,self.ACM_pitch_filtered = self.ACM_pitch_butt.update(self.ACM_pitch)
+        roll,self.ACM_roll_filtered = self.ACM_roll_butt.update(self.ACM_roll)
+        yaw,self.ACM_yaw_filtered = self.ACM_yaw_butt.update(self.ACM_yaw)
+        self.ACM_pitch_rate = (pitch - self.ACM_pitch_last)/dt
+        self.ACM_roll_rate = (roll - self.ACM_roll_last)/dt
+        self.ACM_yaw_rate = (yaw - self.ACM_yaw_last)/dt
+        self.ACM_pitch_last = pitch
+        self.ACM_roll_last = roll
+        self.ACM_yaw_last = yaw
 
         self.update2GUI(ts_ADC)
 
@@ -342,10 +354,10 @@ class ExpData(object):
         self.xbee_network.send(dataA5,self.ACM_node)
         ts2 = getMicroseconds()-self.parent.T0
 
-        self.CMP_servo1_cmd = self.CMP_servo1_0 + da_cmp +de_cmp
-        self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp -dr_cmp
-        self.CMP_servo3_cmd = self.CMP_servo3_0 + da_cmp -de_cmp
-        self.CMP_servo4_cmd = self.CMP_servo4_0 + da_cmp +dr_cmp
+        self.CMP_servo1_cmd = self.CMP_servo1_0 + da_cmp +de_cmp-dr_cmp
+        self.CMP_servo2_cmd = self.CMP_servo2_0 + da_cmp -de_cmp-dr_cmp
+        self.CMP_servo3_cmd = self.CMP_servo3_0 + da_cmp -de_cmp+dr_cmp
+        self.CMP_servo4_cmd = self.CMP_servo4_0 + da_cmp +de_cmp+dr_cmp
 
         dataA6 = self.A5.pack(0xA6, time_token, 1, self.CMP_servo1_cmd,
                 self.CMP_servo2_cmd, self.CMP_servo3_cmd, self.CMP_servo4_cmd,
@@ -385,5 +397,8 @@ class ExpData(object):
                         self.Vel, self.DP,
                         self.CMP_mot1, self.CMP_mot2, #41 42
                         self.CMP_mot3, self.CMP_mot4,
+                        self.ACM_mot1, self.ACM_mot2,
+                        self.ACM_mot3, self.ACM_mot4,
+                        self.ACM_mot5, self.ACM_mot6,
                         ]})
 
