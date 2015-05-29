@@ -27,9 +27,13 @@ import numpy as np
 from scipy import interpolate
 
 
-bat_volt = np.array([3,3.58, 3.7, 3.74, 3.78, 3.8, 3.88, 4.09, 4.18, 4.2,4.3])
-bat_pct = np.array([5, 5, 9, 15, 17, 23, 55, 95, 99, 100,100])
-bat_interp1d = interpolate.interp1d(bat_volt, bat_pct, bounds_error=False, fill_value=0)
+bat_acm_volt = np.array([3,3.58, 3.7, 3.74, 3.78, 3.8, 3.88, 4.09, 4.18, 4.2,4.3])
+bat_acm_pct = np.array([5, 5, 9, 15, 17, 23, 55, 95, 99, 100,100])
+bat_acm_interp1d = interpolate.interp1d(bat_acm_volt, bat_acm_pct, bounds_error=False, fill_value=0)
+
+bat_cmp_volt = np.array([3,3.5, 3.6, 3.66, 3.7, 3.72, 4.0, 4.2, 4.5])
+bat_cmp_pct = np.array( [5,  5,  10,  44,   52,  57,   92, 100,100])
+bat_cmp_interp1d = interpolate.interp1d(bat_cmp_volt, bat_cmp_pct, bounds_error=False, fill_value=0)
 
 process_funcs = {}
 
@@ -115,7 +119,7 @@ def process_CODE_AEROCOMP_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     if Id == CODE_AEROCOMP_STATS:
         B1v = 0.0199*B1-0.0772
         B3v = (0.0377*B3+0.3571)-B1v
-        batpct = int(bat_interp1d(B1v))
+        batpct = int(bat_cmp_interp1d(B1v))
         info = 'CMP states NTP{}/{} B{:d}/{:d}/{:d}(ADC) B{:04.2f}/{:04.2f}(V) Load{}/{}/{}'.format(
             NTP_delay, NTP_offset, B1, B2, B3, B1v, B3v, load_sen, load_rsen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'CMP_STA', 'info':info, 'batpct':batpct})
@@ -132,7 +136,7 @@ def process_CODE_AC_MODEL_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
     if Id == CODE_AC_MODEL_STATS:
         B1v = 0.0192*B1+0.28065
         B3v = (0.0589*B3+0.456946)-B1v
-        batpct = int(bat_interp1d(B1v))
+        batpct = int(bat_acm_interp1d(B1v))
         info = 'ACM states NTP{}/{} B{:04.2f}/{:04.2f}(V) Load{}/{}/{}'.format(
             NTP_delay, NTP_offset, B1v, B3v, load_sen, load_rsen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'ACM_STA', 'info':info, 'batpct':batpct})
