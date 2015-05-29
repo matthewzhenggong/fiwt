@@ -136,16 +136,18 @@ void UpdateRigPos(void) {
         int16_t CurRigPitchPos;
         int16_t CurRigYawPos;
 
-        CurRigRollPos = -(RigPos[0]-2220);
+        CurRigRollPos = -(RigPos[0]-2048)-112;
         CurRigPitchPos = (RigPos[2]-2657);
         CurRigYawPos = -(RigPos[3]-3669);
 
-        diff = CurRigRollPos-LastRigRollPos;
-        if (diff < 256 && diff > -256)
-        {
-            RigRollPos = updateAngle32(CurRigRollPos, &RigRollLoop, RigRollPos);
-        }
-        LastRigRollPos = CurRigRollPos;
+//        diff = CurRigRollPos-LastRigRollPos;
+//        if (diff < 256 && diff > -256)
+//        {
+//            //RigRollPos = updateAngle32(CurRigRollPos, &RigRollLoop, RigRollPos);
+//            RigRollPos = CurRigRollPos;
+//        }
+//        LastRigRollPos = CurRigRollPos;
+        RigRollPos = CurRigRollPos;
 
         RigPitchPos = CurRigPitchPos;
 
