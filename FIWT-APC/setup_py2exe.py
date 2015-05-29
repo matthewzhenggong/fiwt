@@ -4,6 +4,7 @@ import py2exe
 
 import sys
 import os
+sys.setrecursionlimit(5000)
 
 manifest='''<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
 <assembly xmlns='urn:schemas-microsoft-com:asm.v1' manifestVersion='1.0'>
@@ -44,23 +45,21 @@ shutil.rmtree("build", ignore_errors=True)
 shutil.rmtree("dist", ignore_errors=True)
 
 # my setup.py is based on one generated with gui2exe, so data_files is done a bit differently
-includes = ['numpy']
-excludes = ['_gtkagg', '_tkagg', 'bsddb', 'curses', 'pywin.debugger',
-            'pywin.debugger.dbgcon', 'pywin.dialogs', 'tcl',
-            'Tkconstants', 'Tkinter', 'pydoc', 'doctest', 'test', 'sqlite3'
-            ]
+includes = ['numpy','scipy','psutil',
+    r'scipy.sparse.csgraph._validation',
+    r'scipy.special._ufuncs_cxx']
+excludes = [ ]
 packages = []
-dll_excludes = ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll', 'tcl84.dll',
-                'tk84.dll']
+dll_excludes = ["MSVCR80.dll","MSVCP80.dll",
+    "IPHLPAPI.DLL", "NSI.dll",  "WINNSI.DLL",  "WTSAPI32.dll"]
 icon_resources = []
 bitmap_resources = []
 other_resources = []
 
 
 # add the mpl mpl-data folder and rc file
-#import matplotlib as mpl
-#data_files = mpl.get_py2exe_datafiles()
-data_files = []
+import matplotlib as mpl
+data_files = mpl.get_py2exe_datafiles()
 
 options = {"py2exe":  
             {   "compressed": 2,  
@@ -92,11 +91,5 @@ setup(
     
     )  
 
-try :
-    os.remove('AccessPointCenter.exe')
-except :
-    pass
-shutil.copy('dist\\AccessPointCenter.exe', '.')
 shutil.rmtree("build", ignore_errors=True)
-shutil.rmtree("dist", ignore_errors=True)
 
