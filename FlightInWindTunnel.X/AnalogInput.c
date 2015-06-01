@@ -138,7 +138,7 @@ void UpdateRigPos(void) {
 
         CurRigRollPos = -(RigPos[0]-2048)-112;
         CurRigPitchPos = (RigPos[2]-2657);
-        CurRigYawPos = -(RigPos[3]-3669);
+        CurRigYawPos = -(RigPos[3]-1610);
 
 //        diff = CurRigRollPos-LastRigRollPos;
 //        if (diff < 256 && diff > -256)
