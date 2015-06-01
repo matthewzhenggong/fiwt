@@ -31,7 +31,7 @@ class Manimeter(object):
         self.parent = parent
         try:
             self.serial_port = serial.Serial(port=port_name,
-                    baudrate=baudrate, timeout=5)
+                    baudrate=baudrate, timeout=2)
         except:
             self.serial_port = None
             traceback.print_exc()
