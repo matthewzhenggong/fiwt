@@ -968,12 +968,12 @@ Unused bits must be set to 0.  '''))
                      | (8 if self.Srv2Move4.GetValue() else 0) \
                      | (16 if self.Srv2Move5.GetValue() else 0) \
                      | (32 if self.Srv2Move6.GetValue() else 0)
-            others = [ int(float(self.MaxValue1.GetValue()*4096/180.0/4.0)),
-                       int(float(self.MaxValue2.GetValue()*4096/180.0/4.0)),
-                       int(float(self.MaxValue3.GetValue()*4096/180.0/4.0)),
-                       int(float(self.MaxValue4.GetValue()*4096/180.0/4.0)),
-                       int(float(self.MaxValue5.GetValue()*4096/180.0/4.0)),
-                       int(float(self.MaxValue6.GetValue()*4096/180.0/4.0)),
+            others = [ int(float(self.MaxValue1.GetValue())*4096/180.0/4.0),
+                       int(float(self.MaxValue2.GetValue())*4096/180.0/4.0),
+                       int(float(self.MaxValue3.GetValue())*4096/180.0/4.0),
+                       int(float(self.MaxValue4.GetValue())*4096/180.0/4.0),
+                       int(float(self.MaxValue5.GetValue())*4096/180.0/4.0),
+                       int(float(self.MaxValue6.GetValue())*4096/180.0/4.0),
                        float(self.MinValue1.GetValue()),
                        float(self.MinValue2.GetValue()),
                        float(self.MinValue3.GetValue()),
@@ -992,8 +992,8 @@ Unused bits must be set to 0.  '''))
                 deltatime = int(int(self.TimeDelta.GetValue())*1000/(1024.0*8))
             elif InputType in [8,9]:
                 deltatime = int(int(self.TimeDelta.GetValue())*1000/(1024.0*4))
+                others[6] = int(others[6]*25)
                 others[7] = int(others[7]*25)
-                others[8] = int(others[8]*25)
             else:
                 deltatime = int(int(self.TimeDelta.GetValue())*1000/1024.0)
             nofcyc = int(self.NofCycles.GetValue())
