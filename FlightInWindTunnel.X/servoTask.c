@@ -235,7 +235,7 @@ PT_THREAD(servoLoop)(TaskHandle_p task) {
                         if (k < 0.0f) k = 0.0f; else if (k > 1.0f) k = 1.0f;
                         omega = min_omega+(max_omega-min_omega)*k;
 
-                        tht += (omega+last_omega) * 0.005;
+                        tht += (omega+last_omega) * 0.002048;
                         sfun = sin(tht);
                         last_omega = omega;
                     }

@@ -374,13 +374,13 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move1, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MaxValue1 = wx.TextCtrl(panel, -1, "100",
+        self.MaxValue1 = wx.TextCtrl(panel, -1, "5.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MaxValue1, 0, wx.ALIGN_CENTER, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinFreq"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MinValue1 = wx.TextCtrl(panel, -1, "100",
+        self.MinValue1 = wx.TextCtrl(panel, -1, "1.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MinValue1, 0, wx.ALIGN_CENTER, 5)
@@ -403,13 +403,13 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move2, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MaxValue2 = wx.TextCtrl(panel, -1, "100",
+        self.MaxValue2 = wx.TextCtrl(panel, -1, "5.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MaxValue2, 0, wx.ALIGN_CENTER, 5)
-        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MinValue"), 0,
+        boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxFreq"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MinValue2 = wx.TextCtrl(panel, -1, "100",
+        self.MinValue2 = wx.TextCtrl(panel, -1, "1.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MinValue2, 0, wx.ALIGN_CENTER, 5)
@@ -432,7 +432,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move3, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MaxValue3 = wx.TextCtrl(panel, -1, "100",
+        self.MaxValue3 = wx.TextCtrl(panel, -1, "5.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MaxValue3, 0, wx.ALIGN_CENTER, 5)
@@ -461,7 +461,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move4, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MaxValue4 = wx.TextCtrl(panel, -1, "100",
+        self.MaxValue4 = wx.TextCtrl(panel, -1, "5.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MaxValue4, 0, wx.ALIGN_CENTER, 5)
@@ -490,7 +490,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move5, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MaxValue5 = wx.TextCtrl(panel, -1, "100",
+        self.MaxValue5 = wx.TextCtrl(panel, -1, "5.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MaxValue5, 0, wx.ALIGN_CENTER, 5)
@@ -519,7 +519,7 @@ Unused bits must be set to 0.  '''))
         boxH.Add(self.Srv2Move6, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         boxH.Add(wx.StaticText(panel, wx.ID_ANY, "MaxValue"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        self.MaxValue6 = wx.TextCtrl(panel, -1, "100",
+        self.MaxValue6 = wx.TextCtrl(panel, -1, "5.0",
                                    size=(50, -1),
                                    validator=MyValidator(DIGIT_ONLY))
         boxH.Add(self.MaxValue6, 0, wx.ALIGN_CENTER, 5)
@@ -634,7 +634,9 @@ Unused bits must be set to 0.  '''))
         self.Bind(wx.EVT_MENU, self.OnES, menu_ES)
         self.Bind(wx.EVT_MENU, self.OnER, menu_ER)
         self.Bind(wx.EVT_BUTTON, self.OnRstRig, self.btnResetRig)
+        self.Bind(wx.EVT_CHOICE, self.OnInputType, self.InputType)
 
+        self.OnInputType(None)
 
         # Set some program flags
         self.keepgoing = True
@@ -870,6 +872,80 @@ Unused bits must be set to 0.  '''))
     def OnER(self, event):
         self.gui2msgcQueue.put({'ID': 'EMERGENCY_CANCELED'})
 
+    def OnInputType(self, event):
+        InputType = self.InputType.GetSelection()+1
+        if InputType == 1:
+            self.StartTime.Enable(False)
+            self.TimeDelta.Enable(False)
+            self.NofCycles.Enable(False)
+            self.ServoRef1.Enable(True)
+            self.Srv2Move1.Enable(False)
+            self.MaxValue1.Enable(False)
+            self.MinValue1.Enable(False)
+            self.Sign1.Enable(False)
+            self.ServoRef2.Enable(True)
+            self.Srv2Move2.Enable(False)
+            self.MaxValue2.Enable(False)
+            self.MinValue2.Enable(False)
+            self.Sign2.Enable(False)
+            self.ServoRef3.Enable(True)
+            self.Srv2Move3.Enable(False)
+            self.MaxValue3.Enable(False)
+            self.MinValue3.Enable(False)
+            self.Sign3.Enable(False)
+            self.ServoRef4.Enable(True)
+            self.Srv2Move4.Enable(False)
+            self.MaxValue4.Enable(False)
+            self.MinValue4.Enable(False)
+            self.Sign4.Enable(False)
+            self.ServoRef5.Enable(True)
+            self.Srv2Move5.Enable(False)
+            self.MaxValue5.Enable(False)
+            self.MinValue5.Enable(False)
+            self.Sign5.Enable(False)
+            self.ServoRef6.Enable(True)
+            self.Srv2Move6.Enable(False)
+            self.MaxValue6.Enable(False)
+            self.MinValue6.Enable(False)
+            self.Sign6.Enable(False)
+        else:
+            self.StartTime.Enable(True)
+            self.TimeDelta.Enable(True)
+            self.NofCycles.Enable(True)
+            self.ServoRef1.Enable(False)
+            self.Srv2Move1.Enable(True)
+            self.MaxValue1.Enable(True)
+            self.MinValue1.Enable(False)
+            self.Sign1.Enable(True)
+            self.ServoRef2.Enable(False)
+            self.Srv2Move2.Enable(True)
+            self.MaxValue2.Enable(True)
+            self.MinValue2.Enable(False)
+            self.Sign2.Enable(True)
+            self.ServoRef3.Enable(False)
+            self.Srv2Move3.Enable(True)
+            self.MaxValue3.Enable(True)
+            self.MinValue3.Enable(False)
+            self.Sign3.Enable(True)
+            self.ServoRef4.Enable(False)
+            self.Srv2Move4.Enable(True)
+            self.MaxValue4.Enable(True)
+            self.MinValue4.Enable(False)
+            self.Sign4.Enable(True)
+            self.ServoRef5.Enable(False)
+            self.Srv2Move5.Enable(True)
+            self.MaxValue5.Enable(True)
+            self.MinValue5.Enable(False)
+            self.Sign5.Enable(True)
+            self.ServoRef6.Enable(False)
+            self.Srv2Move6.Enable(True)
+            self.MaxValue6.Enable(True)
+            self.MinValue6.Enable(False)
+            self.Sign6.Enable(True)
+            if InputType in [8,9]:
+                self.MinValue1.Enable(True)
+                self.MinValue2.Enable(True)
+
     def OnTestMotor(self, event):
         InputType = self.InputType.GetSelection()+1
         if self.target == 'CMP' :
@@ -892,18 +968,18 @@ Unused bits must be set to 0.  '''))
                      | (8 if self.Srv2Move4.GetValue() else 0) \
                      | (16 if self.Srv2Move5.GetValue() else 0) \
                      | (32 if self.Srv2Move6.GetValue() else 0)
-            others = [ int(self.MaxValue1.GetValue()),
-                       int(self.MaxValue2.GetValue()),
-                       int(self.MaxValue3.GetValue()),
-                       int(self.MaxValue4.GetValue()),
-                       int(self.MaxValue5.GetValue()),
-                       int(self.MaxValue6.GetValue()),
-                       int(self.MinValue1.GetValue()),
-                       int(self.MinValue2.GetValue()),
-                       int(self.MinValue3.GetValue()),
-                       int(self.MinValue4.GetValue()),
-                       int(self.MinValue5.GetValue()),
-                       int(self.MinValue6.GetValue()),
+            others = [ int(float(self.MaxValue1.GetValue()*4096/180.0/4.0)),
+                       int(float(self.MaxValue2.GetValue()*4096/180.0/4.0)),
+                       int(float(self.MaxValue3.GetValue()*4096/180.0/4.0)),
+                       int(float(self.MaxValue4.GetValue()*4096/180.0/4.0)),
+                       int(float(self.MaxValue5.GetValue()*4096/180.0/4.0)),
+                       int(float(self.MaxValue6.GetValue()*4096/180.0/4.0)),
+                       float(self.MinValue1.GetValue()),
+                       float(self.MinValue2.GetValue()),
+                       float(self.MinValue3.GetValue()),
+                       float(self.MinValue4.GetValue()),
+                       float(self.MinValue5.GetValue()),
+                       float(self.MinValue6.GetValue()),
                        int(self.Sign1.GetValue()),
                        int(self.Sign2.GetValue()),
                        int(self.Sign3.GetValue()),
@@ -911,8 +987,15 @@ Unused bits must be set to 0.  '''))
                        int(self.Sign5.GetValue()),
                        int(self.Sign6.GetValue()),
                      ]
-            starttime = int(self.StartTime.GetValue())
-            deltatime = int(self.TimeDelta.GetValue())
+            starttime = int(int(self.StartTime.GetValue())*1000/1024.0)
+            if InputType == 5:
+                deltatime = int(int(self.TimeDelta.GetValue())*1000/(1024.0*8))
+            elif InputType in [8,9]:
+                deltatime = int(int(self.TimeDelta.GetValue())*1000/(1024.0*4))
+                others[7] = int(others[7]*25)
+                others[8] = int(others[8]*25)
+            else:
+                deltatime = int(int(self.TimeDelta.GetValue())*1000/1024.0)
             nofcyc = int(self.NofCycles.GetValue())
             data = struct.pack('>Bf2B2HB6B6B6B', Id, 0.0, InputType, Srv2Move,
                     starttime, deltatime, nofcyc, *others)
