@@ -42,7 +42,8 @@ class Butter(object):
         self.U0 = U+self.circle
         self.X = np.dot(self.A,self.X) + np.dot(self.B,self.U0)
         y = np.dot(self.C,self.X) + np.dot(self.D,self.U0)
-        YC = Y = y[0]%360
+        Y = y[0]
+        YC = Y%360
         if YC > 180:
             YC -= 360
         return Y,YC
