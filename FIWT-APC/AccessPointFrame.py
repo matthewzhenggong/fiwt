@@ -154,7 +154,7 @@ class MyFrame(wx.Frame):
         # 1st menu from left
         menu1 = wx.Menu()
         menu_ES = menu1.Append(wx.ID_ANY, "&Emergency Stop\tCTRL+E", "Emergency Stop")
-        menu_ER = menu1.Append(wx.ID_ANY, "Emergency &Cancel\tCTRL+C", "Emergency Canceled")
+        menu_ER = menu1.Append(wx.ID_ANY, "Emergency &Cancel", "Emergency Canceled")
         menu1.AppendSeparator()
         menu_close = menu1.Append(wx.ID_ANY, "&Close\tCTRL+Q", "Close this frame")
         # Add menu to the menu bar

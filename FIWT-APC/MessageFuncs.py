@@ -119,10 +119,12 @@ def cmd_reset_rig(self, cmd):
     self.expData.resetRigAngel()
 
 def cmd_emergency_stop(self, cmd):
-    pass
+    self.emergency_stop = False
+    self.expData.sendCommand(0, 0, 0, 0, 0, 0, 0, 0)
+    self.emergency_stop = True
 
 def cmd_emergency_cancelled(self, cmd):
-    pass
+    self.emergency_stop = False
 
 process_funcs = {'START':msg_start,
     'STOP':msg_stop,

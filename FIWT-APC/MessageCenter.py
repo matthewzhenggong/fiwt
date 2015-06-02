@@ -45,6 +45,7 @@ class RedirectText(object):
 
 class Worker(object):
     def __init__(self, gui2msgcQueue, msgc2guiQueue):
+        self.emergency_stop = False
         self.gui2msgcQueue = gui2msgcQueue
         self.msgc2guiQueue = msgc2guiQueue
         self.socklist = []

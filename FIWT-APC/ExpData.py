@@ -316,6 +316,8 @@ class ExpData(object):
         self.CMP_mot4 = ServoCtrl4
         self.CMP_CmdTime = CmdTime
 
+        if self.parent:
+            self.parent.matlab_link.write(self)
         self.update2GUI(ts_ADC)
 
     def getCMPdata(self):
@@ -334,6 +336,9 @@ class ExpData(object):
                         + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
     def sendCommand(self, time_token, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
+        if self.parent.emergency_stop:
+            return
+
         ts1 = getMicroseconds()-self.parent.T0
         da = int(dac/self.ACMScale)
         dea = int(deac/self.ACMScale)
