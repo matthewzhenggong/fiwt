@@ -84,6 +84,7 @@ def process_CODE_GNDBOARD_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
         info = 'GND states NTP{}/{} Load{}/{}'.format(
             NTP_delay, NTP_offset, load_sen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'GND_STA', 'info':info})
+        self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 
 process_funcs[CODE_GNDBOARD_STATS] = process_CODE_GNDBOARD_STATS
@@ -123,6 +124,7 @@ def process_CODE_AEROCOMP_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
         info = 'CMP states NTP{}/{} B{:d}/{:d}/{:d}(ADC) B{:04.2f}/{:04.2f}(V) Load{}/{}/{}'.format(
             NTP_delay, NTP_offset, B1, B2, B3, B1v, B3v, load_sen, load_rsen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'CMP_STA', 'info':info, 'batpct':batpct})
+        self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 
 process_funcs[CODE_AEROCOMP_STATS] = process_CODE_AEROCOMP_STATS
@@ -140,6 +142,7 @@ def process_CODE_AC_MODEL_STATS(self, rf_data, gen_ts, sent_ts, recv_ts, addr):
         info = 'ACM states NTP{}/{} B{:04.2f}/{:04.2f}(V) Load{}/{}/{}'.format(
             NTP_delay, NTP_offset, B1v, B3v, load_sen, load_rsen, load_msg)
         self.msgc2guiQueue.put_nowait({'ID':'ACM_STA', 'info':info, 'batpct':batpct})
+        self.parent.save(rf_data, gen_ts, sent_ts, recv_ts, addr)
 
 
 process_funcs[CODE_AC_MODEL_STATS] = process_CODE_AC_MODEL_STATS

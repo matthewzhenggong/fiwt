@@ -102,7 +102,8 @@ class Worker(object):
 
     def save(self,rf_data, gen_ts, sent_ts, recv_ts, addr):
         if self.fileALL:
-            head = self.packHdr.pack(0x7e, gen_ts, sent_ts, recv_ts, addr[1],len(rf_data))
+            head = self.packHdr.pack(0x7e, gen_ts, sent_ts, recv_ts,
+                    int(addr[0].split('.')[-1]),len(rf_data))
             self.writing = True
             self.fileALL.write(head)
             self.fileALL.write(rf_data)

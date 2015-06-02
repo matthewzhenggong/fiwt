@@ -205,7 +205,7 @@ class ExpData(object):
                 "RigYawRawPos", "RigYawPos",
                 "RigYawPosFiltered", "RigYawPosRate",
                 "Vel", "DP"] \
-                        + ["gen_ts", "sent_ts", "recv_ts", "port"]
+                        + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
     def getGNDdata(self):
         return [self.GND_ADC_TS, self.RigRollRawPos, self.RigRollPos,
@@ -264,6 +264,8 @@ class ExpData(object):
         self.ACM_roll_last = roll
         self.ACM_yaw_last = yaw
 
+        if self.parent:
+            self.parent.matlab_link.write(self)
         self.update2GUI(ts_ADC)
 
     def getACMdata(self):
@@ -291,7 +293,7 @@ class ExpData(object):
                 "GX", "GY", "GZ", "AX", "AY", "AZ",
                 "ACM_mot1", "ACM_mot2", "ACM_mot3", "ACM_mot4",
                 "ACM_mot5", "ACM_mot6"] \
-                        + ["gen_ts", "sent_ts", "recv_ts", "port"]
+                        + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
 
     def updateCMP(self, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
@@ -329,7 +331,7 @@ class ExpData(object):
                 "CMP_svoref3", "CMP_servo3", "CMP_svoref4",
                 "CMP_servo4", "CMP_mot1", "CMP_mot2",
                 "CMP_mot3", "CMP_mot4"] \
-                        + ["gen_ts", "sent_ts", "recv_ts", "port"]
+                        + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
     def sendCommand(self, time_token, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
         ts1 = getMicroseconds()-self.parent.T0
