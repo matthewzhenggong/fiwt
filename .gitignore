@@ -17,3 +17,5 @@ materials/
 workspace/
 
 *.npz
+*.m
+*.slx
