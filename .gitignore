@@ -16,3 +16,4 @@ materials/
 
 workspace/
 
+*.npz
