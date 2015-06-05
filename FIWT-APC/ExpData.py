@@ -159,7 +159,7 @@ class ExpData(object):
         self.ACM_yaw_butt = Butter()
 
         self.A5 = struct.Struct('>BfB6H')
-        self.AA = struct.Struct('>Bf7f')
+        self.AA = struct.Struct('>Bf8f')
         self.last_update_ts = 0
 
     def resetRigAngel(self):
@@ -195,7 +195,12 @@ class ExpData(object):
         self.DP = dp
 
     def getCMDhdr(self):
-        return ['TS', 'Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']
+        return ['TS', 'Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']\
+                        + ["gen_ts", "sent_ts", "recv_ts", "addr"]
+
+    def getCMD2hdr(self):
+        return ['TS', 'CMD_TS','Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']\
+                        + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
     def getGNDhdr(self):
         return ["GND_ADC_TS", "RigRollRawPos", "RigRollPos",
@@ -372,7 +377,7 @@ class ExpData(object):
         self.xbee_network.send(dataA6,self.CMP_node)
         ts3 = getMicroseconds()-self.parent.T0
 
-        data = self.AA.pack(0xA6, time_token, dac, deac, dec, drc,
+        data = self.AA.pack(0xA5, ts1*1e-6, time_token, dac, deac, dec, drc,
                 dac_cmp, dec_cmp, drc_cmp)
         self.parent.save(data, ts1, ts2, ts3, ['192.168.191.1',0])
 
