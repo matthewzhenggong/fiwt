@@ -30,7 +30,6 @@ import gc
 from utils import getMicroseconds, getHighPriorityLevel
 
 from MessageFuncs import process_funcs
-from ExpData import ExpData
 
 class RedirectText(object):
     def __init__(self, msg_queue):
@@ -53,7 +52,6 @@ class Worker(object):
         self.mano = None
         self.fileALL = None
         self.packHdr = struct.Struct(">B3I2H")
-        self.expData = ExpData(self, msgc2guiQueue)
         self.max_dt = 0
 
         #logging

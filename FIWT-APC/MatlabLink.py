@@ -33,6 +33,7 @@ class MatlabLink(object):
         self.host = '127.0.0.1'
         local_port = ports[0]
         remote_port = ports[1]
+        extra_inputs = len(ports[2].split())
 
         self.rx_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.rx_udp.bind((self.host,local_port))
@@ -43,7 +44,7 @@ class MatlabLink(object):
         self.tx_udp.setblocking(0)
         self.tx_udp_addr = (self.host,remote_port)
 
-        self.rx_pack = struct.Struct("<d4d3d")
+        self.rx_pack = struct.Struct("<d4d3d{}d".format(extra_inputs))
         self.tx_pack = struct.Struct("<40d")
 
     def getReadList(self):
@@ -73,13 +74,7 @@ class MatlabLink(object):
 
     def read(self, rlist, recv_ts):
         if self.rx_udp in rlist:
-            try:
-                (dat,address)=self.rx_udp.recvfrom(1000)
-                time_token, da, dea, de, dr, da_cmp, de_cmp, dr_cmp \
-                        = self.rx_pack.unpack(dat)
-                self.expData.sendCommand(time_token, da, dea, de, dr,
-                        da_cmp, de_cmp, dr_cmp)
-                exp = self.expData
-            except:
-                pass
+            (dat,address)=self.rx_udp.recvfrom(1000)
+            data = self.rx_pack.unpack(dat)
+            self.expData.sendCommand(*data)
 

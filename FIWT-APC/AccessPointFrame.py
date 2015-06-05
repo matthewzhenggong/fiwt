@@ -209,7 +209,8 @@ class MyFrame(wx.Frame):
 
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Simulink Tx port:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtMatlabRx = wx.TextCtrl(panel, -1, "9090",
+        self.txtMatlabRx = wx.TextCtrl(panel, -1,
+                parser.get('simulink','tx'), size=(100,-1),
                 validator=MyValidator(DIGIT_ONLY))
         box.Add(self.txtMatlabRx, 0, wx.ALIGN_CENTER, 5)
 
@@ -231,7 +232,8 @@ class MyFrame(wx.Frame):
 
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Simulink Rx port:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
-        self.txtMatlabTx = wx.TextCtrl(panel, -1, "8080",
+        self.txtMatlabTx = wx.TextCtrl(panel, -1,
+                parser.get('simulink','rx'), size=(100,-1),
                 validator=MyValidator(DIGIT_ONLY))
         box.Add(self.txtMatlabTx, 0, wx.ALIGN_CENTER, 5)
 
@@ -250,6 +252,13 @@ class MyFrame(wx.Frame):
         self.ggCMPbat.SetDrawValue(draw=True, drawPercent=True, font=wx.SMALL_FONT, colour=wx.BLUE)
         box.Add(self.ggCMPbat, 0, wx.ALIGN_CENTER|wx.LEFT, 5)
         box.AddStretchSpacer()
+
+        box.Add(wx.StaticText(panel, wx.ID_ANY, "Simulink ExtraInputs:"), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
+        self.txtMatlabExtra = wx.TextCtrl(panel, -1,
+                parser.get('simulink','extra'), size=(100,-1),
+                validator=MyValidator(DIGIT_ONLY))
+        box.Add(self.txtMatlabExtra, 0, wx.ALIGN_CENTER, 5)
 
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
@@ -667,6 +676,9 @@ Unused bits must be set to 0.  '''))
         parser.set('host','ACM', self.txtACMhost.GetValue())
         parser.set('host','CMP', self.txtCMPhost.GetValue())
         parser.set('rec','prefix', self.txtRecName.GetValue())
+        parser.set('simulink','tx', self.txtMatlabRx.GetValue())
+        parser.set('simulink','rx', self.txtMatlabTx.GetValue())
+        parser.set('simulink','extra', self.txtMatlabExtra.GetValue())
         cfg = open('config.ini', 'w')
         parser.write(cfg)
         cfg.close()
@@ -727,7 +739,8 @@ Unused bits must be set to 0.  '''))
                 self.txtACMhost.GetValue(), self.txtCMPhost.GetValue()],
             'xbee_port': 0x2000, 'mano_port': self.txtCOM.GetValue(),
             'matlab_ports': [int(self.txtMatlabRx.GetValue()),
-                int(self.txtMatlabTx.GetValue())],
+                int(self.txtMatlabTx.GetValue()),
+                self.txtMatlabExtra.GetValue()],
                 })
 
         self.btnStart.Enable(False)
@@ -738,6 +751,7 @@ Unused bits must be set to 0.  '''))
         self.txtCMPhost.Enable(False)
         self.txtMatlabRx.Enable(False)
         self.txtMatlabTx.Enable(False)
+        self.txtMatlabExtra.Enable(False)
         self.btnALLrec.Enable(True)
         self.btnBaseTime.Enable(True)
         self.btnGNDsynct.Enable(True)

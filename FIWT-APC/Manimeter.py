@@ -29,12 +29,13 @@ import traceback
 class Manimeter(object):
     def __init__(self, parent, port_name, baudrate=4800):
         self.parent = parent
+        self.log = parent.parent.log
         try:
             self.serial_port = serial.Serial(port=port_name,
                     baudrate=baudrate, timeout=2)
         except:
             self.serial_port = None
-            traceback.print_exc()
+            self.log.error(traceback.format_exc())
         if self.serial_port:
             self.running = True
             self.msg_thread = threading.Thread(target=self.processMsg)
@@ -54,7 +55,7 @@ class Manimeter(object):
                     props[seg[i].strip('\"')] = (float(seg[i+1]), seg[i+2])
                 except:
                     pass
-            print len(data),data
+            self.log.info(data)
             if self.parent:
                 if 'Velocity' in props:
                     self.parent.Vel = props['Velocity'][0]

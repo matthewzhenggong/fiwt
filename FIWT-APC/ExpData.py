@@ -43,7 +43,9 @@ def getPeriodDiff(EncPos, EncPos0, peroid=2**13):
     return diff
 
 class ExpData(object):
-    def __init__(self, parent, msgc2guiQueue):
+    def __init__(self, parent, msgc2guiQueue, extra_simulink_inputs):
+        extra_num = len(extra_simulink_inputs)
+        self.extra_simulink_inputs = extra_simulink_inputs
         self.parent = parent
         self.RigRollRawPos = 0
         self.RigRollPos0 = 0
@@ -159,7 +161,7 @@ class ExpData(object):
         self.ACM_yaw_butt = Butter()
 
         self.A5 = struct.Struct('>BfB6H')
-        self.AA = struct.Struct('>Bf8f')
+        self.AA = struct.Struct('>Bf8f{}f'.format(extra_num))
         self.last_update_ts = 0
 
     def resetRigAngel(self):
@@ -201,6 +203,9 @@ class ExpData(object):
     def getCMD2hdr(self):
         return ['TS', 'CMD_TS','Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']\
                         + ["gen_ts", "sent_ts", "recv_ts", "addr"]
+
+    def getCMD3hdr(self):
+        return ['TS', 'CMD_TS','Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp'] + self.extra_simulink_inputs + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
     def getGNDhdr(self):
         return ["GND_ADC_TS", "RigRollRawPos", "RigRollPos",
@@ -340,7 +345,8 @@ class ExpData(object):
                 "CMP_mot3", "CMP_mot4"] \
                         + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
-    def sendCommand(self, time_token, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp):
+    def sendCommand(self, time_token, dac, deac, dec, drc, dac_cmp, dec_cmp,
+            drc_cmp, *extra):
         if self.parent.emergency_stop:
             return
 
@@ -377,8 +383,8 @@ class ExpData(object):
         self.xbee_network.send(dataA6,self.CMP_node)
         ts3 = getMicroseconds()-self.parent.T0
 
-        data = self.AA.pack(0xA5, ts1*1e-6, time_token, dac, deac, dec, drc,
-                dac_cmp, dec_cmp, drc_cmp)
+        data = self.AA.pack(0xA7, ts1*1e-6, time_token, dac, deac, dec, drc,
+                dac_cmp, dec_cmp, drc_cmp, *extra)
         self.parent.save(data, ts1, ts2, ts3, ['192.168.191.1',0])
 
     def update2GUI(self, ts_ADC):

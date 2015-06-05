@@ -29,10 +29,16 @@ from XBeeWifiNetwork import XBeeNetwork
 from utils import getMicroseconds
 
 import Manimeter
+from ExpData import ExpData
 
 def msg_start(self, cmd):
     if not self.ready:
         self.log.info('Starting...')
+        self.extra_simulink_inputs = cmd['matlab_ports'][2].split()
+        self.extra_simulink_input_number = len(self.extra_simulink_inputs)
+        self.zero_vector = [0]*self.extra_simulink_input_number
+        self.expData = ExpData(self, self.msgc2guiQueue,
+                self.extra_simulink_inputs)
         self.host = cmd['xbee_hosts'][0]
         self.node_addr = { 'GND': (cmd['xbee_hosts'][1],cmd['xbee_port']),
                 'ACM': (cmd['xbee_hosts'][2],cmd['xbee_port']),
@@ -103,7 +109,8 @@ def cmd_command(self, cmd):
     da_cmp = cmd['da_cmp']
     de_cmp = cmd['de_cmp']
     dr_cmp = cmd['dr_cmp']
-    self.expData.sendCommand(0, da, dea, de, dr, da_cmp, de_cmp, dr_cmp)
+    self.expData.sendCommand(0, da, dea, de, dr, da_cmp, de_cmp, dr_cmp,
+            *self.zero_vector)
 
 def cmd_clear(self, cmd):
     self.xbee_network.arrv_cnt = -1
@@ -120,7 +127,7 @@ def cmd_reset_rig(self, cmd):
 
 def cmd_emergency_stop(self, cmd):
     self.emergency_stop = False
-    self.expData.sendCommand(0, 0, 0, 0, 0, 0, 0, 0)
+    self.expData.sendCommand(0, 0, 0, 0, 0, 0, 0, 0,*self.zero_vector)
     self.emergency_stop = True
 
 def cmd_emergency_cancelled(self, cmd):
