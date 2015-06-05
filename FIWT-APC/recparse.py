@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io as syio
 import struct
 import time
-
+import glob
 import ExpData
 
 def Get14bit(val) :
@@ -18,6 +18,7 @@ CODE_AEROCOMP_SERVO_POS = 0x33
 CODE_GNDBOARD_ADCM_READ = 0x44
 CODE_GNDBOARD_MANI_READ = 0x45
 
+CODE_AEROCOMP_SERV_CMD2 = 0xA5
 CODE_AEROCOMP_SERV_CMD = 0xA6
 
 CODE_GNDBOARD_STATS = 0x76
@@ -29,6 +30,7 @@ packCODE_GNDBOARD_MANI_READ = struct.Struct('>B2f')
 packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hQ6h6hf')
 packCODE_AEROCOMP_SERVO_POS = struct.Struct('>B4H4HQ4h4hf')
 packCODE_AEROCOMP_SERV_CMD = struct.Struct('>Bf7f')
+packCODE_AEROCOMP_SERV_CMD2 = struct.Struct('>Bf8f')
 
 packCODE_GNDBOARD_STATS = struct.Struct('>B2h2H')
 packCODE_AEROCOMP_STATS = struct.Struct('>B2h3B3H')
@@ -42,6 +44,7 @@ class fileParser(object):
 
         self.head22 = np.array(self.expData.getACMhdr(), dtype=np.object)
         self.head33 = np.array(self.expData.getCMPhdr(), dtype=np.object)
+        self.headA5 = np.array(self.expData.getCMD2hdr(), dtype=np.object)
         self.headA6 = np.array(self.expData.getCMDhdr(), dtype=np.object)
         self.head44 = np.array(self.expData.getGNDhdr(), dtype=np.object)
         self.head76 = np.array(['ID', 'delay', 'offset',
@@ -81,6 +84,11 @@ class fileParser(object):
                     ADC_TimeStamp = packCODE_GNDBOARD_ADCM_READ.unpack(rf_data)
             self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp)
             self.data44.append(self.expData.getGNDdata() + [gen_ts, sent_ts, recv_ts, addr])
+        elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD2 :
+            Id, TimeStamp, cmd_ts, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp = packCODE_AEROCOMP_SERV_CMD2.unpack(rf_data)
+            TS = TimeStamp
+            self.dataA5.append([TS, cmd_ts, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp,
+                gen_ts, sent_ts, recv_ts, addr])
         elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD :
             Id, TimeStamp, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp = packCODE_AEROCOMP_SERV_CMD.unpack(rf_data)
             TS = TimeStamp
@@ -103,6 +111,7 @@ class fileParser(object):
         self.data22 = []
         self.data33 = []
         self.data44 = []
+        self.dataA5 = []
         self.dataA6 = []
         self.data76 = []
         with open(filename, 'rb') as f:
@@ -118,11 +127,13 @@ class fileParser(object):
                 head = f.read(17)
         self.data22 = np.array(self.data22)
         self.data33 = np.array(self.data33)
+        self.dataA5 = np.array(self.dataA5)
         self.dataA6 = np.array(self.dataA6)
         self.data44 = np.array(self.data44)
         self.data76 = np.array(self.data76)
         return {'data22':self.data22,'data33':self.data33,
                 'head22':self.head22,'head33':self.head33,
+                'headA5':self.headA5,'dataA5':self.dataA5,
                 'headA6':self.headA6,'dataA6':self.dataA6,
                 'head44':self.head44,'data44':self.data44,
                 'head76':self.head76,'data76':self.data76,
@@ -132,11 +143,15 @@ if __name__=='__main__' :
     parser = argparse.ArgumentParser(
         prog='recparse',
         description='parse rec data file')
+    parser.add_argument('-c', '--config', metavar='file',
+            nargs='?', help='config filename')
     parser.add_argument('filenames', metavar='file',
             nargs='+', help='data filename')
     args = parser.parse_args()
     p = fileParser()
-    for filename in args.filenames :
-        mat_data = p.parse_file(filename)
-        syio.savemat(filename+'.mat', mat_data)
+    for name in args.filenames :
+        for filename in glob.glob(name):
+            mat_data = p.parse_file(filename)
+            syio.savemat(filename+'.mat', mat_data)
+            np.savez_compressed(filename, **mat_data)
 
