@@ -830,11 +830,22 @@ Unused bits must be set to 0.  '''))
         'RigPitch{15:07.2f} RigPitchRate{16:07.2f}').format(*states)
         self.txtExpDat.SetLabel(txt)
         msgs = {'data': {
-                    'VC': states[39]*10,
+                    'VC': states[39],
                     'VG': states[40],
                     'heading': states[13],
+                    'NAV':{ 'SLG': states[15]*10,
+                        'CTE': states[17]*10 },
                     'roll': states[7],
-                    'pitch': states[9]} }
+                    'pitch': states[9],
+                    'AoS': -states[11],
+                    'AoA': states[9],
+                    'Ma': states[7],
+                    'GLoad':-states[6],
+                    'ASL': states[15],
+                    'AGL': states[17],
+                    'T': states[0],
+                    'mode': 'FIWT',
+                    } }
         self.aclink.sendto(json.dumps(msgs), self.aclink_addr)
 
     def OnSaveLog(self, event):
