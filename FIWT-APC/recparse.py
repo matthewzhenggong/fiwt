@@ -94,7 +94,7 @@ class fileParser(object):
                 gen_ts, sent_ts, recv_ts, addr])
         elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD3 :
             data = packCODE_AEROCOMP_SERV_CMD3.unpack(rf_data)
-            self.dataA7.append(list(data(1:))+[gen_ts, sent_ts, recv_ts, addr])
+            self.dataA7.append(list(data[1:])+[gen_ts, sent_ts, recv_ts, addr])
         elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD :
             Id, TimeStamp, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp = packCODE_AEROCOMP_SERV_CMD.unpack(rf_data)
             TS = TimeStamp
@@ -160,6 +160,8 @@ if __name__=='__main__' :
     parser = SafeConfigParser()
     parser.read(args.config)
     extra_simulink_inputs = parser.get('simulink','extra').split()
+    global packCODE_AEROCOMP_SERV_CMD3
+    packCODE_AEROCOMP_SERV_CMD3 = struct.Struct('>Bf8f{}f'.format(len(extra_simulink_inputs)))
     p = fileParser(extra_simulink_inputs)
     for name in args.filenames :
         for filename in glob.glob(name):
