@@ -27,6 +27,13 @@ from Butter import Butter
 import time
 from utils import getMicroseconds
 
+def lim40(data):
+    if data > 40:
+        data = 40
+    elif data < -40:
+        data = -40
+    return data
+
 def Get14bit(val) :
     if val & 0x2000 :
         return -(((val & 0x1FFF)^0x1FFF)+1)
@@ -349,6 +356,14 @@ class ExpData(object):
             drc_cmp, *extra):
         if self.parent.emergency_stop:
             return
+
+        dac = lim40(dac)
+        dec = lim40(dec)
+        drc = lim40(drc)
+        deac = lim40(deac)
+        dac_cmp = lim40(dac_cmp)
+        dec_cmp = lim40(dec_cmp)
+        drc_cmp = lim40(drc_cmp)
 
         ts1 = getMicroseconds()-self.parent.T0
         da = int(dac/self.ACMScale)
