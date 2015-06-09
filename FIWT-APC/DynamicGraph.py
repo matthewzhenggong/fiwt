@@ -65,6 +65,12 @@ def run(dat, queue, t,ax_data,lines):
     d = ax_data[5][0]
     for i in xrange(5):
         d[i].append(data[45+i])
+    d = ax_data[6][0]
+    for i in range(3):
+        d[i].append(data[14+i*2])
+    d = ax_data[7][0]
+    for i in range(3):
+        d[i].append(data[8+i*2])
     if len(t)>2:
         for i in ax_data:
             for j,k in izip(i[2],i[0]):
@@ -78,7 +84,7 @@ def drawer(gui2drawerQueue):
     """
     Worker process to draw data
     """
-    fig1,axarr = plt.subplots(3,2,sharex=True)
+    fig1,axarr = plt.subplots(4,2,sharex=True)
     mngr = plt.get_current_fig_manager()
     mngr.window.wm_geometry("700x800+720+0")
 
@@ -93,8 +99,17 @@ def drawer(gui2drawerQueue):
     rigpos_ax.set_ylim(-180, 180)
     rigpos_ax.set_ylabel(r'$RigPos/^o$')
 
+    rigrate = [[],[],[]]
+    rigrate_ax = axarr[0][1]
+    rigrate_l = rigrate_ax.plot(t, rigrate[0], 'r-',t, rigrate[1], 'g-',
+            t, rigrate[2], 'b-')
+    rigrate_ax.grid(True)
+    rigrate_ax.set_xlim(0, 10)
+    rigrate_ax.set_ylim(-380, 380)
+    rigrate_ax.set_ylabel(r'$RigRate / ^o/s$')
+
     acmpos = [[],[],[]]
-    acmpos_ax = axarr[0][1]
+    acmpos_ax = axarr[1][0]
     acmpos_l = acmpos_ax.plot(t, acmpos[0], 'r-',t, acmpos[1], 'g-',
             t, acmpos[2], 'b-')
     acmpos_ax.grid(True)
@@ -102,8 +117,17 @@ def drawer(gui2drawerQueue):
     acmpos_ax.set_ylim(-90, 90)
     acmpos_ax.set_ylabel(r'$AcmPos/^o$')
 
+    acmrate = [[],[],[]]
+    acmrate_ax = axarr[1][1]
+    acmrate_l = acmrate_ax.plot(t, acmrate[0], 'r-',t, acmrate[1], 'g-',
+            t, acmrate[2], 'b-')
+    acmrate_ax.grid(True)
+    acmrate_ax.set_xlim(0, 10)
+    acmrate_ax.set_ylim(-380, 380)
+    acmrate_ax.set_ylabel(r'$AcmPos / ^o/s$')
+
     cmpsvo = [[],[],[],[],[],[],[],[]]
-    cmpsvo_ax = axarr[1][0]
+    cmpsvo_ax = axarr[2][0]
     cmpsvo_l = cmpsvo_ax.plot(t, cmpsvo[0], 'r-',t, cmpsvo[1], 'r:',
             t, cmpsvo[2], 'b-', t, cmpsvo[3], 'b:',
             t, cmpsvo[4], 'g-', t, cmpsvo[5], 'g:',
@@ -114,7 +138,7 @@ def drawer(gui2drawerQueue):
     cmpsvo_ax.set_ylabel(r'$CmpServo/^o$')
 
     cmpmot = [[],[],[],[]]
-    cmpmot_ax = axarr[1][1]
+    cmpmot_ax = axarr[2][1]
     cmpmot_l = cmpmot_ax.plot(t, cmpmot[0], 'r-', t, cmpmot[1], 'b-',
             t, cmpmot[2], 'g-', t, cmpmot[3], 'm-')
     cmpmot_ax.grid(True)
@@ -123,7 +147,7 @@ def drawer(gui2drawerQueue):
     cmpmot_ax.set_ylabel(r'$CmpMot$')
 
     acmsvo = [[],[],[],[],[],[],[],[],[],[]]
-    acmsvo_ax = axarr[2][0]
+    acmsvo_ax = axarr[3][0]
     acmsvo_l = acmsvo_ax.plot(t, acmsvo[0], 'r-',t, acmsvo[1], 'r:',
             t, acmsvo[2], 'b-', t, acmsvo[3], 'b:',
             t, acmsvo[4], 'g-', t, acmsvo[5], 'g:',
@@ -136,7 +160,7 @@ def drawer(gui2drawerQueue):
     acmsvo_ax.set_xlabel(r'$T/s$')
 
     acmmot = [[],[],[],[],[]]
-    acmmot_ax = axarr[2][1]
+    acmmot_ax = axarr[3][1]
     acmmot_l = acmmot_ax.plot(t, acmmot[0], 'r-', t, acmmot[1], 'b-',
             t, acmmot[2], 'g-', t, acmmot[3], 'm-', t, acmmot[4], 'c-')
     acmmot_ax.grid(True)
@@ -151,8 +175,11 @@ def drawer(gui2drawerQueue):
                 [cmpmot, cmpmot_ax, cmpmot_l],
                 [acmsvo, acmsvo_ax, acmsvo_l],
                 [acmmot, acmmot_ax, acmmot_l],
+                [rigrate, rigrate_ax, rigrate_l],
+                [acmrate, acmrate_ax, acmrate_l],
               ]
-    lines = rigpos_l+acmpos_l+cmpsvo_l+cmpmot_l+acmsvo_l+acmmot_l
+    lines = rigpos_l+rigrate_l+acmpos_l+acmrate_l\
+            +cmpsvo_l+cmpmot_l+acmsvo_l+acmmot_l
 
     fig1.subplots_adjust(wspace=0.3,hspace=0.1)
 
