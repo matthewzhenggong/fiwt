@@ -55,10 +55,10 @@ class Manimeter(object):
                     props[seg[i].strip('\"')] = (float(seg[i+1]), seg[i+2])
                 except:
                     pass
-            self.log.info(data)
             if self.parent:
                 if 'Velocity' in props:
                     self.parent.Vel = props['Velocity'][0]
+                    self.log.info(data)
                 if 'D.P.' in props:
                     self.parent.DP = props['D.P.'][0]
 
