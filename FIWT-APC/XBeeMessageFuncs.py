@@ -165,9 +165,9 @@ def process_CODE_AC_MODEL_SERVO_POS(self, rf_data, gen_ts, sent_ts, recv_ts, add
             cnt[0] = 0
             info = ('ACM {:.3f} rawdat S{:04d}/{:04d}/{:04d}/{:04d}/{:04d}/{:04d} '
             'E{:04d}/{:04d}/{:04d} '
-            'GX{:05d} AY{:05d}').format(ts_ADC*1e-6,
+            'Nx{:d}/Gx{:d} ').format(ts_ADC*1e-6,
                 ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6,
-                EncPos1,EncPos2,EncPos3, Gx,Ny)
+                EncPos1,EncPos2,EncPos3, Nx,Gx)
             self.msgc2guiQueue.put_nowait({'ID':'ACM_DAT', 'info':info})
         else:
             cnt[0] += 1

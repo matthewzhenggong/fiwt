@@ -26,6 +26,7 @@ import math, os, sys, time, types, string, wx
 import threading, logging, struct
 import Queue
 from ConfigParser import SafeConfigParser
+from math import atan2,sqrt
 
 import socket
 import json
@@ -256,8 +257,7 @@ class MyFrame(wx.Frame):
         box.Add(wx.StaticText(panel, wx.ID_ANY, "Simulink ExtraInputs:"), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 1)
         self.txtMatlabExtra = wx.TextCtrl(panel, -1,
-                parser.get('simulink','extra'), size=(100,-1),
-                validator=MyValidator(DIGIT_ONLY))
+                parser.get('simulink','extra'), size=(100,-1))
         box.Add(self.txtMatlabExtra, 0, wx.ALIGN_CENTER, 5)
 
         sizer.Add(box, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
@@ -584,7 +584,7 @@ Unused bits must be set to 0.  '''))
         self.txtCMPDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
         sub_sizer.Add(self.txtCMPDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
-        self.txtExpDat = wx.StaticText(sub_panel, wx.ID_ANY, "")
+        self.txtExpDat = wx.StaticText(sub_panel, wx.ID_ANY, "", size=(100,32))
         sub_sizer.Add(self.txtExpDat, 0, wx.ALIGN_CENTRE | wx.ALL | wx.EXPAND, 1)
 
         sub_panel.SetSizer(sub_sizer)
@@ -841,8 +841,15 @@ Unused bits must be set to 0.  '''))
         states = event.states
         txt = ('ACRoll{7:.2f} ACRollRate{1:.2f} '
         'RigRoll{13:07.2f} RigRollRate{14:07.2f} '
-        'RigPitch{15:07.2f} RigPitchRate{16:07.2f}').format(*states)
-        self.txtExpDat.SetLabel(txt)
+        'RigPitch{15:07.2f} RigPitchRate{16:07.2f}\n').format(*states)
+        Ax = states[4]
+        Ay = states[5]
+        Az = states[6]
+        roll = atan2(-Ay, -Az)*57.3
+        pitch = atan2(Ax,sqrt(Ay*Ay+Az*Az))*57.3
+        txt2 = 'Pitch{:-5.1f}/Roll{:-5.1f}'.format(pitch,roll)
+
+        self.txtExpDat.SetLabel(txt+txt2)
         msgs = {'data': {
                     'VC': states[39],
                     'VG': states[40],
