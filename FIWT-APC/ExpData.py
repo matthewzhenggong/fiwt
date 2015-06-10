@@ -365,8 +365,8 @@ class ExpData(object):
 
         self.ACM_servo1_cmd = self.ACM_servo1_0 - da
         self.ACM_servo2_cmd = self.ACM_servo2_0 - da
-        self.ACM_servo3_cmd = self.ACM_servo3_0 + dr
-        self.ACM_servo4_cmd = self.ACM_servo4_0# + dr
+        self.ACM_servo3_cmd = self.ACM_servo3_0# + dr
+        self.ACM_servo4_cmd = self.ACM_servo4_0 + dr
         self.ACM_servo5_cmd = self.ACM_servo5_0 + de -dea
         self.ACM_servo6_cmd = self.ACM_servo6_0 - de -dea
         dataA5 = self.A5.pack(0xA5, time_token, 1, self.ACM_servo1_cmd,
