@@ -25,7 +25,7 @@ License along with this library.
 import numpy as np
 
 class Butter(object):
-    def __init__(self,rate_lim=2000):
+    def __init__(self,rate_lim=1000):
         self.A = np.array([[0.8299,  -0.1151],[0.1151,   0.9928]])
         self.B = np.array([[0.1628],[0.0102]])
         self.C = np.array([0.0407,   0.7045])
@@ -38,6 +38,7 @@ class Butter(object):
         self.count = 0
         self.Y0 = 0
         self.rate = 0
+        self.last_rate = 0
 
     def update(self, U, dt):
         if dt < 1e06:
@@ -45,25 +46,30 @@ class Butter(object):
         rate_raw = (U-self.U0_raw)/dt
         self.U0_raw = U
         if abs(rate_raw) > self.rate_lim:
-            self.count = 3
+            self.count = 10
         if self.count > 0:
-            U = self.U0-self.circle+self.rate*0.8*dt
+            U = self.U0-self.circle+self.rate*dt
             self.count -= 1
 
         while U+self.circle - self.U0 > 180:
             self.circle -= 360
         while U+self.circle - self.U0 < -180:
-            self.circle = 360
+            self.circle += 360
         self.U0 = U+self.circle
 
         self.X = np.dot(self.A,self.X) + np.dot(self.B,self.U0)
         y = np.dot(self.C,self.X) + np.dot(self.D,self.U0)
         Y = y[0]
-        self.rate = (Y - self.Y0)/dt
+        rate = (Y - self.Y0)/dt
+        if abs(rate-self.last_rate) > 100:
+            rate = self.rate
+        else:
+            self.rate = rate
+        self.last_rate = rate
         self.Y0 = Y
         YC = Y%360
         if YC > 180:
             YC -= 360
-        return self.rate,YC
+        return rate,YC
 
 
