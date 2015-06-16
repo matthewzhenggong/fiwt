@@ -25,11 +25,14 @@ License along with this library.
 import serial
 import threading
 import traceback
+import struct
+from utils import getMicroseconds
 
 class Manimeter(object):
     def __init__(self, parent, port_name, baudrate=4800):
         self.parent = parent
         self.log = parent.parent.log
+        self.AA = struct.Struct('>Bf3f')
         try:
             self.serial_port = serial.Serial(port=port_name,
                     baudrate=baudrate, timeout=2)
@@ -56,11 +59,14 @@ class Manimeter(object):
                 except:
                     pass
             if self.parent:
-                if 'Velocity' in props:
-                    self.parent.Vel = props['Velocity'][0]
-                    self.log.info(data)
-                if 'D.P.' in props:
+                if 'D.P.' in props and 'Velocity' in props:
+                    ts1 = getMicroseconds()-self.parent.parent.T0
+
                     self.parent.DP = props['D.P.'][0]
+                    self.parent.Vel = props['Velocity'][0]
+                    data = self.AA.pack(0xE7, ts1*1e-6, self.parent.Vel, self.parent.DP)
+                    self.parent.parent.save(data, ts1, ts1, ts1, ['192.168.191.1',0])
+                    self.log.info(data)
 
 
 if __name__ == '__main__':

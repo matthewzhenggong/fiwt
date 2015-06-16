@@ -27,6 +27,8 @@ CODE_GNDBOARD_STATS = 0x76
 CODE_AC_MODEL_STATS = 0x77
 CODE_AEROCOMP_STATS = 0x78
 
+CODE_MANO_STATS = 0xE7
+
 packCODE_GNDBOARD_ADCM_READ = struct.Struct('>B4Hi2hQ')
 packCODE_GNDBOARD_MANI_READ = struct.Struct('>B2f')
 packCODE_AC_MODEL_SERVO_POS = struct.Struct('>B6H3H6hQ6h6hf')
@@ -38,6 +40,7 @@ packCODE_GNDBOARD_STATS = struct.Struct('>B2h2H')
 packCODE_AEROCOMP_STATS = struct.Struct('>B2h3B3H')
 packCODE_AC_MODEL_STATS = struct.Struct('>B2h3B3H')
 
+packCODE_MANO_STATS = struct.Struct('>B3f')
 
 class fileParser(object):
     def __init__(self, extra_simulink_inputs):
@@ -112,6 +115,10 @@ class fileParser(object):
             Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AC_MODEL_STATS.unpack( rf_data)
             self.data76.append([CODE_AC_MODEL_STATS, NTP_delay, NTP_offset,
                 gen_ts, sent_ts, recv_ts, addr])
+        elif ord(rf_data[0]) == CODE_MANO_STATS:
+            Id, TimeStamp, Vel, DP = packCODE_MANO_STATS.unpack( rf_data)
+            self.expData.Vel = Vel
+            self.expData.DP = DP
 
     def parse_file(self, filename):
         self.data22 = []
