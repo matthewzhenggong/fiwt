@@ -133,6 +133,12 @@ class fileParser(object):
             while len(head) == 17:
                 header,gen_ts, sent_ts, recv_ts, addr, length \
                         = self.packHdr.unpack(head)
+                while header != 126 or addr not in [1,2,3,4] or length == 0:
+                    print 'bad head'
+                    c = f.read(1)
+                    head = head[1:]+c
+                    header,gen_ts, sent_ts, recv_ts, addr, length \
+                            = self.packHdr.unpack(head)
                 data = f.read(length)
                 if len(data) == length:
                     self.parse_data(gen_ts, sent_ts, recv_ts, addr, data)
