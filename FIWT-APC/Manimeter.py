@@ -32,7 +32,7 @@ class Manimeter(object):
     def __init__(self, parent, port_name, baudrate=4800):
         self.parent = parent
         self.log = parent.parent.log
-        self.AA = struct.Struct('>Bf3f')
+        self.AA = struct.Struct('>B3f')
         try:
             self.serial_port = serial.Serial(port=port_name,
                     baudrate=baudrate, timeout=2)
@@ -64,8 +64,8 @@ class Manimeter(object):
 
                     self.parent.DP = props['D.P.'][0]
                     self.parent.Vel = props['Velocity'][0]
-                    data = self.AA.pack(0xE7, ts1*1e-6, self.parent.Vel, self.parent.DP)
-                    self.parent.parent.save(data, ts1, ts1, ts1, ['192.168.191.1',0])
+                    pkgdata = self.AA.pack(0xE7, ts1*1e-6, self.parent.Vel, self.parent.DP)
+                    self.parent.parent.save(pkgdata, ts1, ts1, ts1, ['192.168.191.1',0])
                     self.log.info(data)
 
 
