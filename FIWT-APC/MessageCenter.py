@@ -104,8 +104,7 @@ class Worker(object):
             head = self.packHdr.pack(0x7e, gen_ts, sent_ts, recv_ts,
                     int(addr[0].split('.')[-1]),len(rf_data))
             self.writing = True
-            self.fileALL.write(head)
-            self.fileALL.write(rf_data)
+            self.fileALL.write(head+rf_data)
             self.writing = False
 
 def worker(gui2msgcQueue, msgc2guiQueue):

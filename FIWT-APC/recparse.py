@@ -57,7 +57,8 @@ class fileParser(object):
             "gen_ts", "sent_ts", "recv_ts", "addr"], dtype=np.object)
 
     def parse_data(self, gen_ts, sent_ts, recv_ts, addr, rf_data):
-        if ord(rf_data[0]) == CODE_AC_MODEL_SERVO_POS:
+        code = ord(rf_data[0])
+        if code == CODE_AC_MODEL_SERVO_POS:
             Id, ServoPos1,ServoPos2,ServoPos3,ServoPos4,ServoPos5,ServoPos6, \
                 EncPos1,EncPos2,EncPos3, Gx,Gy,Gz, Nx,Ny,Nz, ts_ADC, \
                 ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4,ServoCtrl5,ServoCtrl6, \
@@ -69,7 +70,7 @@ class fileParser(object):
                 ServoRef1,ServoRef2,ServoRef3,ServoRef4,ServoRef5,ServoRef6, \
                 CmdTime)
             self.data22.append(self.expData.getACMdata() + [gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_AEROCOMP_SERVO_POS:
+        elif code == CODE_AEROCOMP_SERVO_POS:
             Id, ServoPos1,ServoPos2,ServoPos3,ServoPos4, \
                 EncPos1,EncPos2,EncPos3,EncPos4,ts_ADC, \
                 ServoCtrl1,ServoCtrl2,ServoCtrl3,ServoCtrl4, \
@@ -81,44 +82,46 @@ class fileParser(object):
                 ServoRef1,ServoRef2,ServoRef3,ServoRef4, \
                 CmdTime)
             self.data33.append(self.expData.getCMPdata() + [gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_GNDBOARD_MANI_READ:
+        elif code == CODE_GNDBOARD_MANI_READ:
             Id, Vel, DP = packCODE_GNDBOARD_MANI_READ.unpack(rf_data)
             self.expData.updateMani(Vel, DP)
-        elif ord(rf_data[0]) == CODE_GNDBOARD_ADCM_READ:
+        elif code == CODE_GNDBOARD_ADCM_READ:
             Id, RigPos1, RigPos2, RigPos3, RigPos4, \
                     RigRollPos, RigPitchPos, RigYawPos, \
                     ADC_TimeStamp = packCODE_GNDBOARD_ADCM_READ.unpack(rf_data)
             self.expData.updateRigPos(RigRollPos, RigPitchPos, RigYawPos, ADC_TimeStamp)
             self.data44.append(self.expData.getGNDdata() + [gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD2 :
+        elif code == CODE_AEROCOMP_SERV_CMD2 :
             Id, TimeStamp, cmd_ts, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp = packCODE_AEROCOMP_SERV_CMD2.unpack(rf_data)
             TS = TimeStamp
             self.dataA5.append([TS, cmd_ts, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp,
                 gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD3 :
+        elif code == CODE_AEROCOMP_SERV_CMD3 :
             data = packCODE_AEROCOMP_SERV_CMD3.unpack(rf_data)
             self.dataA7.append(list(data[1:])+[gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_AEROCOMP_SERV_CMD :
+        elif code == CODE_AEROCOMP_SERV_CMD :
             Id, TimeStamp, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp = packCODE_AEROCOMP_SERV_CMD.unpack(rf_data)
             TS = TimeStamp
             self.dataA6.append([TS, dac, deac, dec, drc, dac_cmp, dec_cmp, drc_cmp,
                 gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_GNDBOARD_STATS:
+        elif code == CODE_GNDBOARD_STATS:
             Id, NTP_delay, NTP_offset, load_sen, load_msg = packCODE_GNDBOARD_STATS.unpack(rf_data)
             self.data76.append([CODE_GNDBOARD_STATS, NTP_delay, NTP_offset,
                 gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_AEROCOMP_STATS:
+        elif code == CODE_AEROCOMP_STATS:
             Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AEROCOMP_STATS.unpack( rf_data)
             self.data76.append([CODE_AEROCOMP_STATS, NTP_delay, NTP_offset,
                 gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_AC_MODEL_STATS:
+        elif code == CODE_AC_MODEL_STATS:
             Id, NTP_delay, NTP_offset, B1, B2, B3, load_sen, load_rsen, load_msg = packCODE_AC_MODEL_STATS.unpack( rf_data)
             self.data76.append([CODE_AC_MODEL_STATS, NTP_delay, NTP_offset,
                 gen_ts, sent_ts, recv_ts, addr])
-        elif ord(rf_data[0]) == CODE_MANO_STATS:
+        elif code == CODE_MANO_STATS:
             Id, TimeStamp, Vel, DP = packCODE_MANO_STATS.unpack( rf_data)
             self.expData.Vel = Vel
             self.expData.DP = DP
+        else:
+            print 'unkown code {:02x}'.format(code)
 
     def parse_file(self, filename):
         self.data22 = []
@@ -133,13 +136,27 @@ class fileParser(object):
             while len(head) == 17:
                 header,gen_ts, sent_ts, recv_ts, addr, length \
                         = self.packHdr.unpack(head)
-                while header != 126 or addr not in [1,2,3,4] or length == 0:
-                    print 'bad head'
+                if header != 126 or addr not in [1,2,3,4] or length == 0:
+                    print  ';'.join(['{:02x}'.format(ord(i)) for i in data])
                     c = f.read(1)
+                    print  ':'.join(['{:02x}'.format(ord(i)) for i in head])
+                    c = f.read(1)
+                    print ':{:02x}'.format(ord(c)),
                     head = head[1:]+c
                     header,gen_ts, sent_ts, recv_ts, addr, length \
                             = self.packHdr.unpack(head)
-                data = f.read(length)
+                    while header != 126 or addr not in [1,2,3,4] or length == 0:
+                        c = f.read(1)
+                        print ':{:02x}'.format(ord(c)),
+                        head = head[1:]+c
+                        header,gen_ts, sent_ts, recv_ts, addr, length \
+                                = self.packHdr.unpack(head)
+                    print
+                    data = f.read(length)
+                    print  '.'.join(['{:02x}'.format(ord(i)) for i in data])
+                    print
+                else:
+                    data = f.read(length)
                 if len(data) == length:
                     self.parse_data(gen_ts, sent_ts, recv_ts, addr, data)
                 else:
