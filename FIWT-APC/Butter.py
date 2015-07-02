@@ -46,7 +46,7 @@ class Butter(object):
         rate_raw = (U-self.U0_raw)/dt
         self.U0_raw = U
         if abs(rate_raw) > self.rate_lim:
-            self.count = 10
+            self.count = 1
         if self.count > 0:
             U = self.U0-self.circle+self.rate*dt
             self.count -= 1
@@ -62,7 +62,8 @@ class Butter(object):
         Y = y[0]
         rate = (Y - self.Y0)/dt
         if abs(rate-self.last_rate) > 100:
-            rate = self.rate
+            #rate = self.rate
+            pass
         else:
             self.rate = rate
         self.last_rate = rate

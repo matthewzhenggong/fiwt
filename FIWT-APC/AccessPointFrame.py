@@ -26,7 +26,7 @@ import math, os, sys, time, types, string, wx
 import threading, logging, struct
 import Queue
 from ConfigParser import SafeConfigParser
-from math import atan2,sqrt
+from math import atan2,sqrt,sin,cos
 
 import socket
 import json
@@ -842,12 +842,13 @@ Unused bits must be set to 0.  '''))
         txt = ('ACRoll{7:.2f} ACRollRate{1:.2f} '
         'RigRoll{13:07.2f} RigRollRate{14:07.2f} '
         'RigPitch{15:07.2f} RigPitchRate{16:07.2f}\n').format(*states)
+
         Ax = states[4]
         Ay = states[5]
         Az = states[6]
-        roll = atan2(-Ay, -Az)*57.3
-        pitch = atan2(Ax,sqrt(Ay*Ay+Az*Az))*57.3
-        txt2 = 'Pitch{:-5.1f}/Roll{:-5.1f}'.format(pitch,roll)
+        roll_s = atan2(-Ay, -Az)*57.3
+        pitch_s = atan2(Ax,sqrt(Ay*Ay+Az*Az))*57.3
+        txt2 = 'AoA{:-5.1f}/AoS{:-5.1f} Pitch{:-5.1f}/Roll{:-5.1f} PitchS{:-5.1f}/RollS{:-5.1f}'.format(states[51],states[52], states[53],states[54], pitch_s,roll_s)
 
         self.txtExpDat.SetLabel(txt+txt2)
         msgs = {'data': {
@@ -856,10 +857,10 @@ Unused bits must be set to 0.  '''))
                     'heading': states[13],
                     'NAV':{ 'SLG': states[15]*10,
                         'CTE': states[17]*10 },
-                    'roll': states[7],
-                    'pitch': states[9],
-                    'AoS': -states[11],
-                    'AoA': states[9],
+                    'roll': states[53],
+                    'pitch': states[54],
+                    'AoS': states[52],
+                    'AoA': states[51],
                     'Ma': states[7],
                     'GLoad':-states[6],
                     'ASL': states[15],

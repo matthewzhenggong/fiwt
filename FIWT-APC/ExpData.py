@@ -26,6 +26,8 @@ import math, struct
 from Butter import Butter
 import time
 from utils import getMicroseconds
+import numpy as np
+from math import atan2,sqrt,sin,cos
 
 def lim40(data):
     if data > 40:
@@ -117,7 +119,7 @@ class ExpData(object):
         self.ACM_roll = 0
         self.ACM_yaw = 0
 
-        self.ACM_roll0 = 4896#4964+1.2*4095/180.0
+        self.ACM_roll0 = 5042#4964+1.2*4095/180.0
         self.ACM_pitch0 = 263#180+1.45*4095/180.0
         self.ACM_yaw0 = 6395
 
@@ -161,6 +163,11 @@ class ExpData(object):
         self.ACM_roll_butt = Butter()
         self.ACM_yaw_butt = Butter()
 
+        self.AoA = 0
+        self.AoS = 0
+        self.roll_ac = 0
+        self.pitch_ac = 0
+
         self.A5 = struct.Struct('>BfB6H')
         self.AA = struct.Struct('>Bf8f{}f'.format(extra_num))
         self.last_update_ts = 0
@@ -193,6 +200,38 @@ class ExpData(object):
     def updateMani(self, vel, dp):
         self.Vel = vel
         self.DP = dp
+
+    def updateAoA(self):
+        roll_acm = self.ACM_roll_filtered/57.3
+        pitch_acm = self.ACM_pitch_filtered/57.3
+        yaw_acm = self.ACM_yaw_filtered/57.3
+        roll_rig = self.RigRollPosFiltered/57.3
+        pitch_rig = self.RigPitchPosFiltered/57.3
+        yaw_rig = self.RigYawPosFiltered/57.3
+
+        cos_pitch_acm = cos(pitch_acm)
+        cos_roll_acm = cos(roll_acm)
+        cos_yaw_acm = cos(yaw_acm)
+        cos_pitch_rig = cos(pitch_rig)
+        cos_roll_rig = cos(roll_rig)
+        cos_yaw_rig = cos(yaw_rig)
+        sin_pitch_acm = sin(pitch_acm)
+        sin_roll_acm = sin(roll_acm)
+        sin_yaw_acm = sin(yaw_acm)
+        sin_pitch_rig = sin(pitch_rig)
+        sin_roll_rig = sin(roll_rig)
+        sin_yaw_rig = sin(yaw_rig)
+
+        T = np.array([ [cos_pitch_acm*cos_pitch_rig*cos_yaw_acm*cos_yaw_rig - cos_pitch_acm*sin_yaw_acm*(cos_roll_rig*sin_yaw_rig - cos_yaw_rig*sin_pitch_rig*sin_roll_rig) - sin_pitch_acm*(sin_roll_rig*sin_yaw_rig + cos_roll_rig*cos_yaw_rig*sin_pitch_rig), sin_pitch_acm*(cos_yaw_rig*sin_roll_rig - cos_roll_rig*sin_pitch_rig*sin_yaw_rig) + cos_pitch_acm*sin_yaw_acm*(cos_roll_rig*cos_yaw_rig + sin_pitch_rig*sin_roll_rig*sin_yaw_rig) + cos_pitch_acm*cos_pitch_rig*cos_yaw_acm*sin_yaw_rig, cos_pitch_acm*cos_pitch_rig*sin_roll_rig*sin_yaw_acm - cos_pitch_acm*cos_yaw_acm*sin_pitch_rig - cos_pitch_rig*cos_roll_rig*sin_pitch_acm],
+[ cos_pitch_acm*sin_roll_acm*(sin_roll_rig*sin_yaw_rig + cos_roll_rig*cos_yaw_rig*sin_pitch_rig) - cos_pitch_rig*cos_yaw_rig*(cos_roll_acm*sin_yaw_acm - cos_yaw_acm*sin_pitch_acm*sin_roll_acm) - (cos_roll_acm*cos_yaw_acm + sin_pitch_acm*sin_roll_acm*sin_yaw_acm)*(cos_roll_rig*sin_yaw_rig - cos_yaw_rig*sin_pitch_rig*sin_roll_rig), (cos_roll_acm*cos_yaw_acm + sin_pitch_acm*sin_roll_acm*sin_yaw_acm)*(cos_roll_rig*cos_yaw_rig + sin_pitch_rig*sin_roll_rig*sin_yaw_rig) - cos_pitch_acm*sin_roll_acm*(cos_yaw_rig*sin_roll_rig - cos_roll_rig*sin_pitch_rig*sin_yaw_rig) - cos_pitch_rig*sin_yaw_rig*(cos_roll_acm*sin_yaw_acm - cos_yaw_acm*sin_pitch_acm*sin_roll_acm), sin_pitch_rig*(cos_roll_acm*sin_yaw_acm - cos_yaw_acm*sin_pitch_acm*sin_roll_acm) + cos_pitch_rig*sin_roll_rig*(cos_roll_acm*cos_yaw_acm + sin_pitch_acm*sin_roll_acm*sin_yaw_acm) + cos_pitch_acm*cos_pitch_rig*cos_roll_rig*sin_roll_acm],
+[ (cos_yaw_acm*sin_roll_acm - cos_roll_acm*sin_pitch_acm*sin_yaw_acm)*(cos_roll_rig*sin_yaw_rig - cos_yaw_rig*sin_pitch_rig*sin_roll_rig) + cos_pitch_acm*cos_roll_acm*(sin_roll_rig*sin_yaw_rig + cos_roll_rig*cos_yaw_rig*sin_pitch_rig) + cos_pitch_rig*cos_yaw_rig*(sin_roll_acm*sin_yaw_acm + cos_roll_acm*cos_yaw_acm*sin_pitch_acm), cos_pitch_rig*sin_yaw_rig*(sin_roll_acm*sin_yaw_acm + cos_roll_acm*cos_yaw_acm*sin_pitch_acm) - cos_pitch_acm*cos_roll_acm*(cos_yaw_rig*sin_roll_rig - cos_roll_rig*sin_pitch_rig*sin_yaw_rig) - (cos_yaw_acm*sin_roll_acm - cos_roll_acm*sin_pitch_acm*sin_yaw_acm)*(cos_roll_rig*cos_yaw_rig + sin_pitch_rig*sin_roll_rig*sin_yaw_rig), cos_pitch_acm*cos_pitch_rig*cos_roll_acm*cos_roll_rig - cos_pitch_rig*sin_roll_rig*(cos_yaw_acm*sin_roll_acm - cos_roll_acm*sin_pitch_acm*sin_yaw_acm) - sin_pitch_rig*(sin_roll_acm*sin_yaw_acm + cos_roll_acm*cos_yaw_acm*sin_pitch_acm)]])
+
+        vec_g = np.dot(T,[0,0,1])
+        vec_a = np.dot(T,[1,0,0])
+        self.AoA = atan2(vec_a[2],vec_a[0])*57.3
+        self.AoS = atan2(vec_a[1],sqrt(vec_a[0]**2+vec_a[2]**2))*57.3
+        self.roll_ac = atan2(vec_g[1], vec_g[2])*57.3
+        self.pitch_ac = atan2(-vec_g[0],sqrt(vec_g[1]**2+vec_g[2]**2))*57.3
 
     def getCMDhdr(self):
         return ['TS', 'Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']\
@@ -269,6 +308,7 @@ class ExpData(object):
         self.ACM_yaw_rate,self.ACM_yaw_filtered = \
             self.ACM_yaw_butt.update(self.ACM_yaw, dt)
 
+        self.updateAoA()
         if self.parent:
             self.parent.matlab_link.write(self)
         self.update2GUI(ts_ADC)
@@ -421,5 +461,6 @@ class ExpData(object):
                         self.ACM_mot1, self.ACM_mot2,
                         self.ACM_mot3, self.ACM_mot4,
                         self.ACM_mot5, self.ACM_mot6,
+                        self.AoA, self.AoS, self.roll_ac, self.pitch_ac #51
                         ]})
 

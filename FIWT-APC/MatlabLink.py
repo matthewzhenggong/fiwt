@@ -45,7 +45,7 @@ class MatlabLink(object):
         self.tx_udp_addr = (self.host,remote_port)
 
         self.rx_pack = struct.Struct("<d4d3d{}d".format(extra_inputs))
-        self.tx_pack = struct.Struct("<40d")
+        self.tx_pack = struct.Struct("<44d")
 
     def getReadList(self):
         return self.socklist
@@ -69,7 +69,7 @@ class MatlabLink(object):
                 exp.CMP_servo2, exp.CMP_svoref2,
                 exp.CMP_servo3, exp.CMP_svoref3,
                 exp.CMP_servo4, exp.CMP_svoref4,
-                exp.Vel)
+                exp.Vel, exp.AoA, exp.AoS, exp.roll_ac, exp.pitch_ac)
         self.tx_udp.sendto(data, self.tx_udp_addr)
 
     def read(self, rlist, recv_ts):
