@@ -57,11 +57,11 @@ class ExpData(object):
         self.extra_simulink_inputs = extra_simulink_inputs
         self.parent = parent
         self.RigRollRawPos = 0
-        self.RigRollPos0 = 0
+        self.RigRollPos0 = 0.5/(360/4095.0)
         self.RigPitchRawPos = 0
         self.RigPitchPos0 = 0
         self.RigYawRawPos = 0
-        self.RigYawPos0 = 0
+        self.RigYawPos0 = -3.5/(360/4095.0)
         self.Vel = 0
         self.DP = 0
         self.GND_ADC_TS = 0
@@ -119,9 +119,14 @@ class ExpData(object):
         self.ACM_roll = 0
         self.ACM_yaw = 0
 
+        '''
         self.ACM_roll0 = 5042#4964+1.2*4095/180.0
         self.ACM_pitch0 = 263#180+1.45*4095/180.0
         self.ACM_yaw0 = 6395
+        '''
+        self.ACM_roll0 = 5042
+        self.ACM_pitch0 = 205
+        self.ACM_yaw0 = 6385
 
         self.ACMScale = 180/4096.0
         self.CMPScale = 180/4096.0
