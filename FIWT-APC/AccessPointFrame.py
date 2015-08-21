@@ -848,7 +848,7 @@ Unused bits must be set to 0.  '''))
         Az = states[6]
         roll_s = atan2(-Ay, -Az)*57.3
         pitch_s = atan2(Ax,sqrt(Ay*Ay+Az*Az))*57.3
-        txt2 = 'AoA{:-5.1f}/AoS{:-5.1f} Pitch{:-5.1f}/Roll{:-5.1f} PitchS{:-5.1f}/RollS{:-5.1f}'.format(states[51],states[52], states[53],states[54], pitch_s,roll_s)
+        txt2 = 'AoA{:-5.1f}/AoS{:-5.1f} Pitch{:-5.1f}/Roll{:-5.1f} PitchS{:-5.1f}/RollS{:-5.1f}'.format(states[51],states[52], states[54],states[53], pitch_s,roll_s)
 
         self.txtExpDat.SetLabel(txt+txt2)
         msgs = {'data': {

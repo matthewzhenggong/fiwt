@@ -15,7 +15,10 @@ XbeeZBS2Test/log.txt
 materials/
 
 workspace/
+workspace_py/
+documents-export-2015-06-25/
 
 *.npz
 *.m
 *.slx
+*.ipynb
