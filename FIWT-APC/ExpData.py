@@ -57,11 +57,11 @@ class ExpData(object):
         self.extra_simulink_inputs = extra_simulink_inputs
         self.parent = parent
         self.RigRollRawPos = 0
-        self.RigRollPos0 = 0.5/(360/4095.0)
+        self.RigRollPos0 = -10
         self.RigPitchRawPos = 0
-        self.RigPitchPos0 = 0
+        self.RigPitchPos0 = 5
         self.RigYawRawPos = 0
-        self.RigYawPos0 = -3.5/(360/4095.0)
+        self.RigYawPos0 = -30
         self.Vel = 0
         self.DP = 0
         self.GND_ADC_TS = 0
