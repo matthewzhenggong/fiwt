@@ -1,4 +1,9 @@
 
 *.fig
+*.pyd
+*.so
+
 build/
 dist/
+EKFF/
+

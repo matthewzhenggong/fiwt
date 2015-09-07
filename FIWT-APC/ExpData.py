@@ -29,6 +29,8 @@ from utils import getMicroseconds
 import numpy as np
 from math import atan2,sqrt,sin,cos
 
+import ekff
+
 def lim40(data):
     if data > 40:
         data = 40
@@ -172,10 +174,14 @@ class ExpData(object):
         self.AoS = 0
         self.roll_ac = 0
         self.pitch_ac = 0
+        self.yaw_ac = 0
 
         self.A5 = struct.Struct('>BfB6H')
         self.AA = struct.Struct('>Bf8f{}f'.format(extra_num))
         self.last_update_ts = 0
+
+        self.ekff = ekff.ekff(1/244.0)
+        self.ekff.reset(0,0,0,0,0,-9.8)
 
     def resetRigAngel(self):
         self.RigRollPos0 += self.RigRollRawPos
@@ -205,6 +211,14 @@ class ExpData(object):
     def updateMani(self, vel, dp):
         self.Vel = vel
         self.DP = dp
+
+    def updateAoA2(self):
+        self.ekff.update(0, self.GX/57.3, self.GY/57.3, self.GZ/57.3, self.AX*9.81, self.AY*9.81, self.AZ*9.81)
+        self.AoA = 0
+        self.AoS = 0
+        self.roll_ac = self.ekff.phi*57.3
+        self.pitch_ac = self.ekff.theta*57.3
+        self.yaw_ac = self.ekff.psi*57.3
 
     def updateAoA(self):
         roll_acm = self.ACM_roll_filtered/57.3
@@ -313,7 +327,7 @@ class ExpData(object):
         self.ACM_yaw_rate,self.ACM_yaw_filtered = \
             self.ACM_yaw_butt.update(self.ACM_yaw, dt)
 
-        self.updateAoA()
+        self.updateAoA2()
         if self.parent:
             self.parent.matlab_link.write(self)
         self.update2GUI(ts_ADC)
@@ -329,7 +343,8 @@ class ExpData(object):
                 self.ACM_yaw, self.ACM_yaw_filtered, self.ACM_yaw_rate,
                 self.GX, self.GY, self.GZ, self.AX, self.AY, self.AZ,
                 self.ACM_mot1, self.ACM_mot2, self.ACM_mot3, self.ACM_mot4,
-                self.ACM_mot5, self.ACM_mot6]
+                self.ACM_mot5, self.ACM_mot6,
+                self.roll_ac, self.pitch_ac, self.yaw_ac]
 
     def getACMhdr(self):
         return ["ACM_ADC_TS", "ACM_CmdTime", "ACM_svoref1",
@@ -342,7 +357,8 @@ class ExpData(object):
                 "ACM_yaw", "ACM_yaw_filtered", "ACM_yaw_rate",
                 "GX", "GY", "GZ", "AX", "AY", "AZ",
                 "ACM_mot1", "ACM_mot2", "ACM_mot3", "ACM_mot4",
-                "ACM_mot5", "ACM_mot6"] \
+                "ACM_mot5", "ACM_mot6",
+                "EKFF_roll", "EKFF_pitch", "EKFF_yaw"] \
                         + ["gen_ts", "sent_ts", "recv_ts", "addr"]
 
 
@@ -442,7 +458,7 @@ class ExpData(object):
         if deltaT > 50000 or deltaT < 0:
             self.last_update_ts = ts_ADC
             self.msgc2guiQueue.put_nowait({'ID':'ExpData',
-                'states':[self.GND_ADC_TS,
+                'states':[self.ACM_ADC_TS,
                         self.GX, self.GY, self.GZ, self.AX, self.AY,
                         self.AZ, self.ACM_roll_filtered, self.ACM_roll_rate,
                         self.ACM_pitch_filtered, self.ACM_pitch_rate,

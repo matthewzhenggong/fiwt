@@ -22,3 +22,7 @@ documents-export-2015-06-25/
 *.m
 *.slx
 *.ipynb
+
+*.bmp
+*.png
+

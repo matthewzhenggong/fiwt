@@ -52,8 +52,10 @@ def run(dat, queue, t,ax_data,lines):
     d[1].append(data[15])
     d[2].append(data[17])
     d = ax_data[1][0]
-    d[0].append(data[7])
-    d[1].append(data[9])
+    #d[0].append(data[7])
+    #d[1].append(data[9])
+    d[0].append(data[53])
+    d[1].append(data[54])
     d[2].append(data[11])
     d = ax_data[2][0]
     for i in xrange(8):
@@ -72,7 +74,8 @@ def run(dat, queue, t,ax_data,lines):
         d[i].append(data[14+i*2])
     d = ax_data[7][0]
     for i in range(3):
-        d[i].append(data[8+i*2])
+        #d[i].append(data[8+i*2])
+        d[i].append(data[1+i])
     if len(t)>2:
         for i in ax_data:
             for j,k in izip(i[2],i[0]):
