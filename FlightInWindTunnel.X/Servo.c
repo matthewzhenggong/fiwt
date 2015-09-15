@@ -77,9 +77,9 @@ Servo_t Servos[] = {
     {&ServoPos[3], &PWM7DC, &LATJ, _LATJ_LATJ10_MASK, ~_LATJ_LATJ10_MASK, &LATJ, _LATJ_LATJ11_MASK, ~_LATJ_LATJ11_MASK, 3800, 200,
             10, 3, 11, 0,440},
     {&ServoPos[4], &PWM5DC, &LATJ, _LATJ_LATJ12_MASK, ~_LATJ_LATJ12_MASK, &LATJ, _LATJ_LATJ13_MASK, ~_LATJ_LATJ13_MASK, 3800, 200,
-            10, 3, 11, 0,420},
+            10, 3, 11, 0,440},
     {&ServoPos[5], &PWM6DC, &LATG, _LATG_LATG6_MASK, ~_LATG_LATG6_MASK, &LATG, _LATG_LATG7_MASK, ~_LATG_LATG7_MASK, 3800, 200,
-            10, 3, 11, 0,455},
+            10, 3, 11, 0,465},
 #endif
 #elif AEROCOMP
 #if USE_TESTBOARD
