@@ -64,11 +64,15 @@ def run(dat, queue, t,ax_data,lines):
     for i in xrange(4):
         d[i].append(data[41+i])
     d = ax_data[4][0]
-    for i in xrange(10):
+    for i in xrange(4):
         d[i].append(data[19+i])
+    for i in xrange(6):
+        d[i+4].append(data[25+i])
     d = ax_data[5][0]
-    for i in xrange(5):
+    for i in xrange(2):
         d[i].append(data[45+i])
+    for i in xrange(3):
+        d[i+2].append(data[48+i])
     d = ax_data[6][0]
     for i in range(3):
         d[i].append(data[14+i*2])
@@ -153,11 +157,11 @@ def drawer(gui2drawerQueue):
 
     acmsvo = [[],[],[],[],[],[],[],[],[],[]]
     acmsvo_ax = axarr[3][0]
-    acmsvo_l = acmsvo_ax.plot(t, acmsvo[0], 'r-',t, acmsvo[1], 'r:',
-            t, acmsvo[2], 'b-', t, acmsvo[3], 'b:',
-            t, acmsvo[4], 'g-', t, acmsvo[5], 'g:',
-            t, acmsvo[6], 'm-', t, acmsvo[7], 'm:',
-            t, acmsvo[8], 'm-', t, acmsvo[9], 'c:')
+    acmsvo_l = acmsvo_ax.plot(t, acmsvo[0], 'r:',t, acmsvo[1], 'r-',
+            t, acmsvo[2], 'b:', t, acmsvo[3], 'b-',
+            t, acmsvo[4], 'g:', t, acmsvo[5], 'g-',
+            t, acmsvo[6], 'm:', t, acmsvo[7], 'm-',
+            t, acmsvo[8], 'm:', t, acmsvo[9], 'c-')
     acmsvo_ax.grid(True)
     acmsvo_ax.set_xlim(0, 10)
     acmsvo_ax.set_ylim(-30, 30)
