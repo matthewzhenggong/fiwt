@@ -53,11 +53,32 @@ def getPeriodDiff(EncPos, EncPos0, peroid=2**13):
         diff += peroid
     return diff
 
+def getAoA(roll_acm, pitch_acm, yaw_acm, vec_a):
+    cos_tht = math.cos(pitch_acm)
+    cos_phi = math.cos(roll_acm)
+    cos_psi = math.cos(yaw_acm)
+
+    sin_tht = math.sin(pitch_acm)
+    sin_phi = math.sin(roll_acm)
+    sin_psi = math.sin(yaw_acm)
+
+    T = np.array([[cos_psi*cos_tht, sin_psi*cos_tht, -sin_tht],
+[sin_phi*sin_tht*cos_psi - sin_psi*cos_phi,  sin_phi*sin_psi*sin_tht + cos_phi*cos_psi, sin_phi*cos_tht],
+[sin_phi*sin_psi + sin_tht*cos_phi*cos_psi, -sin_phi*cos_psi + sin_psi*sin_tht*cos_phi, cos_phi*cos_tht]])
+
+    vec_b = np.dot(T,vec_a)
+    AoA = math.atan2(vec_b[2],vec_b[0])
+    AoS = math.atan2(vec_b[1],math.sqrt(vec_b[0]**2+vec_b[2]**2))
+    return AoA, AoS
+
 class ExpData(object):
     def __init__(self, parent, msgc2guiQueue, extra_simulink_inputs):
         extra_num = len(extra_simulink_inputs)
         self.extra_simulink_inputs = extra_simulink_inputs
         self.parent = parent
+
+        self.la = 0.8
+
         self.RigRollRawPos = 0
         self.RigRollPos0 = -10
         self.RigPitchRawPos = 0
@@ -213,44 +234,18 @@ class ExpData(object):
         self.DP = dp
 
     def updateAoA2(self):
-        self.ekff.update(0, self.GX/57.3, self.GY/57.3, self.GZ/57.3, self.AX*9.81, self.AY*9.81, self.AZ*9.81)
-        self.AoA = 0
-        self.AoS = 0
+        tht_r = 0      #self.RigPitchPosFiltered/57.3
+        tht_dot_r = 0  #self.RigPitchPosRate/57.3
+        Wind = 30      #self.Vel
+        vec_a = [Wind-math.sin(tht_r)*self.la*tht_dot_r,0,-math.cos(tht_r)*self.la*tht_dot_r]
+        yaw = 0        #(self.ACM_yaw_filtered + RigYawPosFiltered)/57.3
+        self.ekff.update(yaw, self.GX/57.3, self.GY/57.3, self.GZ/57.3, self.AX*9.81, self.AY*9.81, self.AZ*9.81)
+        AoA, AoS = getAoA(self.ekff.phi, self.ekff.theta, self.ekff.psi, vec_a)
+        self.AoA = AoA*57.3
+        self.AoS = AoS*57.3
         self.roll_ac = self.ekff.phi*57.3
         self.pitch_ac = self.ekff.theta*57.3
         self.yaw_ac = self.ekff.psi*57.3
-
-    def updateAoA(self):
-        roll_acm = self.ACM_roll_filtered/57.3
-        pitch_acm = self.ACM_pitch_filtered/57.3
-        yaw_acm = self.ACM_yaw_filtered/57.3
-        roll_rig = self.RigRollPosFiltered/57.3
-        pitch_rig = self.RigPitchPosFiltered/57.3
-        yaw_rig = self.RigYawPosFiltered/57.3
-
-        cos_pitch_acm = cos(pitch_acm)
-        cos_roll_acm = cos(roll_acm)
-        cos_yaw_acm = cos(yaw_acm)
-        cos_pitch_rig = cos(pitch_rig)
-        cos_roll_rig = cos(roll_rig)
-        cos_yaw_rig = cos(yaw_rig)
-        sin_pitch_acm = sin(pitch_acm)
-        sin_roll_acm = sin(roll_acm)
-        sin_yaw_acm = sin(yaw_acm)
-        sin_pitch_rig = sin(pitch_rig)
-        sin_roll_rig = sin(roll_rig)
-        sin_yaw_rig = sin(yaw_rig)
-
-        T = np.array([ [cos_pitch_acm*cos_pitch_rig*cos_yaw_acm*cos_yaw_rig - cos_pitch_acm*sin_yaw_acm*(cos_roll_rig*sin_yaw_rig - cos_yaw_rig*sin_pitch_rig*sin_roll_rig) - sin_pitch_acm*(sin_roll_rig*sin_yaw_rig + cos_roll_rig*cos_yaw_rig*sin_pitch_rig), sin_pitch_acm*(cos_yaw_rig*sin_roll_rig - cos_roll_rig*sin_pitch_rig*sin_yaw_rig) + cos_pitch_acm*sin_yaw_acm*(cos_roll_rig*cos_yaw_rig + sin_pitch_rig*sin_roll_rig*sin_yaw_rig) + cos_pitch_acm*cos_pitch_rig*cos_yaw_acm*sin_yaw_rig, cos_pitch_acm*cos_pitch_rig*sin_roll_rig*sin_yaw_acm - cos_pitch_acm*cos_yaw_acm*sin_pitch_rig - cos_pitch_rig*cos_roll_rig*sin_pitch_acm],
-[ cos_pitch_acm*sin_roll_acm*(sin_roll_rig*sin_yaw_rig + cos_roll_rig*cos_yaw_rig*sin_pitch_rig) - cos_pitch_rig*cos_yaw_rig*(cos_roll_acm*sin_yaw_acm - cos_yaw_acm*sin_pitch_acm*sin_roll_acm) - (cos_roll_acm*cos_yaw_acm + sin_pitch_acm*sin_roll_acm*sin_yaw_acm)*(cos_roll_rig*sin_yaw_rig - cos_yaw_rig*sin_pitch_rig*sin_roll_rig), (cos_roll_acm*cos_yaw_acm + sin_pitch_acm*sin_roll_acm*sin_yaw_acm)*(cos_roll_rig*cos_yaw_rig + sin_pitch_rig*sin_roll_rig*sin_yaw_rig) - cos_pitch_acm*sin_roll_acm*(cos_yaw_rig*sin_roll_rig - cos_roll_rig*sin_pitch_rig*sin_yaw_rig) - cos_pitch_rig*sin_yaw_rig*(cos_roll_acm*sin_yaw_acm - cos_yaw_acm*sin_pitch_acm*sin_roll_acm), sin_pitch_rig*(cos_roll_acm*sin_yaw_acm - cos_yaw_acm*sin_pitch_acm*sin_roll_acm) + cos_pitch_rig*sin_roll_rig*(cos_roll_acm*cos_yaw_acm + sin_pitch_acm*sin_roll_acm*sin_yaw_acm) + cos_pitch_acm*cos_pitch_rig*cos_roll_rig*sin_roll_acm],
-[ (cos_yaw_acm*sin_roll_acm - cos_roll_acm*sin_pitch_acm*sin_yaw_acm)*(cos_roll_rig*sin_yaw_rig - cos_yaw_rig*sin_pitch_rig*sin_roll_rig) + cos_pitch_acm*cos_roll_acm*(sin_roll_rig*sin_yaw_rig + cos_roll_rig*cos_yaw_rig*sin_pitch_rig) + cos_pitch_rig*cos_yaw_rig*(sin_roll_acm*sin_yaw_acm + cos_roll_acm*cos_yaw_acm*sin_pitch_acm), cos_pitch_rig*sin_yaw_rig*(sin_roll_acm*sin_yaw_acm + cos_roll_acm*cos_yaw_acm*sin_pitch_acm) - cos_pitch_acm*cos_roll_acm*(cos_yaw_rig*sin_roll_rig - cos_roll_rig*sin_pitch_rig*sin_yaw_rig) - (cos_yaw_acm*sin_roll_acm - cos_roll_acm*sin_pitch_acm*sin_yaw_acm)*(cos_roll_rig*cos_yaw_rig + sin_pitch_rig*sin_roll_rig*sin_yaw_rig), cos_pitch_acm*cos_pitch_rig*cos_roll_acm*cos_roll_rig - cos_pitch_rig*sin_roll_rig*(cos_yaw_acm*sin_roll_acm - cos_roll_acm*sin_pitch_acm*sin_yaw_acm) - sin_pitch_rig*(sin_roll_acm*sin_yaw_acm + cos_roll_acm*cos_yaw_acm*sin_pitch_acm)]])
-
-        vec_g = np.dot(T,[0,0,1])
-        vec_a = np.dot(T,[1,0,0])
-        self.AoA = atan2(vec_a[2],vec_a[0])*57.3
-        self.AoS = atan2(vec_a[1],sqrt(vec_a[0]**2+vec_a[2]**2))*57.3
-        self.roll_ac = atan2(vec_g[1], vec_g[2])*57.3
-        self.pitch_ac = atan2(-vec_g[0],sqrt(vec_g[1]**2+vec_g[2]**2))*57.3
 
     def getCMDhdr(self):
         return ['TS', 'Dac','Deac','Dec','Drc','Dac_cmp', 'Dec_cmp', 'Drc_cmp']\
