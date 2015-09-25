@@ -234,11 +234,12 @@ class ExpData(object):
         self.DP = dp
 
     def updateAoA2(self):
+        #TODO use encoder data
         tht_r = 0      #self.RigPitchPosFiltered/57.3
         tht_dot_r = 0  #self.RigPitchPosRate/57.3
         Wind = 30      #self.Vel
         vec_a = [Wind-math.sin(tht_r)*self.la*tht_dot_r,0,-math.cos(tht_r)*self.la*tht_dot_r]
-        yaw = 0        #(self.ACM_yaw_filtered + RigYawPosFiltered)/57.3
+        yaw = self.ACM_yaw_filtered/57.3  #(self.ACM_yaw_filtered + RigYawPosFiltered)/57.3
         self.ekff.update(yaw, self.GX/57.3, self.GY/57.3, self.GZ/57.3, self.AX*9.81, self.AY*9.81, self.AZ*9.81)
         AoA, AoS = getAoA(self.ekff.phi, self.ekff.theta, self.ekff.psi, vec_a)
         self.AoA = AoA*57.3
