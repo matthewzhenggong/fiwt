@@ -861,7 +861,7 @@ Unused bits must be set to 0.  '''))
                     'pitch': states[54],
                     'AoS': states[52],
                     'AoA': states[51],
-                    'Ma': states[7],
+                    'Ma': states[52],
                     'GLoad':-states[6],
                     'ASL': states[15],
                     'AGL': states[17],
